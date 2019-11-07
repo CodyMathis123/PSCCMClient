@@ -1,2 +1,1 @@
-# CCMClient
-PowerShell Module for manage the SCCM client
+PowerShell module focused around interaction with the Configuration Manager client. 
