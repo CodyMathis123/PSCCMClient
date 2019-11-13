@@ -1,5 +1,4 @@
 function Invoke-CCMResetPolicy {
-    [CmdletBinding(SupportsShouldProcess)]
     <#
         .SYNOPSIS
             Invokes a ResetPolicy on the sms_client
@@ -19,6 +18,7 @@ function Invoke-CCMResetPolicy {
             Created:     10-30-2019
             Updated:     10-30-2019
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param
     (
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
