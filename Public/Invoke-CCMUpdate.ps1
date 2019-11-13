@@ -1,5 +1,4 @@
 function Invoke-CCMUpdate {
-    [CmdletBinding(SupportsShouldProcess)]
     <#
         .SYNOPSIS
             Invokes updates deployed via Configuration Manager on a client
@@ -26,6 +25,7 @@ function Invoke-CCMUpdate {
             Created:     12-22-2018
             Updated:     10-15-2019
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]

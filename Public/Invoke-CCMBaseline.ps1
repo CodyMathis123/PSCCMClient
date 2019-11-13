@@ -1,5 +1,4 @@
 function Invoke-CCMBaseline {
-    [CmdletBinding(SupportsShouldProcess)]
     <#
         .SYNOPSIS
             Invoke SCCM Configuration Baselines on the specified computers
@@ -45,6 +44,7 @@ function Invoke-CCMBaseline {
             invoking SCCM Configuration Baselines, and there were always comments about certain scenarios not working. This implementation has been consistent in
             invoking Configuration Baselines, including those with user settings, as long as the context is correct.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]

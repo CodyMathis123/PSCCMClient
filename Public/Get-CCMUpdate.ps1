@@ -1,5 +1,4 @@
 function Get-CCMUpdate {
-    [cmdletbinding()]
     <#
     .SYNOPSIS
         Get pending SCCM patches for a machine
@@ -15,6 +14,7 @@ function Get-CCMUpdate {
         PS C:\> Get-CCMUpdates -Computer Testing123
         will return all non-AV Dev patches for computer Testing123
     #>
+    [cmdletbinding()]
     param(
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]

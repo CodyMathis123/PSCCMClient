@@ -1,46 +1,46 @@
 function Get-CCMBaseline {
-    [CmdletBinding(SupportsShouldProcess = $true)]
     <#
-.SYNOPSIS
-    Get SCCM Configuration Baselines on the specified computer(s)
-.DESCRIPTION
-    This function is used to identify baselines on computers. You can provide an array of computer names, and configuration baseline names which will be 
-    search for. If you do not specify a baseline name, then there will be no filter applied. A [PSCustomObject] is returned that
-    outlines the findings.
-.PARAMETER ComputerName
-    Provides computer names to find the configuration baselines on.
-.PARAMETER BaselineName
-    Provides the configuration baseline names that you wish to search for.
-.PARAMETER Credential
-    Provides optional credentials to use for the WMI cmdlets.
-.EXAMPLE
-    C:\PS> Get-CCMBaseline
-        Gets all baselines identified in WMI on the local computer.
-.EXAMPLE
-    C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321' -BaselineName 'Check Computer Compliance','Double Check Computer Compliance'
-        Gets the two baselines on the computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
-.EXAMPLE
-    C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321'
-        Gets all baselines identified in WMI for the computers specified. 
-.NOTES
-    FileName:    Get-CCMBaseline.ps1
-    Author:      Cody Mathis
-    Contact:     @CodyMathis123
-    Created:     2019-07-24
-    Updated:     2019-10-16
+        .SYNOPSIS
+            Get SCCM Configuration Baselines on the specified computer(s)
+        .DESCRIPTION
+            This function is used to identify baselines on computers. You can provide an array of computer names, and configuration baseline names which will be 
+            search for. If you do not specify a baseline name, then there will be no filter applied. A [PSCustomObject] is returned that
+            outlines the findings.
+        .PARAMETER ComputerName
+            Provides computer names to find the configuration baselines on.
+        .PARAMETER BaselineName
+            Provides the configuration baseline names that you wish to search for.
+        .PARAMETER Credential
+            Provides optional credentials to use for the WMI cmdlets.
+        .EXAMPLE
+            C:\PS> Get-CCMBaseline
+                Gets all baselines identified in WMI on the local computer.
+        .EXAMPLE
+            C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321' -BaselineName 'Check Computer Compliance','Double Check Computer Compliance'
+                Gets the two baselines on the computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
+        .EXAMPLE
+            C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321'
+                Gets all baselines identified in WMI for the computers specified. 
+        .NOTES
+            FileName:    Get-CCMBaseline.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-07-24
+            Updated:     2019-10-16
 
-    It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
-    with those credentials. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' that has user settings,
+            It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
+            with those credentials. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' that has user settings,
 
-    This command would successfully find FixJimsStuff
-    Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -Credential $JimsCreds
+            This command would successfully find FixJimsStuff
+            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -Credential $JimsCreds
 
-    This command would not find the baseline FixJimsStuff
-    Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
+            This command would not find the baseline FixJimsStuff
+            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
 
-    You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to the function's -Credential param.
-    If you try to query for this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
-#>
+            You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to the function's -Credential param.
+            If you try to query for this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]

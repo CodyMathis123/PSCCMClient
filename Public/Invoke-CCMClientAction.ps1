@@ -1,5 +1,4 @@
 function Invoke-CCMClientAction {
-    [CmdletBinding(SupportsShouldProcess)]
     <#
         .SYNOPSIS
             Invokes CM Client actions on local or remote machines
@@ -26,6 +25,7 @@ function Invoke-CCMClientAction {
             Created:     11-29-2018
             Updated:     10-30-2019
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param
     (
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
