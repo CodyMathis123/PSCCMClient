@@ -25,7 +25,7 @@ function Set-WmiRegistryProperty {
         'String', 'ExpandedString', 'Binary', 'DWORD', 'MultiString', 'QWORD'
 
     .PARAMETER Force
-        Create the Property if it does not exist, otherwise only exist properties will have their value modified
+        Create the Property if it does not exist, otherwise only existing properties will have their value modified
 
     .EXAMPLE
         PS> Set-WmiRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer" -Value 1 -PropertyType DWORD
