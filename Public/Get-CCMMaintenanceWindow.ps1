@@ -92,8 +92,8 @@ function Get-CCMMaintenanceWindow {
                 [System.Management.ManagementObject[]]$ServiceWindows = Get-WmiObject @getWmiObjectServiceWindowSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     $Return[$Computer] = foreach ($ServiceWindow in $ServiceWindows) {
-                        $Result['StartTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.StartTime)
-                        $Result['EndTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.EndTime)
+                        $Result['StartTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.StartTime).ToUniversalTime()
+                        $Result['EndTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.EndTime).ToUniversalTime()
                         $Result['Duration'] = $ServiceWindow.Duration
                         $Result['MWID'] = $ServiceWindow.ID
                         $Result['Type'] = $MW_Type.Item([int]$($ServiceWindow.Type))
