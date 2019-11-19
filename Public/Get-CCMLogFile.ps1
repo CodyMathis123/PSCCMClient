@@ -7,12 +7,17 @@ Function Get-CCMLogFile {
         searched and manipulated easily with PowerShell
     .PARAMETER LogFilePath
         Path to the log file(s) you would like to parse.
+    .PARAMETER ParseSMSTS
+        Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
     .EXAMPLE
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\ccmexec.log'
         Returns the CCMExec.log as a PSCustomObject
     .EXAMPLE
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
         Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
+    .EXAMPLE 
+        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
+        Returns all the actions that ran according to the SMSTSLog provided
     .OUTPUTS
         [pscustomobject]
     .NOTES
