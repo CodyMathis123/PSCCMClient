@@ -26,14 +26,17 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  9/19/2019
-            Updated:  9/20/2019
+            Updated:  11/19/2019
     #>
     param (
         [Parameter(Mandatory = $true)]
-        [string[]]$LogFilePath
+        [string[]]$LogFilePath,
+        [Parameter(Mandatory = $false)]
+        [switch]$ParseSMSTS
     )
     begin {
-        Add-Type -TypeDefinition @"
+        try {
+            Add-Type -ErrorAction SilentlyContinue -TypeDefinition @"
             public enum Severity
             {
                 None,
@@ -42,6 +45,55 @@ Function Get-CCMLogFile {
                 Error
             }
 "@
+        }
+        catch {
+            Write-Debug "Type Severity already exists"
+        }
+
+        function Get-TimeStampFromLogLine {
+            <#
+            .SYNOPSIS
+                Parses a datetime object from an SCCM log line 
+            .DESCRIPTION
+                This will return a datetime object if it is passed the part of an SCCM log line that contains the date and time
+            .PARAMETER LogLinSubArray
+                A log line sub array which is everything past "]LOG]!><" split by '"'
+                For Example:
+                    time=
+                    09:58:50.301+300
+                    date=
+                    11-18-2019
+                    component=
+                    TSManager
+                    context=
+
+                    type=
+                    1
+                    thread=
+                    2164
+                    file=
+                    tsxml.cpp:898
+
+                    such that the [3] and [1] are the date and time respectively
+            .EXAMPLE
+                PS C:\> Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                return datetime object from the log line that was split into a subarray
+            #>
+            param (
+                [Parameter(Mandatory = $true)]
+                [array]$LogLineSubArray
+            )
+            $DateString = $LogLineSubArray[3]
+            $DateStringArray = $DateString -split "-"
+
+            $MonthParser = $DateStringArray[0] -replace '\d', 'M'
+            $DayParser = $DateStringArray[1] -replace '\d', 'd'
+
+            $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fff', $MonthParser, $DayParser)
+            $TimeString = ($LogLineSubArray[1]).Split("+|-")[0].ToString().Substring(0, 12)
+            $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
+            [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
+        }
     }
     process {
         $ReturnLog = Foreach ($LogFile in $LogFilePath) {
@@ -83,21 +135,25 @@ Function Get-CCMLogFile {
                             $LogLine.Type = [Severity]$LogLineSubArray[9]
                             $LogLine.Component = $LogLineSubArray[5]
                             $LogLine.Thread = $LogLineSubArray[11]
-
-                            #region determine timestamp for log line
-                            $DateString = $LogLineSubArray[3]
-                            $DateStringArray = $DateString -split "-"
-
-                            $MonthParser = $DateStringArray[0] -replace '\d', 'M'
-                            $DayParser = $DateStringArray[1] -replace '\d', 'd'
-
-                            $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fff', $MonthParser, $DayParser)
-                            $TimeString = ($LogLineSubArray[1]).Split("+|-")[0].ToString().Substring(0, 12)
-                            $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
-                            $LogLine.TimeStamp = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
-                            #region determine timestamp for log line
-
-                            [pscustomobject]$LogLine
+                            
+                            # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
+                            switch ($ParseSMSTS.IsPresent) {
+                                $true {
+                                    switch -regex ($Message) {
+                                        'win32 code 0|failed to run the action' {
+                                            $LogLine.TimeStamp = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                                            [pscustomobject]$LogLine
+                                        }
+                                        default {
+                                            continue
+                                        }
+                                    }
+                                }
+                                $false {
+                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                                    [pscustomobject]$LogLine
+                                }
+                            }
                         }
                     }
                 }
