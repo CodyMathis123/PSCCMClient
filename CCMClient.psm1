@@ -44,7 +44,8 @@ Catch {
 #region Export Module Members
 $ExportModule = @{
     Alias    = @()
-    Function = @('Get-CCMClientDirectory',
+    Function = @('ConvertFrom-CCMSchedule',
+    'Get-CCMClientDirectory',
     'Get-CCMClientLogDirectory',
     'Get-CCMLogFile',
     'Get-CCMUpdate',
