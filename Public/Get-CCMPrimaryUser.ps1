@@ -10,7 +10,7 @@ function Get-CCMPrimaryUser {
         PS> Get-CCMPrimaryUser
         Name                           Value
         ----                           -----
-        Computer123                    humad\ccm5521
+        Computer123                    contoso\codymathis123
 
     .OUTPUTS
         [System.Collections.Hashtable]
