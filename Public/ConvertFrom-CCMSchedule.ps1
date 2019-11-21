@@ -94,9 +94,8 @@ Function ConvertFrom-CCMSchedule {
                     [string]$StartMonth = ([Convert]::ToInt32($binaryStart.Substring(16, 4), 2).ToString()).PadLeft(2, 48)
                     [String]$StartYear = [Convert]::ToInt32($binaryStart.Substring(20, 6), 2) + 1970
 
-                    # set our StartString variable by formatting all our calculated datetime components
-                    $StartString = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute)
-                    $StartDateTimeObject = $StartString | Get-Date
+                    # set our StartDateTimeObject variable by formatting all our calculated datetime components and piping to Get-Date
+                    $StartDateTimeObject = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute) | Get-Date
                 }
             }
             # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
@@ -105,9 +104,9 @@ Function ConvertFrom-CCMSchedule {
             [bool]$IsGMT = [Convert]::ToInt32($binaryRecurrence.Substring(31, 1), 2)
 
             <#
-            Day duration is found by calculating how many times 24 goes into our TotalHourDuration (number of times being DayDuration)
-            and getting the remainder for HourDuration by using % for modulus
-        #>
+                Day duration is found by calculating how many times 24 goes into our TotalHourDuration (number of times being DayDuration)
+                and getting the remainder for HourDuration by using % for modulus
+            #>
             $TotalHourDuration = [Convert]::ToInt32($binaryRecurrence.Substring(0, 5), 2)
 
             switch ($TotalHourDuration -gt 24) {
@@ -191,7 +190,7 @@ Function ConvertFrom-CCMSchedule {
                     $Props = 'SmsProviderObjectPath', 'DayDuration', 'ForNumberOfMonths', 'HourDuration', 'IsGMT', 'MinuteDuration', 'MonthDay', 'StartTime', 'Description'
                 }
                 Default {
-                    Throw "Invalid type"
+                    Write-Error "Parsing Schedule String resulted in invalid type of $RecurType"
                 }
             }
 
