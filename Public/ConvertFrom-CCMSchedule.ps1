@@ -71,7 +71,8 @@ Function ConvertFrom-CCMSchedule {
         #endregion function to return a formatted day such as 1st, 2nd, or 3rd
     }
     process {
-        foreach ($Schedule in $ScheduleString) {
+        # we will split the schedulestring input into 16 characters, as some are stored as multiple in one
+        foreach ($Schedule in ($ScheduleString -split '(\w{16})' | Where-Object { $_ })) {
             $MW = @{ }
 
             # the first 8 characters are the Start of the MW, while the last 8 characters are the recurrence schedule
@@ -94,9 +95,8 @@ Function ConvertFrom-CCMSchedule {
                     [string]$StartMonth = ([Convert]::ToInt32($binaryStart.Substring(16, 4), 2).ToString()).PadLeft(2, 48)
                     [String]$StartYear = [Convert]::ToInt32($binaryStart.Substring(20, 6), 2) + 1970
 
-                    # set our StartString variable by formatting all our calculated datetime components
-                    $StartString = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute)
-                    $StartDateTimeObject = $StartString | Get-Date
+                    # set our StartDateTimeObject variable by formatting all our calculated datetime components and piping to Get-Date
+                    $StartDateTimeObject = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute) | Get-Date
                 }
             }
             # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
@@ -105,9 +105,9 @@ Function ConvertFrom-CCMSchedule {
             [bool]$IsGMT = [Convert]::ToInt32($binaryRecurrence.Substring(31, 1), 2)
 
             <#
-            Day duration is found by calculating how many times 24 goes into our TotalHourDuration (number of times being DayDuration)
-            and getting the remainder for HourDuration by using % for modulus
-        #>
+                Day duration is found by calculating how many times 24 goes into our TotalHourDuration (number of times being DayDuration)
+                and getting the remainder for HourDuration by using % for modulus
+            #>
             $TotalHourDuration = [Convert]::ToInt32($binaryRecurrence.Substring(0, 5), 2)
 
             switch ($TotalHourDuration -gt 24) {
@@ -191,7 +191,7 @@ Function ConvertFrom-CCMSchedule {
                     $Props = 'SmsProviderObjectPath', 'DayDuration', 'ForNumberOfMonths', 'HourDuration', 'IsGMT', 'MinuteDuration', 'MonthDay', 'StartTime', 'Description'
                 }
                 Default {
-                    Throw "Invalid type"
+                    Write-Error "Parsing Schedule String resulted in invalid type of $RecurType"
                 }
             }
 
