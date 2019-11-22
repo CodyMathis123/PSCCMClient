@@ -71,7 +71,8 @@ Function ConvertFrom-CCMSchedule {
         #endregion function to return a formatted day such as 1st, 2nd, or 3rd
     }
     process {
-        foreach ($Schedule in $ScheduleString) {
+        # we will split the schedulestring input into 16 characters, as some are stored as multiple in one
+        foreach ($Schedule in ($ScheduleString -split '(\w{16})' | Where-Object { $_ })) {
             $MW = @{ }
 
             # the first 8 characters are the Start of the MW, while the last 8 characters are the recurrence schedule
