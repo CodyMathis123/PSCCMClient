@@ -80,7 +80,6 @@ function Get-CCMMaintenanceWindow {
     }
     process {
         foreach ($Computer in $ComputerName) {
-            $Return = @{ }
             $Result = @{ }
             $Result['ComputerName'] = $Computer
             $getWmiObjectServiceWindowSplat['ComputerName'] = $Computer
@@ -91,7 +90,7 @@ function Get-CCMMaintenanceWindow {
 
                 [System.Management.ManagementObject[]]$ServiceWindows = Get-WmiObject @getWmiObjectServiceWindowSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
-                    $Return[$Computer] = foreach ($ServiceWindow in $ServiceWindows) {
+                    foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['StartTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.StartTime).ToUniversalTime()
                         $Result['EndTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.EndTime).ToUniversalTime()
                         $Result['Duration'] = $ServiceWindow.Duration
@@ -106,9 +105,8 @@ function Get-CCMMaintenanceWindow {
                     $Result['Duration'] = $null
                     $Result['MWID'] = $null
                     $Result['Type'] = "No ServiceWindow of type(s) $($RequestedTypesRaw -join ', ')"
-                    $Return[$Computer] = [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                    [PSCustomObject]$Result | Select-Object -Property $OutputProperties
                 }
-                Write-Output $Return
             }
             catch {
                 $ErrorMessage = $_.Exception.Message
