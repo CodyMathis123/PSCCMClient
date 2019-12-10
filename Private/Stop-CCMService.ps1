@@ -82,13 +82,14 @@ function Stop-CCMService {
     process {
         foreach ($Computer in $ComputerName) {
             foreach ($Svc in $Name) {
-                if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Service = '$Svc']", "Stop-CCMService")) {
+                if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ServiceName = '$Svc']", "Stop-CCMService")) {
                     $getWmiObjectSplat['ComputerName'] = $Computer
                     $getWmiObjectSplat['Query'] = [string]::Format("SELECT * FROM Win32_Service WHERE Name = '{0}'", $Svc)
                     try {
                         Write-Verbose "Retrieving service object [ComputerName = '$Computer'] [ServiceName = '$Svc']"
                         $SvcObject = Get-WmiObject @getWmiObjectSplat
                         if ($SvcObject -is [Object]) {
+                            Write-Verbose "Service found [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
                             switch ($SvcObject.State) {
                                 'Stopped' {
                                     Write-Verbose "Service is already stopped [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
