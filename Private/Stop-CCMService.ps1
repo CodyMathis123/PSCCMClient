@@ -25,7 +25,7 @@ function Stop-CCMService {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-8
-        Updated:     2019-11-8
+        Updated:     2019-12-9
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -86,55 +86,74 @@ function Stop-CCMService {
                     $getWmiObjectSplat['ComputerName'] = $Computer
                     $getWmiObjectSplat['Query'] = [string]::Format("SELECT * FROM Win32_Service WHERE Name = '{0}'", $Svc)
                     try {
+                        Write-Verbose "Retrieving service object [ComputerName = '$Computer'] [ServiceName = '$Svc']"
                         $SvcObject = Get-WmiObject @getWmiObjectSplat
-                        $SvcStop = $SvcObject.StopService()
                         if ($SvcObject -is [Object]) {
-                            switch ($SvcStop.ReturnValue) {
-                                0 {
-                                    switch ($PSBoundParameters.ContainsKey('Timeout')) {
-                                        $true {
-                                            $newLoopActionSplat = @{
-                                                LoopTimeoutType = 'Minutes'
-                                                ScriptBlock     = {
-                                                    $SvcObject = Get-WmiObject @getWmiObjectSplat
-                                                    switch ($SvcObject.State) {
-                                                        'Stopped' {
-                                                            $ServiceStopped = $true
-                                                        }
-                                                        default {
-                                                            $null = $SvcObject.StopService()
-                                                        }
-                                                    }
-                                                }
-                                                ExitCondition   = { $ServiceStopped }
-                                                IfTimeoutScript = {
-                                                    $getWmiObjectSplat['Query'] = [string]::Format("SELECT * FROM Win32_Service WHERE ProcessID = {0}", $SvcObject.ProcessID)
-                                                    $ProcessObject = Get-WmiObject @getWmiObjectSplat
-                                                    $ProcessObject.Terminate()
-                                                }
-                                                LoopDelayType   = 'Seconds'
-                                                LoopDelay       = 5
-                                                IfSucceedScript = {
-                                                    $ServiceStopped = $true
-                                                }
-                                                LoopTimeout     = $Timeout
-                                            }
-                                            New-LoopAction @newLoopActionSplat
-                                        }
-                                    }
-                                }
-                                3 {
-                                    switch ($Force.IsPresent) {
-                                        $true {
-
-                                        }
-                                        $false {
-
-                                        }
-                                    }
+                            switch ($SvcObject.State) {
+                                'Stopped' {
+                                    Write-Verbose "Service is already stopped [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
+                                    # service already stopped
                                 }
                                 default {
-                                    # write out the mapped error from the hash table
+                                    Write-Verbose "Attempting to stop service [ComputerName = '$Computer'] [ServiceName = '$Svc']"
+                                    $SvcStop = $SvcObject.StopService()
+                                    switch ($SvcStop.ReturnValue) {
+                                        0 {
+                                            Write-Verbose "Stop service invoke succeeded [ComputerName = '$Computer'] [ServiceName = '$Svc']"
+                                            switch ($PSBoundParameters.ContainsKey('Timeout')) {
+                                                $true {
+                                                    $newLoopActionSplat = @{
+                                                        LoopTimeoutType = 'Minutes'
+                                                        ScriptBlock     = {
+                                                            $SvcObject = Get-WmiObject @getWmiObjectSplat
+                                                            switch ($SvcObject.State) {
+                                                                'Stopped' {
+                                                                    Write-Verbose "Verified service stopped [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
+                                                                    $ServiceStopped = $true
+                                                                }
+                                                                default {
+                                                                    Write-Verbose "Waiting for service to stop [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
+                                                                    $null = $SvcObject.StopService()
+                                                                }
+                                                            }
+                                                        }
+                                                        ExitCondition   = { $ServiceStopped }
+                                                        IfTimeoutScript = {
+                                                            Write-Verbose "There was a timeout while stopping $SVC - will attempt to stop the associated process"
+                                                            $getWmiObjectSplat['Query'] = [string]::Format("SELECT * FROM Win32_Process WHERE ProcessID = {0}", $SvcObject.ProcessID)
+                                                            $ProcessObject = Get-WmiObject @getWmiObjectSplat
+                                                            $ProcessTermination = $ProcessObject.Terminate()
+                                                            switch ($ProcessTermination.ReturnValue) {
+                                                                0 {
+                                                                    Write-Verbose "Successfully stopped the associated process"
+                                                                }
+                                                                default {
+                                                                    Write-Error "Failed to stop the associated process"
+                                                                }
+                                                            }
+                                                        }
+                                                        LoopDelayType   = 'Seconds'
+                                                        LoopDelay       = 5
+                                                        LoopTimeout     = $Timeout
+                                                    }
+                                                    New-LoopAction @newLoopActionSplat
+                                                }
+                                            }
+                                        }
+                                        3 {
+                                            switch ($Force.IsPresent) {
+                                                $true {
+
+                                                }
+                                                $false {
+
+                                                }
+                                            }
+                                        }
+                                        default {
+                                            $ServiceStopError = $ServiceExitCode[$PSItem]
+                                        }
+                                    }
                                 }
                             }
                         }
