@@ -52,31 +52,31 @@ function Stop-CCMService {
         }
 
         $ServiceExitCode = @{
-            0  = 'The request was accepted.'
-            1  = 'The request is not supported.'
-            2  = 'The user did not have the necessary access.'
-            3  = 'The service cannot be stopped because other services that are running are dependent on it.'
-            4  = 'The requested control code is not valid, or it is unacceptable to the service.'
-            5  = 'The requested control code cannot be sent to the service because the state of the service (Win32_BaseService.State property) is equal to 0, 1, or 2.'
-            6  = 'The service has not been started.'
-            7  = 'The service did not respond to the start request in a timely fashion.'
-            8  = 'Unknown failure when starting the service.'
-            9  = 'The directory path to the service executable file was not found.'
-            10 = 'The service is already running.'
-            11 = 'The database to add a new service is locked.'
-            12 = 'A dependency this service relies on has been removed from the system.'
-            13 = 'The service failed to find the service needed from a dependent service.'
-            14 = 'The service has been disabled from the system.'
-            15 = 'The service does not have the correct authentication to run on the system.'
-            16 = 'This service is being removed from the system.'
-            17 = 'The service has no execution thread.'
-            18 = 'The service has circular dependencies when it starts.'
-            19 = 'A service is running under the same name.'
-            20 = 'The service name has invalid characters.'
-            21 = 'Invalid parameters have been passed to the service.'
-            22 = 'The account under which this service runs is either invalid or lacks the permissions to run the service.'
-            23 = 'The service exists in the database of services available from the system.'
-            24 = 'The service is currently paused in the system.'
+            '0'  = 'The request was accepted.'
+            '1'  = 'The request is not supported.'
+            '2'  = 'The user did not have the necessary access.'
+            '3'  = 'The service cannot be stopped because other services that are running are dependent on it.'
+            '4'  = 'The requested control code is not valid, or it is unacceptable to the service.'
+            '5'  = 'The requested control code cannot be sent to the service because the state of the service (Win32_BaseService.State property) is equal to 0, 1, or 2.'
+            '6'  = 'The service has not been started.'
+            '7'  = 'The service did not respond to the start request in a timely fashion.'
+            '8'  = 'Unknown failure when starting the service.'
+            '9'  = 'The directory path to the service executable file was not found.'
+            '10' = 'The service is already running.'
+            '11' = 'The database to add a new service is locked.'
+            '12' = 'A dependency this service relies on has been removed from the system.'
+            '13' = 'The service failed to find the service needed from a dependent service.'
+            '14' = 'The service has been disabled from the system.'
+            '15' = 'The service does not have the correct authentication to run on the system.'
+            '16' = 'This service is being removed from the system.'
+            '17' = 'The service has no execution thread.'
+            '18' = 'The service has circular dependencies when it starts.'
+            '19' = 'A service is running under the same name.'
+            '20' = 'The service name has invalid characters.'
+            '21' = 'Invalid parameters have been passed to the service.'
+            '22' = 'The account under which this service runs is either invalid or lacks the permissions to run the service.'
+            '23' = 'The service exists in the database of services available from the system.'
+            '24' = 'The service is currently paused in the system.'
         }
     }
     process {
@@ -114,7 +114,7 @@ function Stop-CCMService {
                                                                 }
                                                                 default {
                                                                     Write-Verbose "Waiting for service to stop [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)']"
-                                                                    $null = $SvcObject.StopService()
+                                                                    $script:SvcStop = $SvcObject.StopService()
                                                                 }
                                                             }
                                                         }
@@ -144,24 +144,48 @@ function Stop-CCMService {
                                         3 {
                                             switch ($Force.IsPresent) {
                                                 $true {
-
+                                                    $getWmiObjectSplat['Query'] = [string]::Format("Associators of {{Win32_Service.Name='{0}'}} Where AssocClass=Win32_DependentService Role=Antecedent", $SvcObject.Name)
+                                                    $DependentServices = Get-WmiObject @getWmiObjectSplat
+                                                    $stopCCMServiceSplat = @{
+                                                        ComputerName = $Computer
+                                                        Name         = $DependentServices.Name
+                                                    }
+                                                    switch ($PSBoundParameters.ContainsKey('Timeout')) {
+                                                        $true {
+                                                            $stopCCMServiceSplat['Timeout'] = $Timeout
+                                                        }
+                                                    }
+                                                    switch ($PSBoundParameters.ContainsKey('Credential')) {
+                                                        $true {
+                                                            $stopCCMServiceSplat['Credential'] = $Credential
+                                                        }
+                                                    }
+                                                    Stop-CCMService @stopCCMServiceSplat
+                                                    $stopCCMServiceSplat['Name'] = $SvcObject.Name
+                                                    Stop-CCMService @stopCCMServiceSplat
                                                 }
                                                 $false {
-
+                                                    Write-Error "Failed to stop service due to service dependencies [ComputerName = '$Computer'] [ServiceName = '$Svc'] [State = '$($SvcObject.State)'] - retry with -Force to attempt to stop dependent services"
                                                 }
                                             }
-                                        }
-                                        default {
-                                            $ServiceStopError = $ServiceExitCode[$PSItem]
                                         }
                                     }
                                 }
                             }
+                            $ServiceStopMessage = switch ($SvcStop.ReturnValue) {
+                                $null {
+                                    $null
+                                }
+                                default {
+                                    $ServiceExitCode["$PSItem"]
+                                }
+                            }
+                            $getWmiObjectSplat['Query'] = [string]::Format("SELECT * FROM Win32_Service WHERE Name = '{0}'", $Svc)
+                            Get-WmiObject @getWmiObjectSplat | Select-Object -Property @{name = 'ComputerName'; expression = { $_.SystemName } }, Name, StartMode, State, @{name = 'ServiceStopResult'; expression = { $ServiceStopMessage } }
                         }
                         else {
-
+                            Write-Error -Message "Service not found [ComputerName = '$Computer'] [ServiceName = '$Svc']"
                         }
-                        Write-Output $Return
                     }
                     catch {
                         $ErrorMessage = $_.Exception.Message
