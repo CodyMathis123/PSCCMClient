@@ -12,7 +12,7 @@
     RootModule        = 'CCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.0'
+    ModuleVersion     = '1.0.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -24,7 +24,7 @@
     Author            = 'Cody Mathis'
 
     # Company or vendor of this module
-    CompanyName       = 'CM-Ramblings'
+    CompanyName       = 'CCMClient'
 
     # Copyright statement for this module
     Copyright         = '(c) 2019 Cody Mathis. All rights reserved.'
@@ -69,20 +69,23 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Get-CCMClientDirectory',
+    FunctionsToExport = @('ConvertFromCCMSchedule',
+        'Get-CCMBaseline',
+        'Get-CCMCache',
+        'Get-CCMClientDirectory',
         'Get-CCMClientLogDirectory',
         'Get-CCMLogFile',
-        'Get-CCMUpdate',
         'Get-CCMMaintenanceWindow',
-        'Get-CCMBaseline',
         'Get-CCMPrimaryUser',
-        'Get-CCMCache',
-        'Set-CCMCacheLocation',
-        'Set-CCMCacheSize',
+        'Get-CCMServiceWindow',
+        'Get-CCMUpdate',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
+        'Invoke-CCMResetPolicy',
         'Invoke-CCMUpdate',
         'Repair-CCMCacheLocation',
+        'Set-CCMCacheLocation',
+        'Set-CCMCacheSize',
         'Write-CCMLogEntry'
     )
 
