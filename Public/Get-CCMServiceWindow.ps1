@@ -73,11 +73,10 @@ function Get-CCMServiceWindow {
             Class     = 'CCM_ServiceWindow'
             Filter    = $RequestedTypesFilter
         }
-        $OutputProperties = @('ComputerName', 'Schedules', 'ServiceWindowID', 'ServiceWindowType')
     }
     process {
         foreach ($Computer in $ComputerName) {
-            $Result = @{ }
+            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
             $getWmiObjectServiceWindowSplat['ComputerName'] = $Computer
 
@@ -88,14 +87,14 @@ function Get-CCMServiceWindow {
                         $Result['Schedules'] = $ServiceWindow.Schedules
                         $Result['ServiceWindowID'] = $ServiceWindow.ServiceWindowID
                         $Result['ServiceWindowType'] = $SW_Type.Item([int]$($ServiceWindow.ServiceWindowType))
-                        [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                        [PSCustomObject]$Result
                     }
                 }
                 else {
                     $Result['Schedules'] = $null
                     $Result['ServiceWindowID'] = $null
                     $Result['ServiceWindowType'] = "No ServiceWindow of type(s) $($RequestedTypesRaw -join ', ')"
-                    [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                    [PSCustomObject]$Result
                 }
             }
             catch {

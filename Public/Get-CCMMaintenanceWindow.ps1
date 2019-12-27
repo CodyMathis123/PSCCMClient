@@ -76,11 +76,10 @@ function Get-CCMMaintenanceWindow {
             $getWmiObjectServiceWindowSplat['Credential'] = $Credential
             $getWmiObjectTimeZoneSplat['Credential'] = $Credential
         }
-        $OutputProperties = @('ComputerName', 'StartTime', 'EndTime', 'TimeZone', 'Duration', 'MWID', 'Type')
     }
     process {
         foreach ($Computer in $ComputerName) {
-            $Result = @{ }
+            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
             $getWmiObjectServiceWindowSplat['ComputerName'] = $Computer
             $getWmiObjectTimeZoneSplat['ComputerName'] = $Computer
@@ -96,7 +95,7 @@ function Get-CCMMaintenanceWindow {
                         $Result['Duration'] = $ServiceWindow.Duration
                         $Result['MWID'] = $ServiceWindow.ID
                         $Result['Type'] = $MW_Type.Item([int]$($ServiceWindow.Type))
-                        [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                        [PSCustomObject]$Result
                     }
                 }
                 else {
@@ -105,7 +104,7 @@ function Get-CCMMaintenanceWindow {
                     $Result['Duration'] = $null
                     $Result['MWID'] = $null
                     $Result['Type'] = "No ServiceWindow of type(s) $($RequestedTypesRaw -join ', ')"
-                    [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                    [PSCustomObject]$Result
                 }
             }
             catch {

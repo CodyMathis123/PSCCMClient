@@ -98,7 +98,7 @@ function Get-CCMBaseline {
                 switch ($null -eq $Baselines) {
                     $false {
                         foreach ($BL in $Baselines) {
-                            $Return = @{ }
+                            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
                             $Return['ComputerName'] = $Computer
                             $Return['BaselineName'] = $BL.DisplayName
                             $Return['Version'] = $BL.Version

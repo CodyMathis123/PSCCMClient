@@ -32,7 +32,6 @@ function Repair-CCMCacheLocation {
         [pscredential]$Credential
     )
     begin {
-        $Return = @{ }
         
         $GetCCMCacheSplat = @{ }
         $SetCCMCacheSplat = @{ }
@@ -43,6 +42,7 @@ function Repair-CCMCacheLocation {
     }
     process {
         foreach ($Computer in $ComputerName) {
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
             $GetCCMCacheSplat['ComputerName'] = $Computer
             $SetCCMCacheSplat['ComputerName'] = $Computer
 

@@ -39,12 +39,11 @@ function Get-CCMCache {
         if ($PSBoundParameters.ContainsKey('Credential')) {
             $getWmiObjectSplat['Credential'] = $Credential
         }
-        $OutputProperties = 'Location', 'Size'
     }
     process {
         foreach ($Computer in $ComputerName) {
-            $Return = @{ }
-            $Result = @{ }
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
             $getWmiObjectSplat['ComputerName'] = $Computer
 
@@ -54,13 +53,13 @@ function Get-CCMCache {
                     $Return[$Computer] = foreach ($Object in $WmiResult) {
                         $Result['Location'] = $Object.Location
                         $Result['Size'] = $Object.Size
-                        [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                        [PSCustomObject]$Result 
                     }
                 }
                 else {
                     $Result['Location'] = $null
                     $Result['Size'] = $null
-                    $Return[$Computer] = [PSCustomObject]$Result | Select-Object -Property $OutputProperties
+                    $Return[$Computer] = [PSCustomObject]$Result
                 }
                 Write-Output $Return
             }

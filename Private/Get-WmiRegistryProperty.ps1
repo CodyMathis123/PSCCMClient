@@ -118,7 +118,8 @@ function Get-WmiRegistryProperty {
                     $PropertiesToReturn = $EnumValues.sNames
                 }
             }
-            $PerPC_Reg = @{ }
+            $PerPC_Reg = [System.Collections.Specialized.OrderedDictionary]::new()
+            
             foreach ($PropertyName In $PropertiesToReturn) {
                 $PropIndex = $EnumValues.sNames.IndexOf($PropertyName)
                 switch ($PropIndex) {
