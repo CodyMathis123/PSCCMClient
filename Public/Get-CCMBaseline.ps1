@@ -3,7 +3,7 @@ function Get-CCMBaseline {
         .SYNOPSIS
             Get SCCM Configuration Baselines on the specified computer(s)
         .DESCRIPTION
-            This function is used to identify baselines on computers. You can provide an array of computer names, and configuration baseline names which will be 
+            This function is used to identify baselines on computers. You can provide an array of computer names, and configuration baseline names which will be
             search for. If you do not specify a baseline name, then there will be no filter applied. A [PSCustomObject] is returned that
             outlines the findings.
         .PARAMETER ComputerName
@@ -20,7 +20,7 @@ function Get-CCMBaseline {
                 Gets the two baselines on the computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
         .EXAMPLE
             C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321'
-                Gets all baselines identified in WMI for the computers specified. 
+                Gets all baselines identified in WMI for the computers specified.
         .NOTES
             FileName:    Get-CCMBaseline.ps1
             Author:      Cody Mathis
@@ -40,7 +40,7 @@ function Get-CCMBaseline {
             You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to the function's -Credential param.
             If you try to query for this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
@@ -67,6 +67,15 @@ function Get-CCMBaseline {
             }
         }
         #endregion Setup our common *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
+
+        #region hash table for translating compliance status
+        $LastComplianceStatus = @{
+            0 = 'Compliance State Unknown'
+            1 = 'Compliant'
+            2 = 'Non-Compliant'
+            4 = 'Error'
+        }
+        #endregion hash table for translating compliance status
     }
     process {
         foreach ($Computer in $ComputerName) {
@@ -87,7 +96,7 @@ function Get-CCMBaseline {
                     $Baselines = Get-WmiObject @getWmiObjectSplat
                 }
                 catch {
-                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module. 
+                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
                     # Maybe write a function???
                     Write-Error "Failed to query for baselines on $Computer"
                     continue
@@ -102,23 +111,7 @@ function Get-CCMBaseline {
                             $Return['ComputerName'] = $Computer
                             $Return['BaselineName'] = $BL.DisplayName
                             $Return['Version'] = $BL.Version
-                            
-                            #region convert LastComplianceStatus to readable value
-                            $Return['LastComplianceStatus'] = switch ($BL.LastComplianceStatus) {
-                                4 {
-                                    'Error'
-                                }
-                                2 {
-                                    'Non-Compliant'
-                                }
-                                1 {
-                                    'Compliant'
-                                }
-                                0 {
-                                    'Compliance State Unknown'
-                                }
-                            }
-                            #endregion convert LastComplianceStatus to readable value
+                            $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
 
                             #region convert LastEvalTime to local time zone DateTime object
                             if ($null -ne $BL.LastEvalTime) {

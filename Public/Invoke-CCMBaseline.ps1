@@ -20,13 +20,13 @@ function Invoke-CCMBaseline {
                 Invoke the two baselines on the computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
         .EXAMPLE
             C:\PS> Invoke-CCMBaseline -ComputerName 'Workstation1234','Workstation4321'
-                Invoke all baselines identified in WMI for the computers specified. 
+                Invoke all baselines identified in WMI for the computers specified.
         .NOTES
             FileName:    Invoke-CCMBaseline.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
-            Created:     07-24-2019
-            Updated:     10-15-2019
+            Created:     2019-07-24
+            Updated:     2019-12-30
 
             It is important to note that if a configuration baseline has user settings, the only way to invoke it is if the user is logged in, and you run this script
             with those credentials. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' that has user settings,
@@ -79,6 +79,15 @@ function Invoke-CCMBaseline {
         }
         #endregion Setup our common *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
 
+        #region hash table for translating compliance status
+        $LastComplianceStatus = @{
+            0 = 'Compliance State Unknown'
+            1 = 'Compliant'
+            2 = 'Non-Compliant'
+            4 = 'Error'
+        }
+        #endregion hash table for translating compliance status
+
         <#
             Not all Properties are on all Configuration Baseline instances, this is the list of possible options
             We will compare this list to the $ValidParams identified per Configuration Baseline found with the Get-WMIObject query
@@ -104,7 +113,7 @@ function Invoke-CCMBaseline {
                     $Baselines = Get-WmiObject @getWmiObjectSplat
                 }
                 catch {
-                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module. 
+                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
                     # Maybe write a function???
                     Write-Error "Failed to query for baselines on $Computer"
                 }
@@ -119,7 +128,8 @@ function Invoke-CCMBaseline {
                                 $Return['ComputerName'] = $Computer
                                 $Return['BaselineName'] = $BL.DisplayName
                                 $Return['Version'] = $BL.Version
-                            
+                                $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
+
                                 #region generate a property ordered list of existing arguments to pass to the TriggerEvaluation method. Order is important!
                                 $ValidParams = $BL.GetMethodParameters('TriggerEvaluation').Properties.Name
                                 $compareObjectSplat = @{
@@ -153,23 +163,6 @@ function Invoke-CCMBaseline {
                                 catch {
                                     $false
                                 }
-
-                                #region convert LastComplianceStatus to readable value
-                                $Return['LastComplianceStatus'] = switch ($BL.LastComplianceStatus) {
-                                    4 {
-                                        'Error'
-                                    }
-                                    2 {
-                                        'Non-Compliant'
-                                    }
-                                    1 {
-                                        'Compliant'
-                                    }
-                                    0 {
-                                        'Compliance State Unknown'
-                                    }
-                                }
-                                #endregion convert LastComplianceStatus to readable value
 
                                 #region convert LastEvalTime to local time zone DateTime object
                                 if ($null -ne $BL.LastEvalTime) {
