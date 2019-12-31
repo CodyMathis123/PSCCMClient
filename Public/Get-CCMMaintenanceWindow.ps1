@@ -85,7 +85,7 @@ function Get-CCMMaintenanceWindow {
             $getWmiObjectTimeZoneSplat['ComputerName'] = $Computer
 
             try {
-                $Result['TimeZone'] = Get-WmiObject @getWmiObjectTimeZoneSplat | Select-Object -ExpandProperty Caption
+                $Result['TimeZone'] = (Get-WmiObject @getWmiObjectTimeZoneSplat ).Caption
 
                 [System.Management.ManagementObject[]]$ServiceWindows = Get-WmiObject @getWmiObjectServiceWindowSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
