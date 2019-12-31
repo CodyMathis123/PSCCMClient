@@ -29,9 +29,9 @@ function Get-CCMMaintenanceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-08-14
-        Updated:     2019-10-10
+        Updated:     2019-12-31
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
