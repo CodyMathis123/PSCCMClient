@@ -36,7 +36,7 @@ function Set-CCMCacheLocation {
         [pscredential]$Credential
     )
     begin {
-        $Return = @{ }
+        $Return = [System.Collections.Specialized.OrderedDictionary]::new()
         
         $GetCacheSplat = @{
             Namespace = 'root\CCM\SoftMgmtAgent'
@@ -54,6 +54,7 @@ function Set-CCMCacheLocation {
     }
     process {
         foreach ($Computer in $ComputerName) {
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
             $GetCacheSplat['ComputerName'] = $Computer
 
             try {

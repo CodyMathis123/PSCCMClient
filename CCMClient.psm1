@@ -44,21 +44,23 @@ Catch {
 #region Export Module Members
 $ExportModule = @{
     Alias    = @()
-    Function = @('ConvertFrom-CCMSchedule',
+    Function =@('ConvertFromCCMSchedule',
+    'Get-CCMBaseline',
+    'Get-CCMCache',
     'Get-CCMClientDirectory',
     'Get-CCMClientLogDirectory',
     'Get-CCMLogFile',
-    'Get-CCMUpdate',
     'Get-CCMMaintenanceWindow',
-    'Get-CCMBaseline',
     'Get-CCMPrimaryUser',
-    'Get-CCMCache',
-    'Set-CCMCacheLocation',
-    'Set-CCMCacheSize',
-    'Repair-CCMCacheLocation',
+    'Get-CCMServiceWindow',
+    'Get-CCMUpdate',
     'Invoke-CCMBaseline',
     'Invoke-CCMClientAction',
+    'Invoke-CCMResetPolicy',
     'Invoke-CCMUpdate',
+    'Repair-CCMCacheLocation',
+    'Set-CCMCacheLocation',
+    'Set-CCMCacheSize',
     'Write-CCMLogEntry')
     Variable = @()
 }

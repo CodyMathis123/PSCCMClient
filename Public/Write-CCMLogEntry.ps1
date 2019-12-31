@@ -3,7 +3,7 @@ Function Write-CCMLogEntry {
     .DESCRIPTION
         Write CMTrace friendly log files with options for log rotation
     .EXAMPLE
-        $Bias = Get-WmiObject -Class Win32_TimeZone | Select-Object -ExpandProperty Bias
+        $Bias = (Get-WmiObject -Class Win32_TimeZone).Bias
         $FileName = "myscript_" + (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss') + ".log"
         Write-CCMLogEntry -Value "Writing text to log file" -Severity 1 -Component "Some component name" -FileName $FileName -Folder "C:\Windows\temp" -Bias $Bias -Enable -MaxLogFileSize 1MB -MaxNumOfRotatedLogs 3
     #>
@@ -44,7 +44,7 @@ Function Write-CCMLogEntry {
         If ((([System.IO.FileInfo]$LogFilePath).Exists) -And ($MaxLogFileSize -ne 0)) {
 
             # Get log size in bytes
-            $LogFileSize = [System.IO.FileInfo]$LogFilePath | Select-Object -ExpandProperty Length
+            $LogFileSize = ([System.IO.FileInfo]$LogFilePath).Length
 
             If ($LogFileSize -ge $MaxLogFileSize) {
 
@@ -55,7 +55,7 @@ Function Write-CCMLogEntry {
                 $AllLogs = Get-ChildItem -Path $Folder -Name "$($LogFileNameWithoutExt)_*" -File
 
                 # Sort them numerically (so the oldest is first in the list)
-                $AllLogs = $AllLogs | Sort-Object -Descending { $_ -replace '_\d+\.lo_$' }, { [Int]($_ -replace '^.+\d_|\.lo_$') } -ErrorAction Ignore
+                $AllLogs = Sort-Object -InputObject $AllLogs -Descending { $_ -replace '_\d+\.lo_$' }, { [Int]($_ -replace '^.+\d_|\.lo_$') } -ErrorAction Ignore
             
                 ForEach ($Log in $AllLogs) {
                     # Get log number

@@ -134,12 +134,12 @@ Function Get-CCMLogFile {
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
                             $LogLineSubArray = $LogLineArray[1] -split '"'
 
-                            $LogLine = @{ }
+                            $LogLine = [System.Collections.Specialized.OrderedDictionary]::new()
                             # Rebuild the LogLine into a hash table
-                            $LogLine.Message = $Message
-                            $LogLine.Type = [Severity]$LogLineSubArray[9]
-                            $LogLine.Component = $LogLineSubArray[5]
-                            $LogLine.Thread = $LogLineSubArray[11]
+                            $LogLine['Message'] = $Message
+                            $LogLine['Type'] = [Severity]$LogLineSubArray[9]
+                            $LogLine['Component'] = $LogLineSubArray[5]
+                            $LogLine['Thread'] = $LogLineSubArray[11]
                             
                             # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
                             switch ($ParseSMSTS.IsPresent) {
@@ -155,7 +155,7 @@ Function Get-CCMLogFile {
                                     }
                                 }
                                 $false {
-                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
                                     [pscustomobject]$LogLine
                                 }
                             }
@@ -191,12 +191,12 @@ Function Get-CCMLogFile {
                                     continue
                                 }
                                 default {
-                                    $LogLine = @{ }
+                                    $LogLine = [System.Collections.Specialized.OrderedDictionary]::new()
                                     # Rebuild the LogLine into a hash table
-                                    $LogLine.Message = $Message
-                                    $LogLine.Type = [Severity]0
-                                    $LogLine.Component = $LogLineSubArray[0].Trim()
-                                    $LogLine.Thread = ($LogLineSubArray[2] -split " ")[0].Substring(7)
+                                    $LogLine['Message'] = $Message
+                                    $LogLine['Type'] = [Severity]0
+                                    $LogLine['Component'] = $LogLineSubArray[0].Trim()
+                                    $LogLine['Thread'] = ($LogLineSubArray[2] -split " ")[0].Substring(7)
 
                                     #region determine timestamp for log line
                                     $DateTimeString = $LogLineSubArray[1]
@@ -210,7 +210,7 @@ Function Get-CCMLogFile {
                                     $DateTimeFormat = [string]::Format('{0}-{1}-yyyy HH:mm:ss.fff', $MonthParser, $DayParser)
                                     $TimeString = $DateTimeStringArray[1].ToString().Substring(0, 12)
                                     $DateTimeString = [string]::Format('{0} {1}', $DateString, $TimeString)
-                                    $LogLine.TimeStamp = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
+                                    $LogLine['TimeStamp'] = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
                                     #endregion determine timestamp for log line
 
                                     [pscustomobject]$LogLine
@@ -225,8 +225,8 @@ Function Get-CCMLogFile {
         }
     }
     end {
-        #region return our collected $ReturnLog object. We do a 'select' to maintain property order
-        $ReturnLog | Select-Object -Property Message, Component, Type, TimeStamp, Thread
-        #endregion return our collected $ReturnLog object. We do a 'select' to maintain property order
+        #region return our collected $ReturnLog object.
+        $ReturnLog
+        #endregion return our collected $ReturnLog object.
     }
 }

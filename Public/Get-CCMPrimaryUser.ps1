@@ -39,7 +39,7 @@ function Get-CCMPrimaryUser {
     }
     process {
         foreach ($Computer in $ComputerName) {
-            $Return = @{ }
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
 
             try {
                 #region Query WMI for Primary User

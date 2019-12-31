@@ -73,7 +73,7 @@ Function ConvertFrom-CCMSchedule {
     process {
         # we will split the schedulestring input into 16 characters, as some are stored as multiple in one
         foreach ($Schedule in ($ScheduleString -split '(\w{16})' | Where-Object { $_ })) {
-            $MW = @{ }
+            $MW = [System.Collections.Specialized.OrderedDictionary]::new()
 
             # the first 8 characters are the Start of the MW, while the last 8 characters are the recurrence schedule
             $Start = $Schedule.Substring(0, 8)
@@ -96,7 +96,8 @@ Function ConvertFrom-CCMSchedule {
                     [String]$StartYear = [Convert]::ToInt32($binaryStart.Substring(20, 6), 2) + 1970
 
                     # set our StartDateTimeObject variable by formatting all our calculated datetime components and piping to Get-Date
-                    $StartDateTimeObject = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute) | Get-Date
+                    $StartDateTimeString = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute)
+                    $StartDateTimeObject = Get-Date -Date $StartDateTimeString
                 }
             }
             # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
@@ -134,7 +135,6 @@ Function ConvertFrom-CCMSchedule {
             Switch ($RecurType) {
                 1 {
                     $MW['Description'] = [string]::Format('Occurs on {0}', $StartDateTimeObject)
-                    $Props = 'SmsProviderObjectPath', 'DayDuration', 'HourDuration', 'IsGMT', 'MinuteDuration', 'StartTime', 'Description'
                 }
                 2 {
                     $MinuteSpan = [Convert]::ToInt32($binaryRecurrence.Substring(13, 6), 2)
@@ -144,7 +144,6 @@ Function ConvertFrom-CCMSchedule {
                     $MW['MinuteSpan'] = $MinuteSpan
                     $MW['HourSpan'] = $Hourspan
                     $MW['DaySpan'] = $DaySpan
-                    $Props = 'SmsProviderObjectPath', 'DayDuration', 'DaySpan', 'HourDuration', 'HourSpan', 'IsGMT', 'MinuteDuration', 'MinuteSpan', 'StartTime', 'Description'
                 }
                 3 {
                     $Day = [Convert]::ToInt32($binaryRecurrence.Substring(13, 3), 2)
@@ -152,7 +151,6 @@ Function ConvertFrom-CCMSchedule {
                     $MW['Description'] = [string]::Format('Occurs every {0} weeks on {1} effective {2}', $WeekRecurrence, $([DayOfWeek]($Day - 1)), $StartDateTimeObject)
                     $MW['Day'] = $Day
                     $MW['ForNumberOfWeeks'] = $WeekRecurrence
-                    $Props = 'SmsProviderObjectPath', 'Day', 'DayDuration', 'ForNumberOfWeeks', 'HourDuration', 'IsGMT', 'MinuteDuration', 'StartTime', 'Description'
                 }
                 4 {
                     $Day = [Convert]::ToInt32($binaryRecurrence.Substring(13, 3), 2)
@@ -170,7 +168,6 @@ Function ConvertFrom-CCMSchedule {
                     $MW['Day'] = $Day
                     $MW['ForNumberOfMonths'] = $ForNumberOfMonths
                     $MW['WeekOrder'] = $WeekOrder
-                    $Props = 'SmsProviderObjectPath', 'Day', 'DayDuration', 'ForNumberOfMonths', 'HourDuration', 'IsGMT', 'MinuteDuration', 'StartTime', 'WeekOrder', 'Description'
                 }
                 5 {
                     $MonthDay = [Convert]::ToInt32($binaryRecurrence.Substring(13, 5), 2)
@@ -188,14 +185,13 @@ Function ConvertFrom-CCMSchedule {
                     $MW['Description'] = [string]::Format('Occurs {0} of every {1} months effective {2}', $MonthRecurrence, $ForNumberOfMonths, $StartDateTimeObject)
                     $MW['ForNumberOfMonths'] = $ForNumberOfMonths
                     $MW['MonthDay'] = $MonthDay
-                    $Props = 'SmsProviderObjectPath', 'DayDuration', 'ForNumberOfMonths', 'HourDuration', 'IsGMT', 'MinuteDuration', 'MonthDay', 'StartTime', 'Description'
                 }
                 Default {
                     Write-Error "Parsing Schedule String resulted in invalid type of $RecurType"
                 }
             }
 
-            [pscustomobject]$MW | Select-Object -Property $Props
+            [pscustomobject]$MW
         }
     }
 }

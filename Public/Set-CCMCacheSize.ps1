@@ -37,8 +37,6 @@ function Set-CCMCacheSize {
         [pscredential]$Credential
     )
     begin {
-        $Return = @{ }
-        
         $GetCacheSplat = @{
             Namespace = 'root\CCM\SoftMgmtAgent'
             Class     = 'CacheConfig'
@@ -55,6 +53,7 @@ function Set-CCMCacheSize {
     }
     process {
         foreach ($Computer in $ComputerName) {
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
             $GetCacheSplat['ComputerName'] = $Computer
 
             try {
