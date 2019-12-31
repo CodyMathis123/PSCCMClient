@@ -90,7 +90,7 @@ function Get-CCMLastScheduleTrigger {
         [pscredential]$Credential
     )
     begin {
-        #region hashtable for mapping schedule names to IDs
+        #region hashtable for mapping schedule names to IDs, and create WMI query
         $ScheduleTypeMap = @{
             'Hardware Inventory'                                                           = '{00000000-0000-0000-0000-000000000001}'
             'Software Inventory'                                                           = '{00000000-0000-0000-0000-000000000002}'
@@ -143,7 +143,7 @@ function Get-CCMLastScheduleTrigger {
             $ScheduleTypeMap[$One]
         }
         $RequestedScheduleQuery = [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
-        #endregion hashtable for mapping schedule names to IDs
+        #endregion hashtable for mapping schedule names to IDs, and create WMI query
 
         $getWmiObjectHINV = @{
             Namespace = 'root\CCM\Scheduler'
@@ -160,26 +160,64 @@ function Get-CCMLastScheduleTrigger {
             $getWmiObjectHINV['ComputerName'] = $Computer
 
             try {
-                Get-WmiObject @getWmiObjectHINV
-                # [System.Management.ManagementObject[]]$ServiceWindows = Get-WmiObject @getWmiObjectHINV
-                # if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
-                #     foreach ($ServiceWindow in $ServiceWindows) {
-                #         $Result['StartTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.StartTime).ToUniversalTime()
-                #         $Result['EndTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.EndTime).ToUniversalTime()
-                #         $Result['Duration'] = $ServiceWindow.Duration
-                #         $Result['MWID'] = $ServiceWindow.ID
-                #         $Result['Type'] = $MW_Type.Item([int]$($ServiceWindow.Type))
-                #         [PSCustomObject]$Result
-                #     }
-                # }
-                # else {
-                #     $Result['StartTime'] = $null
-                #     $Result['EndTime'] = $null
-                #     $Result['Duration'] = $null
-                #     $Result['MWID'] = $null
-                #     $Result['Type'] = "No ServiceWindow of type(s) $($RequestedSchedulesRaw -join ', ')"
-                #     [PSCustomObject]$Result
-                # }
+                [System.Management.ManagementObject[]]$ScheduleHistory = Get-WmiObject @getWmiObjectHINV
+                if ($ScheduleHistory -is [Object] -and $ScheduleHistory.Count -gt 0) {
+                    foreach ($Trigger in $ScheduleHistory) {
+                        <#
+                            String  ScheduleID;  
+                            String  UserSID;  
+                            DateTime  FirstEvalTime;  
+                            DateTime  ActivationMessageSent;  
+                            Boolean  ActivationMessageSentIsGMT;  
+                            DateTime  ExpirationMessageSent;  
+                            Boolean  ExpirationMessageSentIsGMT;     
+                            DateTime  LastTriggerTime;  
+                            String  TriggerState; 
+                        #>
+                        $Result['ScheduleID'] = $Trigger.ScheduleID
+                        $Result['Schedule'] = $ScheduleTypeMap.Keys.Where( { $ScheduleTypeMap[$_] -eq $Trigger.ScheduleID } )
+                        $Result['UserSID'] = $Trigger.UserSID
+                        $Result['FirstEvalTime'] = switch($Trigger.FirstEvalTime) {
+                            $null {
+                                continue
+                            }
+                            default {
+                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
+                            }
+                        } 
+                        $Result['ActivationMessageSent'] = switch($Trigger.ActivationMessageSent) {
+                            $null {
+                                continue
+                            }
+                            default {
+                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
+                            }
+                        } 
+                        $Result['ActivationMessageSentIsGMT'] = $Trigger.ActivationMessageSentIsGMT
+                        $Result['ExpirationMessageSent'] = switch($Trigger.ExpirationMessageSent) {
+                            $null {
+                                continue
+                            }
+                            default {
+                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
+                            }
+                        } 
+                        $Result['ExpirationMessageSentIsGMT'] = $Trigger.ExpirationMessageSentIsGMT
+                        $Result['LastTriggerTime'] = switch($Trigger.LastTriggerTime) {
+                            $null {
+                                continue
+                            }
+                            default {
+                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
+                            }
+                        } 
+                        $Result['TriggerState'] = $Trigger.TriggerState
+                        [PSCustomObject]$Result
+                    }
+                }
+                else {
+                    Write-Warning "No triggered schedules found for [Query = '$RequestedScheduleQuery']"
+                }
             }
             catch {
                 $ErrorMessage = $_.Exception.Message
