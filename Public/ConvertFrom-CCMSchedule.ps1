@@ -96,7 +96,8 @@ Function ConvertFrom-CCMSchedule {
                     [String]$StartYear = [Convert]::ToInt32($binaryStart.Substring(20, 6), 2) + 1970
 
                     # set our StartDateTimeObject variable by formatting all our calculated datetime components and piping to Get-Date
-                    $StartDateTimeObject = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute) | Get-Date
+                    $StartDateTimeString = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute)
+                    $StartDateTimeObject = Get-Date -Date $StartDateTimeString
                 }
             }
             # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
