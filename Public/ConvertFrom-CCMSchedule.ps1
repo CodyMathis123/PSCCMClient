@@ -6,7 +6,7 @@ Function ConvertFrom-CCMSchedule {
         This function will take a Configuration Manager Schedule String and convert it into a readable object, including
         the calculated description of the schedule
     .PARAMETER ScheduleString
-        Accepts an array of strings. This should be a schedule string in the SCCM format, which is
+        Accepts an array of strings. This should be a schedule string in the SCCM format
     .EXAMPLE
         PS C:\> ConvertFrom-CCMSchedule -ScheduleString 1033BC7B10100010
         SmsProviderObjectPath : SMS_ST_RecurInterval
