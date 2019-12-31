@@ -58,9 +58,7 @@ function Get-CCMMaintenanceWindow {
             6	=	'Corresponds to non-working hours'
         }
 
-        $RequestedTypesRaw = foreach ($One in $MWType) {
-            $MW_Type.Keys.Where( { $MW_Type[$_] -eq $One } )
-        }
+        $RequestedTypesRaw = $MW_Type.Keys.Where( { $MW_Type[$_] -in $MWType } )
         $RequestedTypesFilter = [string]::Format('Type = {0}', [string]::Join(' OR Type =', $RequestedTypesRaw))
         #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
 
