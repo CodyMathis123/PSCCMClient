@@ -1,26 +1,22 @@
 function Get-CCMLastScheduleTrigger {
     <#
     .SYNOPSIS
-        Returns the last time hardware inventory was ran
+        Returns the last time a specified schedule was triggered
     .DESCRIPTION
-        This function will return the last time a hardware inventory scan was triggered. You can provide an array of computer names, or you can pass 
-        them through the pipeline.
+        This function will return the last time a schedule was triggered. Keep in mind this is when a scheduled run happens, such as the periodic machine
+        policy refresh. This is why you won't see the timestamp increment if you force a eval, and then check the schedule LastTriggerTime.
     .PARAMETER ComputerName
-        Provides computer names to gather MW info from.
-    .PARAMETER MWType
-        Specifies the types of MW you want information for. Valid options are below
-            'All Deployment Service Window',
-            'Program Service Window',
-            'Reboot Required Service Window',
-            'Software Update Service Window',
-            'Task Sequences Service Window',
-            'Corresponds to non-working hours'
+        Provides computer names to gather schedule trigger info from.
+    .PARAMETER Schedule
+        Specifies the schedule to get trigger history info for. This has a validate set of all possible 'standard' options that the client can perform
+        on a schedule.
+    .PARAMETER ScheduleID
+        Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing. 
     .PARAMETER Credential
         Provides optional credentials to use for the WMI cmdlets.
     .EXAMPLE
-        C:\PS> Get-CCMLastScheduleTrigger
-            Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types
-            that the function looks for
+        C:\PS> Get-CCMLastScheduleTrigger -Schedule 'Hardware Inventory'
+        Returns a [pscustomobject] detailing the schedule trigger history info availble in WMI for Hardware Inventory
     .EXAMPLE
         C:\PS> Get-CCMLastScheduleTrigger -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
             Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
@@ -29,7 +25,7 @@ function Get-CCMLastScheduleTrigger {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-12-31
-        Updated:     2019-12-31
+        Updated:     2019-01-01
     #>
     [CmdletBinding()]
     param (
@@ -139,78 +135,74 @@ function Get-CCMLastScheduleTrigger {
             'Endpoint AM policy reevaluate'                                                = '{00000000-0000-0000-0000-000000000222}'
             'External event detection'                                                     = '{00000000-0000-0000-0000-000000000223}'
         }
-        $RequestedSchedulesRaw = foreach ($One in $Schedule) {
-            $ScheduleTypeMap[$One]
+        $RequestedSchedulesRaw = switch ($PSCmdlet.ParameterSetName) {
+            'ByName' {
+                foreach ($One in $Schedule) {
+                    $ScheduleTypeMap[$One]
+                }
+            }
+            'ByID' {
+                $ScheduleID
+            }
         }
         $RequestedScheduleQuery = [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
         #endregion hashtable for mapping schedule names to IDs, and create WMI query
 
-        $getWmiObjectHINV = @{
+        $getWmiObjectSchedHist = @{
             Namespace = 'root\CCM\Scheduler'
             Query     = $RequestedScheduleQuery
         }
         if ($PSBoundParameters.ContainsKey('Credential')) {
-            $getWmiObjectHINV['Credential'] = $Credential
+            $getWmiObjectSchedHist['Credential'] = $Credential
         }
     }
     process {
         foreach ($Computer in $ComputerName) {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            $getWmiObjectHINV['ComputerName'] = $Computer
+            $getWmiObjectSchedHist['ComputerName'] = $Computer
 
             try {
-                [System.Management.ManagementObject[]]$ScheduleHistory = Get-WmiObject @getWmiObjectHINV
+                [System.Management.ManagementObject[]]$ScheduleHistory = Get-WmiObject @getWmiObjectSchedHist
                 if ($ScheduleHistory -is [Object] -and $ScheduleHistory.Count -gt 0) {
                     foreach ($Trigger in $ScheduleHistory) {
-                        <#
-                            String  ScheduleID;  
-                            String  UserSID;  
-                            DateTime  FirstEvalTime;  
-                            DateTime  ActivationMessageSent;  
-                            Boolean  ActivationMessageSentIsGMT;  
-                            DateTime  ExpirationMessageSent;  
-                            Boolean  ExpirationMessageSentIsGMT;     
-                            DateTime  LastTriggerTime;  
-                            String  TriggerState; 
-                        #>
                         $Result['ScheduleID'] = $Trigger.ScheduleID
                         $Result['Schedule'] = $ScheduleTypeMap.Keys.Where( { $ScheduleTypeMap[$_] -eq $Trigger.ScheduleID } )
                         $Result['UserSID'] = $Trigger.UserSID
-                        $Result['FirstEvalTime'] = switch($Trigger.FirstEvalTime) {
+                        $Result['FirstEvalTime'] = switch ($Trigger.FirstEvalTime) {
                             $null {
                                 continue
                             }
                             default {
                                 [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
                             }
-                        } 
-                        $Result['ActivationMessageSent'] = switch($Trigger.ActivationMessageSent) {
+                        }
+                        $Result['ActivationMessageSent'] = switch ($Trigger.ActivationMessageSent) {
                             $null {
                                 continue
                             }
                             default {
                                 [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
                             }
-                        } 
+                        }
                         $Result['ActivationMessageSentIsGMT'] = $Trigger.ActivationMessageSentIsGMT
-                        $Result['ExpirationMessageSent'] = switch($Trigger.ExpirationMessageSent) {
+                        $Result['ExpirationMessageSent'] = switch ($Trigger.ExpirationMessageSent) {
                             $null {
                                 continue
                             }
                             default {
                                 [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
                             }
-                        } 
+                        }
                         $Result['ExpirationMessageSentIsGMT'] = $Trigger.ExpirationMessageSentIsGMT
-                        $Result['LastTriggerTime'] = switch($Trigger.LastTriggerTime) {
+                        $Result['LastTriggerTime'] = switch ($Trigger.LastTriggerTime) {
                             $null {
                                 continue
                             }
                             default {
                                 [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
                             }
-                        } 
+                        }
                         $Result['TriggerState'] = $Trigger.TriggerState
                         [PSCustomObject]$Result
                     }
