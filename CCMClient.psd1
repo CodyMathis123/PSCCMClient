@@ -74,6 +74,7 @@
         'Get-CCMCache',
         'Get-CCMClientDirectory',
         'Get-CCMClientLogDirectory',
+        'Get-CCMLastScheduleTrigger',
         'Get-CCMLogFile',
         'Get-CCMMaintenanceWindow',
         'Get-CCMPrimaryUser',
