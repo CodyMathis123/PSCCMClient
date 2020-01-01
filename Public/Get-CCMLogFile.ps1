@@ -30,8 +30,8 @@ Function Get-CCMLogFile {
             FileName: Get-CCMLogFile.ps1
             Author:   Cody Mathis
             Contact:  @CodyMathis123
-            Created:  9/19/2019
-            Updated:  11/19/2019
+            Created:  2019-9-19
+            Updated:  2019-12-30
     #>
     param (
         [Parameter(Mandatory = $true)]
