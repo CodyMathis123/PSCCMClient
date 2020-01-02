@@ -63,9 +63,8 @@ function Get-CCMServiceWindow {
             6	=	'Corresponds to non-working hours'
         }
 
-        $RequestedTypesRaw = foreach ($One in $SWType) {
-            $SW_Type.Keys.Where( { $SW_Type[$_] -eq $One } )
-        }
+        $RequestedTypesRaw = $SW_Type.Keys.Where( { $SW_Type[$_] -in $SW_Type } )
+
         $RequestedTypesFilter = [string]::Format('ServiceWindowType = {0}', [string]::Join(' OR ServiceWindowType =', $RequestedTypesRaw))
         #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
         $getWmiObjectServiceWindowSplat = @{

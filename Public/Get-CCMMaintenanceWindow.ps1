@@ -29,9 +29,9 @@ function Get-CCMMaintenanceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-08-14
-        Updated:     2019-10-10
+        Updated:     2019-12-31
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
@@ -58,9 +58,7 @@ function Get-CCMMaintenanceWindow {
             6	=	'Corresponds to non-working hours'
         }
 
-        $RequestedTypesRaw = foreach ($One in $MWType) {
-            $MW_Type.Keys.Where( { $MW_Type[$_] -eq $One } )
-        }
+        $RequestedTypesRaw = $MW_Type.Keys.Where( { $MW_Type[$_] -in $MWType } )
         $RequestedTypesFilter = [string]::Format('Type = {0}', [string]::Join(' OR Type =', $RequestedTypesRaw))
         #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
 

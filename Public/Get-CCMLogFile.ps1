@@ -30,11 +30,12 @@ Function Get-CCMLogFile {
             FileName: Get-CCMLogFile.ps1
             Author:   Cody Mathis
             Contact:  @CodyMathis123
-            Created:  9/19/2019
-            Updated:  11/19/2019
+            Created:  2019-9-19
+            Updated:  2019-01-01
     #>
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
+        [Alias('Fullname')]
         [string[]]$LogFilePath,
         [Parameter(Mandatory = $false)]
         [switch]$ParseSMSTS
@@ -101,7 +102,7 @@ Function Get-CCMLogFile {
         }
     }
     process {
-        $ReturnLog = Foreach ($LogFile in $LogFilePath) {
+        Foreach ($LogFile in $LogFilePath) {
             #region ingest log file with StreamReader. Quick, and prevents locks
             $File = [System.IO.File]::Open($LogFile, 'Open', 'Read', 'ReadWrite')
             $StreamReader = New-Object System.IO.StreamReader($File)
@@ -223,10 +224,5 @@ Function Get-CCMLogFile {
             }
             #endregion perform a regex match to determine the 'type' of log we are working with and parse appropriately
         }
-    }
-    end {
-        #region return our collected $ReturnLog object.
-        $ReturnLog
-        #endregion return our collected $ReturnLog object.
     }
 }
