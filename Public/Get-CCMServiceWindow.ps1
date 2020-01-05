@@ -3,7 +3,8 @@ function Get-CCMServiceWindow {
     .SYNOPSIS
         Get ConfigMgr Service Window information from computers via WMI
     .DESCRIPTION
-        This function will allow you to gather Service Window information from multiple computers using WMI queries. You can provide an array of computer names,
+        This function will allow you to gather Service Window information from multiple computers using WMI queries. Note that 'ServiceWindows' are object
+        that describe the schedule for a maintenance window, such as the recurrence, and date / time information. You can provide an array of computer names,
         or you can pass them through the pipeline. You are also able to specify the Service Window Type (SWType) you wish to query for, and pass credentials.
         What is returned is the data from the 'ActualConfig' section of WMI on the computer. The data returned will include the 'schedules' as well as
         the schedule type. Note that the schedules are not really 'human readable' and can be passed into ConvertFrom-CCMSchedule to convert
