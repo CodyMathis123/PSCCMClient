@@ -3,15 +3,15 @@ function Get-CCMBaseline {
         .SYNOPSIS
             Get SCCM Configuration Baselines on the specified computer(s) or cimsession(s)
         .DESCRIPTION
-            This function is used to identify baselines on computers. You can provide an array of computer names, or cimsessions, and 
-            configuration baseline names which will be queried for. If you do not specify a baseline name, then there will be no filter applied. 
+            This function is used to identify baselines on computers. You can provide an array of computer names, or cimsessions, and
+            configuration baseline names which will be queried for. If you do not specify a baseline name, then there will be no filter applied.
             A [PSCustomObject] is returned that outlines the findings.
         .PARAMETER BaselineName
             Provides the configuration baseline names that you wish to search for.
         .PARAMETER ComputerName
             Provides computer names to find the configuration baselines on.
         .PARAMETER CimSession
-            Provides cimsessions to return baselines from. 
+            Provides cimsessions to return baselines from.
         .EXAMPLE
             C:\PS> Get-CCMBaseline
                 Gets all baselines identified in WMI on the local computer.
@@ -29,14 +29,14 @@ function Get-CCMBaseline {
             Updated:     2019-01-04
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
-            with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' 
+            with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
             that has user settings,
 
             This command would successfully find FixJimsStuff
-            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -CimSession $CimSessionWithJimsCreds
+            Get-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -CimSession $CimSessionWithJimsCreds
 
             This command would not find the baseline FixJimsStuff
-            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
+            Get-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
 
             You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to a cimsesion passed to -cimsession param.
             If you try to query for this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
@@ -72,22 +72,27 @@ function Get-CCMBaseline {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $Computer = switch ($PSCmdlet.ParameterSetName) {
                 'ComputerName' {
-                    $Connection
+                    Write-Output -InputObject $Connection
                     switch ($Connection -eq $env:ComputerName) {
                         $false {
-                            switch (Get-CimSession -ComputerName $Connection) {
-                                $null {
-                                    $getBaselineSplat[($PSCmdlet.ParameterSetName)] = $Connection
-                                }
-                                default {
-                                    $getBaselineSplat['CimSession'] = $PSItem
-                                }
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getBaselineSplat['CimSession'] = $ExistingCimSession
                             }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getBaselineSplat.Remove('CimSession')
+                                $getBaselineSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
                 }
                 'CimSession' {
-                    $Connection.ComputerName
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
                     $getBaselineSplat[($PSCmdlet.ParameterSetName)] = $Connection
                 }
             }
