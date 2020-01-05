@@ -74,7 +74,7 @@ function Get-CCMCache {
                     foreach ($Object in $CimResult) {
                         $Result['Location'] = $Object.Location
                         $Result['Size'] = $Object.Size
-                        [PSCustomObject]$Result 
+                        [PSCustomObject]$Result
                     }
                 }
                 else {
