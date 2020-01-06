@@ -20,7 +20,7 @@ function Get-CCMLastHardwareInventory {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-01-01
-        Updated:     2019-01-05
+        Updated:     2020-01-05
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
