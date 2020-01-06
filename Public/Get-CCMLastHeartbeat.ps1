@@ -7,7 +7,7 @@ function Get-CCMLastHeartbeat {
         The Discovery Data Collection Cycle major, and minor version is included. 
 
         This is also known as a 'Heartbeat' or 'DDR'
-    .PARAMETER CimSessions
+    .PARAMETER CimSession
         Provides CimSessions to gather Discovery Data Collection Cycle last run info from
     .PARAMETER ComputerName
         Provides computer names to gather Discovery Data Collection Cycle last run info from
