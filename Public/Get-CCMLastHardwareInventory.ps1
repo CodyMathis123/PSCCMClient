@@ -45,6 +45,7 @@ function Get-CCMLastHardwareInventory {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getLastHinvSplat.Remove('ComputerName')
                                 $getLastHinvSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -54,6 +55,8 @@ function Get-CCMLastHardwareInventory {
                             }
                         }
                         $true {
+                            $getLastHinvSplat.Remove('CimSession')
+                            $getLastHinvSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -61,7 +64,8 @@ function Get-CCMLastHardwareInventory {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getLastHinvSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getLastHinvSplat.Remove('ComputerName')
+                    $getLastHinvSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

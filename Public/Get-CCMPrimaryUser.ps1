@@ -43,6 +43,7 @@ function Get-CCMPrimaryUser {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getPrimaryUserSplat.Remove('ComputerName')
                                 $getPrimaryUserSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -52,6 +53,8 @@ function Get-CCMPrimaryUser {
                             }
                         }
                         $true {
+                            $getPrimaryUserSplat.Remove('CimSession')
+                            $getPrimaryUserSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -59,7 +62,8 @@ function Get-CCMPrimaryUser {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getPrimaryUserSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getPrimaryUserSplat.Remove('ComputerName')
+                    $getPrimaryUserSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

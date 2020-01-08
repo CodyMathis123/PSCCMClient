@@ -57,6 +57,7 @@
 						$false {
 							if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
 								Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+								$invokeCIMPowerShellSplat.Remove('ComputerName')
 								$invokeCIMPowerShellSplat['CimSession'] = $ExistingCimSession
 							}
 							else {
@@ -66,6 +67,8 @@
 							}
 						}
 						$true {
+							$invokeCIMPowerShellSplat.Remove('CimSession')
+							$invokeCIMPowerShellSplat.Remove('ComputerName')
 							Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
 						}
 					}
@@ -73,7 +76,8 @@
 				'CimSession' {
 					Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
 					Write-Output -InputObject $Connection.ComputerName
-					$invokeCIMPowerShellSplat[($PSCmdlet.ParameterSetName)] = $Connection
+					$invokeCIMPowerShellSplat.Remove('ComputerName')
+					$invokeCIMPowerShellSplat['CimSession'] = $Connection
 				}
 			}
 

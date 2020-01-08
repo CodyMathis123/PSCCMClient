@@ -77,6 +77,7 @@ function Get-CCMBaseline {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getBaselineSplat.Remove('ComputerName')
                                 $getBaselineSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -86,6 +87,8 @@ function Get-CCMBaseline {
                             }
                         }
                         $true {
+                            $getBaselineSplat.Remove('CimSession')
+                            $getBaselineSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -93,7 +96,8 @@ function Get-CCMBaseline {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getBaselineSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getBaselineSplat.Remove('ComputerName')
+                    $getBaselineSplat['CimSession'] = $Connection
                 }
             }
             foreach ($BLName in $BaselineName) {

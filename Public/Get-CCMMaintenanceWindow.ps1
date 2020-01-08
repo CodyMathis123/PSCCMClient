@@ -80,15 +80,24 @@ function Get-CCMMaintenanceWindow {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getMaintenanceWindowSplat.Remove('ComputerName')
                                 $getMaintenanceWindowSplat['CimSession'] = $ExistingCimSession
+                                $getTimeZoneSplat.Remove('ComputerName')
+                                $getTimeZoneSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
                                 $getMaintenanceWindowSplat.Remove('CimSession')
                                 $getMaintenanceWindowSplat['ComputerName'] = $Connection
+                                $getTimeZoneSplat.Remove('CimSession')
+                                $getTimeZoneSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
+                            $getMaintenanceWindowSplat.Remove('CimSession')
+                            $getMaintenanceWindowSplat.Remove('ComputerName')
+                            $getTimeZoneSplat.Remove('CimSession')
+                            $getTimeZoneSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -96,7 +105,10 @@ function Get-CCMMaintenanceWindow {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getMaintenanceWindowSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getMaintenanceWindowSplat.Remove('ComputerName')
+                    $getTimeZoneSplat.Remove('ComputerName')
+                    $getMaintenanceWindowSplat['CimSession'] = $Connection
+                    $getTimeZoneSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

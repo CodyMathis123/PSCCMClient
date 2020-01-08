@@ -47,6 +47,7 @@ function Get-CCMLastHeartbeat {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getLastDDRSplat.Remove('ComputerName')
                                 $getLastDDRSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -56,6 +57,8 @@ function Get-CCMLastHeartbeat {
                             }
                         }
                         $true {
+                            $getLastDDRSplat.Remove('CimSession')
+                            $getLastDDRSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -63,7 +66,8 @@ function Get-CCMLastHeartbeat {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getLastDDRSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getLastDDRSplat.Remove('ComputerName')
+                    $getLastDDRSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

@@ -167,6 +167,7 @@ function Get-CCMLastScheduleTrigger {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getSchedHistSplat.Remove('ComputerName')
                                 $getSchedHistSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -176,6 +177,8 @@ function Get-CCMLastScheduleTrigger {
                             }
                         }
                         $true {
+                            $getSchedHistSplat.Remove('CimSession')
+                            $getSchedHistSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -183,7 +186,8 @@ function Get-CCMLastScheduleTrigger {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getSchedHistSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getSchedHistSplat.Remove('ComputerName')
+                    $getSchedHistSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

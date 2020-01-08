@@ -46,6 +46,7 @@ function Get-CCMCache {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getCacheInfoSplat.Remove('ComputerName')
                                 $getCacheInfoSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -55,6 +56,8 @@ function Get-CCMCache {
                             }
                         }
                         $true {
+                            $getCacheInfoSplat.Remove('CimSession')
+                            $getCacheInfoSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -62,7 +65,8 @@ function Get-CCMCache {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getCacheInfoSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getCacheInfoSplat.Remove('ComputerName')
+                    $getCacheInfoSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

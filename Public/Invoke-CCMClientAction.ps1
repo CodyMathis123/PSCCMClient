@@ -73,7 +73,9 @@ function Invoke-CCMClientAction {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getFullHINVSplat.Remove('ComputerName')
                                 $getFullHINVSplat['CimSession'] = $ExistingCimSession
+                                $invokeCIMPowerShellSplat.Remove('ComputerName')
                                 $invokeCIMPowerShellSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -85,6 +87,10 @@ function Invoke-CCMClientAction {
                             }
                         }
                         $true {
+                            $getFullHINVSplat.Remove('CimSession')
+                            $getFullHINVSplat.Remove('ComputerName')
+                            $invokeCIMPowerShellSplat.Remove('CimSession')
+                            $invokeCIMPowerShellSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -92,8 +98,10 @@ function Invoke-CCMClientAction {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getFullHINVSplat[($PSCmdlet.ParameterSetName)] = $Connection
-                    $invokeCIMPowerShellSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getFullHINVSplat.Remove('ComputerName')
+                    $invokeCIMPowerShellSplat.Remove('ComputerName')
+                    $getFullHINVSplat['CimSession'] = $Connection
+                    $invokeCIMPowerShellSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()

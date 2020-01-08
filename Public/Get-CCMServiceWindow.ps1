@@ -83,6 +83,7 @@ function Get-CCMServiceWindow {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getServiceWindowSplat.Remove('ComputerName')
                                 $getServiceWindowSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
@@ -92,6 +93,8 @@ function Get-CCMServiceWindow {
                             }
                         }
                         $true {
+                            $getServiceWindowSplat.Remove('CimSession')
+                            $getServiceWindowSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -99,7 +102,8 @@ function Get-CCMServiceWindow {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getServiceWindowSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $getServiceWindowSplat.Remove('ComputerName')
+                    $getServiceWindowSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
