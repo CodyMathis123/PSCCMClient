@@ -98,8 +98,10 @@ function Invoke-CCMClientAction {
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
+
             foreach ($Option in $Schedule) {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Schedule = '$Option']", "Invoke Schedule")) {
+                    $Result['Action'] = $Option
                     $Action = switch -Regex ($Option) {
                         '^HardwareInv$|^FullHardwareInv$' {
                             '{00000000-0000-0000-0000-000000000001}'
@@ -175,13 +177,15 @@ function Invoke-CCMClientAction {
                     until ($Invocation -or $StopWatch.Elapsed -ge $TimeSpan -or $MustExit)
                     if ($Invocation) {
                         Write-Verbose "Successfully invoked the $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
-                        Write-Output $Invocation
+                        $Result['Invoked'] = $true
                         Start-Sleep -Seconds $Delay
                     }
                     elseif ($StopWatch.Elapsed -ge $TimeSpan) {
-                        Write-Error "Failed to invoke $Option cycle via CIM after $Timeout minutes of retrrying."
+                        Write-Error "Failed to invoke $Option cycle via CIM after $Timeout minutes of retrying."
+                        $Result['Invoked'] = $false
                     }
                     $StopWatch.Reset()
+                    [pscustomobject]$Result
                 }
             }
         }
