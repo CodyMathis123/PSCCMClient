@@ -24,7 +24,11 @@
 		}
 
 		$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CliXml', 'ConvertTo-Base64StringFromObject'
-		$HelperFunctions = Convert-FunctionToString -FunctionToConvert $FunctionsToLoad
+		$HelperFunctions = switch ($PSBoundParameters.ContainsKey('FunctionsToLoad')) {
+			$true {
+				Convert-FunctionToString -FunctionToConvert $FunctionsToLoad
+			}
+		}
 
 		$ScriptBlockString = [string]::Format(@'
 		{0}
