@@ -45,12 +45,11 @@
 '@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock)
 
 		$scriptBlockPreEncoded = [scriptblock]::Create($ScriptBlockString)
-
 		$byteCommand = [System.Text.encoding]::UTF8.GetBytes($scriptBlockPreEncoded)
 		$encodedScriptBlock = [convert]::ToBase64string($byteCommand)
 	}
 	process {
-		foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+		foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly -Scope Local)) {
 			$Computer = switch ($PSCmdlet.ParameterSetName) {
 				'ComputerName' {
 					Write-Output -InputObject $Connection
@@ -77,8 +76,6 @@
 					$invokeCIMPowerShellSplat[($PSCmdlet.ParameterSetName)] = $Connection
 				}
 			}
-			$Result = [System.Collections.Specialized.OrderedDictionary]::new()
-			$Result['ComputerName'] = $Computer
 
 			$invokeCIMPowerShellSplat['Arguments'] = @{
 				CommandLine = [string]::Format("powershell.exe (invoke-command ([scriptblock]::Create([system.text.encoding]::UTF8.GetString([System.convert]::FromBase64string('{0}')))))", $encodedScriptBlock)
@@ -86,7 +83,7 @@
 
 			$null = Invoke-CimMethod @invokeCIMPowerShellSplat
 
-			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $ComputerName, "$($PipeName)", "In"
+			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $Computer, "$($PipeName)", "In"
 			$namedPipe.Connect($timeout)
 			$streamReader = New-Object System.IO.StreamReader $namedPipe
 
