@@ -1,35 +1,34 @@
-function Get-WmiRegistryProperty {
+function Get-CIMRegistryProperty {
     <#
     .SYNOPSIS
-        Return registry properties using the WMI StdRegProv
-
+        Return registry properties using the CIM StdRegProv
     .DESCRIPTION
-        Relies on remote WMI and StdRegProv to allow for returning Registry Properties under a key,
+        Relies on remote CIM and StdRegProv to allow for returning Registry Properties under a key,
         and you are able to provide pscredential
-
     .PARAMETER RegRoot
         The root key you want to search under
         ('HKEY_LOCAL_MACHINE', 'HKEY_USERS', 'HKEY_CURRENT_CONFIG', 'HKEY_DYN_DATA', 'HKEY_CLASSES_ROOT', 'HKEY_CURRENT_USER')
-        
     .PARAMETER Key
         The key you want to return properties of. (ie. SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties)
-
     .PARAMETER Property
         The property name(s) you want to return the value of. This is an optional string array [string[]] and if it is not provided, all properties
         under the key will be returned
+    .PARAMETER CimSession
+        Provides CimSessions to get registry properties from
+    .PARAMETER ComputerName
+        Provides computer names to get registry properties from
 
     .EXAMPLE
-        PS> Get-WmiRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer"
+        PS> Get-CIMRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer"
         Name                           Value
         ----                           -----
         Computer123                 @{Allow Remote Control of an unattended computer=1}
-
     .OUTPUTS
         [System.Collections.Hashtable]
-
     .NOTES
         Returns a hashtable with the computername as the key, and the value is a pscustomobject of the properties
 #>
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [parameter(Mandatory = $true)]
         [ValidateSet('HKEY_LOCAL_MACHINE', 'HKEY_USERS', 'HKEY_CURRENT_CONFIG', 'HKEY_DYN_DATA', 'HKEY_CLASSES_ROOT', 'HKEY_CURRENT_USER')]
@@ -38,11 +37,11 @@ function Get-WmiRegistryProperty {
         [string]$Key,
         [parameter(Mandatory = $false)]
         [string[]]$Property,
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [parameter(Mandatory = $false)]
-        [PSCredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         #region create hash tables for translating values
@@ -84,32 +83,54 @@ function Get-WmiRegistryProperty {
         # convert RootKey friendly name to the [uint32] equivalent so it can be used later
         $Root = $RootKey[$RegRoot]
 
-        #region define our hash tables for parameters to pass to Get-WMIObject and our return hash table
-        $GetWMI_Params = @{ }
-        switch ($true) {
-            $PSBoundParameters.ContainsKey('Credential') {
-                $GetWMI_Params['Credential'] = $Credential
-            }
+        #region define our hash tables for parameters to pass to Invoke-CimMethod and our return hash table
+        $EnumValuesSplat = @{ 
+            Namespace = 'root\default'
+            ClassName = 'StdRegProv'
         }
-        $GetWMI_Params['List'] = $true
-        $GetWMI_Params['Namespace'] = 'root\default'
-        $GetWMI_Params['Class'] = "StdRegProv"
-        #endregion define our hash tables for parameters to pass to Get-WMIObject and our return hash table
+        #endregion define our hash tables for parameters to pass to Invoke-CimMethod and our return hash table
     }
     process {
-        foreach ($Computer in $ComputerName) {
-            $Return = @{ }
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $EnumValuesSplat.Remove('ComputerName')
+                                $EnumValuesSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $EnumValuesSplat.Remove('CimSession')
+                                $EnumValuesSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $EnumValuesSplat.Remove('CimSession')
+                            $EnumValuesSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $EnumValuesSplat.Remove('ComputerName')
+                    $EnumValuesSplat['CimSession'] = $Connection
+                }
+            }
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $EnumValuesSplat['MethodName'] = 'EnumValues'
+            $EnumValuesSplat['Arguments'] = @{
+                hDefKey     = [uint32]$Root
+                sSubKeyName = $Key
+            }  
 
-            try {
-                #region establish WMI Connection
-                $GetWMI_Params['ComputerName'] = $Computer
-                $WMI_Connection = Get-WmiObject @GetWMI_Params
-                #endregion establish WMI Connection
-            }
-            catch {
-                Write-Error "Failed to establed WMI Connection to $Computer"
-            }
-            $EnumValues = $WMI_Connection.EnumValues($Root, $Key)
+            $EnumValues = Invoke-CimMethod @EnumValuesSplat
+
             switch ($PSBoundParameters.ContainsKey('Property')) {
                 $true {
                     $PropertiesToReturn = $Property
@@ -130,7 +151,9 @@ function Get-WmiRegistryProperty {
                         $PropType = $EnumValues.Types[$PropIndex]
                         $Prop = $ReturnValName[$PropType]
                         $Method = $RegPropertyMethod[$PropType]
-                        $PropertyValueQuery = $WMI_Connection.$Method($Root, $Key, $PropertyName)
+                        $EnumValuesSplat['MethodName'] = $Method
+                        $EnumValuesSplat['Arguments']['sValueName'] = $PropertyName
+                        $PropertyValueQuery = Invoke-CimMethod @EnumValuesSplat
 
                         switch ($PropertyValueQuery.ReturnValue) {
                             0 {
