@@ -17,7 +17,6 @@ function Get-CIMRegistryProperty {
         Provides CimSessions to get registry properties from
     .PARAMETER ComputerName
         Provides computer names to get registry properties from
-
     .EXAMPLE
         PS> Get-CIMRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer"
         Name                           Value
