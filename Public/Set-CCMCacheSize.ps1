@@ -25,7 +25,7 @@ function Set-CCMCacheSize {
         Created:     2019-11-06
         Updated:     2020-01-08
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [parameter(Mandatory = $true)]
         [ValidateRange(1, 99999)]
