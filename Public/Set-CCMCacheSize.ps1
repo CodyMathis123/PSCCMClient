@@ -43,9 +43,9 @@ function Set-CCMCacheSize {
             ErrorAction = 'Stop'
         }
 
-        $ScriptBlockString = [string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size)
+        $SetCacheSizeScriptBlock = [scriptblock]::Create([string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size))
         $SetCacheSplat = @{
-            ScriptBlock = [scriptblock]::Create($ScriptBlockString)
+            ScriptBlock = $SetCacheSizeScriptBlock
         }
     }
     process {
@@ -99,7 +99,14 @@ function Set-CCMCacheSize {
                                 $Return[$Computer] = $true
                             }
                             default {
-                                Invoke-CIMPowerShell @SetCacheSplat
+                                switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        . $SetCacheSizeScriptBlock
+                                    }
+                                    $false {
+                                        Invoke-CIMPowerShell @SetCacheSplat
+                                    }
+                                }
                                 $Cache = Get-CimInstance @GetCacheSplat
                                 if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
                                     $Return[$Computer] = $true
