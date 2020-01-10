@@ -7,7 +7,7 @@ function Set-CCMCacheLocation {
         You can provide an array of computer names, or cimsession, or you can pass them through the pipeline.
         It will return a hashtable with the computer as key and boolean as value for success
     .PARAMETER Location
-        Provides the desired cache location
+        Provides the desired cache location - note that ccmcache is appended if not provided as the end of the path
     .PARAMETER CimSession
         Provides CimSessions to set the cache location for
     .PARAMETER ComputerName
@@ -18,6 +18,12 @@ function Set-CCMCacheLocation {
     .EXAMPLE
         C:\PS> Set-CCMCacheLocation -ComputerName 'Workstation1234','Workstation4321' -Location 'C:\windows\ccmcache'
             Set Cache location to 'C:\Windows\CCMCache' for Workstation1234, and Workstation4321
+    .EXAMPLE
+        C:\PS> Set-CCMCacheLocation -ComputerName 'Workstation1234','Workstation4321' -Location 'C:\temp\ccmcache'
+            Set Cache location to 'C:\temp\CCMCache' for Workstation1234, and Workstation4321
+    .EXAMPLE
+        C:\PS> Set-CCMCacheLocation -Location 'D:'
+            Set Cache location to 'D:\CCMCache' for the local computer
     .NOTES
         FileName:    Set-CCMCacheLocation.ps1
         Author:      Cody Mathis
@@ -28,6 +34,7 @@ function Set-CCMCacheLocation {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [parameter(Mandatory = $true)]
+        [ValidateScript( { -not $_.EndsWith('\') } )]
         [string]$Location,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [CimSession[]]$CimSession,
@@ -35,16 +42,25 @@ function Set-CCMCacheLocation {
         [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
-    begin {        
+    begin {       
+        $FullCachePath = switch ($Location.ToLowerInvariant().EndsWith('ccmcache')) {
+            $true {
+                Write-Output $Location
+            }
+            $false {
+                Join-Path -Path $Location -ChildPath 'ccmcache'
+            }
+        }
+        
         $GetCacheSplat = @{
             Namespace = 'root\CCM\SoftMgmtAgent'
             ClassName = 'CacheConfig'
         }
+        $SetCacheScriptblock = [scriptblock]::Create([string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().Location = "{0}"', (Split-Path -Path $FullCachePath -Parent)))
         $SetCacheSplat = @{
-            Property = @{ 
-                Location = $Location 
-            }
+            ScriptBlock = $SetCacheScriptblock
         }
+
         $CacheSplat = @{
             ErrorAction = 'Stop'
         }
@@ -96,15 +112,21 @@ function Set-CCMCacheLocation {
                     $Cache = Get-CimInstance @GetCacheSplat @CacheSplat
                     if ($Cache -is [object]) {
                         switch ($Cache.Location) {
-                            $Location {
+                            $FullCachePath {
                                 $Return[$Computer] = $true
                             }
                             default {
-                                $SetCacheSplat['InputObject'] = $Cache
-                                $null = Set-CimInstance @CacheSplat @SetCacheSplat
+                                switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        . $SetCacheScriptblock
+                                    }
+                                    $false {
+                                        Invoke-CIMPowerShell @SetCacheSplat
+                                    }
+                                }
                                 $Cache = Get-CimInstance @GetCacheSplat @CacheSplat
                                 switch ($Cache.Location) {
-                                    $Location {
+                                    $FullCachePath {
                                         $Return[$Computer] = $true
                                     }
                                     default {       
