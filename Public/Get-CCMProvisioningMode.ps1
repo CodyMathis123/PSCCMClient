@@ -1,7 +1,3 @@
-# Invoke-WmiMethod -Namespace root\CCM -Class SMS_Client -Name SetClientProvisioningMode -ArgumentList $false
-# HKLM\Software\Microsoft\CCM\CcmExec - ProvisioningMaxMinutes, ProvisioningEnabledTime 
-# https://docs.microsoft.com/en-us/configmgr/osd/understand/provisioning-mode
-
 function Get-CCMProvisioningMode {
     <#
     .SYNOPSIS
