@@ -5,7 +5,7 @@ function Set-CCMCacheSize {
     .DESCRIPTION
         This function will allow you to set the configuration manager cache size for multiple computers using Invoke-CIMPowerShell. 
         You can provide an array of computer names, cimsesions, or you can pass them through the pipeline.
-        It will return a hastable with the computer as key and boolean as value for success
+        It will return a hashtable with the computer as key and boolean as value for success
     .PARAMETER Size
         Provides the desired cache size in MB
     .PARAMETER CimSession

@@ -5,7 +5,7 @@ function Repair-CCMCacheLocation {
     .DESCRIPTION
         This function will allow you to clean the existing cache path for multiple computers using CIM queries. 
         You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
-        It will return a hastable with the computer as key and boolean as value for success
+        It will return a hashtable with the computer as key and boolean as value for success
     .PARAMETER CimSession
         Provides CimSessions to repair the cache location for
     .PARAMETER ComputerName
@@ -21,7 +21,7 @@ function Repair-CCMCacheLocation {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-12-09
+        Updated:     2020-01-09
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
