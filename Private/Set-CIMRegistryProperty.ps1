@@ -49,11 +49,11 @@ function Set-CIMRegistryProperty {
         [string]$PropertyType,
         [parameter(Mandatory = $false)]
         [switch]$Force,
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [parameter(Mandatory = $false)]
-        [PSCredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         #region create hash tables for translating values
