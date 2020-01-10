@@ -81,6 +81,7 @@
         'Get-CCMLogFile',
         'Get-CCMMaintenanceWindow',
         'Get-CCMPrimaryUser',
+        'Get-CCMProvisioningMode',
         'Get-CCMServiceWindow',
         'Get-CCMUpdate',
         'Invoke-CCMBaseline',
