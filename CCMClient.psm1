@@ -62,9 +62,11 @@ $ExportModule = @{
     'Invoke-CCMClientAction',
     'Invoke-CCMResetPolicy',
     'Invoke-CCMUpdate',
+    'Invoke-CIMPowerShell',
     'Repair-CCMCacheLocation',
     'Set-CCMCacheLocation',
     'Set-CCMCacheSize',
+    'Set-CCMProvisioningMode',
     'Write-CCMLogEntry')
     Variable = @()
 }
