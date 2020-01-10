@@ -34,7 +34,7 @@ function Get-CCMServiceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-12-12
-        Updated:     2020-12-31
+        Updated:     2019-12-31
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
