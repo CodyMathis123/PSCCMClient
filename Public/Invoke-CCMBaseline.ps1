@@ -3,15 +3,15 @@ function Invoke-CCMBaseline {
         .SYNOPSIS
             Invoke SCCM Configuration Baselines on the specified computers
         .DESCRIPTION
-            This function will allow you to provide an array of computer names, and configuration baseline names which will be invoked.
+            This function will allow you to provide an array of computer names, or cimsessions, and configuration baseline names which will be invoked.
             If you do not specify a baseline name, then ALL baselines on the machine will be invoked. A [PSCustomObject] is returned that
             outlines the results, including the last time the baseline was ran, and if the previous run returned compliant or non-compliant.
-        .PARAMETER ComputerName
-            Provides computer names to invoke the configuration baselines on.
         .PARAMETER BaselineName
             Provides the configuration baseline names that you wish to invoke.
-        .PARAMETER Credential
-            Provides optional credentials to use for the WMI cmdlets.
+        .PARAMETER ComputerName
+            Provides computer names to invoke the configuration baselines on.
+        .PARAMETER CimSession
+            Provides cimsessions to invoke the configuration baselines on.
         .EXAMPLE
             C:\PS> Invoke-CCMBaseline
                 Invoke all baselines identified in WMI on the local computer.
@@ -26,58 +26,48 @@ function Invoke-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2019-12-30
+            Updated:     2020-01-04
 
             It is important to note that if a configuration baseline has user settings, the only way to invoke it is if the user is logged in, and you run this script
-            with those credentials. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' that has user settings,
+            with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
+            that has user settings,
 
             This command would successfully invoke FixJimsStuff
-            Invoke-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -Credential $JimsCreds
+            Invoke-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -CimSession $CimSessionWithJimsCreds
 
             This command would not find the baseline FixJimsStuff, and be unable to invoke it
-            Invoke-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
+            Invoke-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
 
-            You could remotely invoke that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to the function's -Credential param.
+            You could remotely invoke that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to a cimsesion passed to -cimsession param.
             If you try to invoke this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
 
             Outside of that, it will dynamically generate the arguments to pass to the TriggerEvaluation method. I found a handful of examples on the internet for
             invoking SCCM Configuration Baselines, and there were always comments about certain scenarios not working. This implementation has been consistent in
             invoking Configuration Baselines, including those with user settings, as long as the context is correct.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-        [string[]]$BaselineName,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [string[]]$BaselineName = 'NotSpecified',
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region Setup our *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
-        $getWmiObjectSplat = @{
+        #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
+        $getBaselineSplat = @{
             Namespace   = 'root\ccm\dcm'
             ErrorAction = 'Stop'
         }
-        $invokeWmiMethodSplat = @{
+        $invokeBaselineEvalSplat = @{
             Namespace   = 'root\ccm\dcm'
-            Class       = 'SMS_DesiredConfiguration'
+            ClassName   = 'SMS_DesiredConfiguration'
             ErrorAction = 'Stop'
             Name        = 'TriggerEvaluation'
         }
-        switch ($PSBoundParameters.ContainsKey('Credential')) {
-            $true {
-                $getWmiObjectSplat.Add('Credential', $Credential)
-                $invokeWmiMethodSplat.Add('Credential', $Credential)
-            }
-        }
-        switch ($PSBoundParameters.ContainsKey('BaselineName')) {
-            $false {
-                $BaselineName = 'NotSpecified'
-            }
-        }
-        #endregion Setup our common *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
+        #endregion Setup our common *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
 
         #region hash table for translating compliance status
         $LastComplianceStatus = @{
@@ -90,13 +80,42 @@ function Invoke-CCMBaseline {
 
         <#
             Not all Properties are on all Configuration Baseline instances, this is the list of possible options
-            We will compare this list to the $ValidParams identified per Configuration Baseline found with the Get-WMIObject query
+            We will identify which properties exist, and pass the respective arguments to Invoke-CimMethod with typecasting
         #>
         $PropertyOptions = 'IsEnforced', 'IsMachineTarget', 'Name', 'PolicyType', 'Version'
     }
     process {
-        foreach ($Computer in $ComputerName) {
-            $getWmiObjectSplat['ComputerName'] = $Computer
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getBaselineSplat['CimSession'] = $ExistingCimSession
+                                $invokeBaselineEvalSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getBaselineSplat.Remove('CimSession')
+                                $getBaselineSplat['ComputerName'] = $Connection
+                                $invokeBaselineEvalSplat.Remove('CimSession')
+                                $invokeBaselineEvalSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $getBaselineSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $invokeBaselineEvalSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                }
+            }
             foreach ($BLName in $BaselineName) {
                 #region Query WMI for Configuration Baselines based off DisplayName
                 $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
@@ -108,14 +127,14 @@ function Invoke-CCMBaseline {
                     }
                 }
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
-                $getWmiObjectSplat['Query'] = $BLQuery
+                $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-WmiObject @getWmiObjectSplat
+                    $Baselines = Get-CimInstance @getBaselineSplat
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
                     # Maybe write a function???
-                    Write-Error "Failed to query for baselines on $Computer"
+                    Write-Error "Failed to query for baselines on $Computer - $_"
                 }
                 #endregion Query WMI for Configuration Baselines based off DisplayName
 
@@ -129,28 +148,30 @@ function Invoke-CCMBaseline {
                                 $Return['BaselineName'] = $BL.DisplayName
                                 $Return['Version'] = $BL.Version
                                 $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
+                                $Return['LastEvalTime'] = $BL.LastEvalTime
 
-                                #region generate a property ordered list of existing arguments to pass to the TriggerEvaluation method. Order is important!
-                                $ValidParams = $BL.GetMethodParameters('TriggerEvaluation').Properties.Name
-                                $compareObjectSplat = @{
-                                    ReferenceObject  = $PropertyOptions
-                                    DifferenceObject = $ValidParams
-                                    ExcludeDifferent = $true
-                                    IncludeEqual     = $true
-                                    PassThru         = $true
+                                #region generate a property list of existing arguments to pass to the TriggerEvaluation method. Type is important!
+                                $ArgumentList = @{ }
+                                foreach ($Property in $PropertyOptions) {
+                                    $PropExist = Get-Member -InputObject $BL -MemberType Properties -Name $Property
+                                    switch ($PropExist) {
+                                        $null {
+                                            continue
+                                        }
+                                        default {
+                                            $TypeString = ($PropExist.Definition -split ' ')[0]
+                                            $Type = [scriptblock]::Create("[$TypeString]")
+                                            $ArgumentList[$Property] = $BL.$Property -as (. $Type)
+                                        }
+                                    }
                                 }
-                                $Select = Compare-Object @compareObjectSplat
-
-                                $invokeWmiMethodSplat['ArgumentList'] = foreach ($Property in $Select) {
-                                    $BL.$Property
-                                }
-                                #endregion generate a property ordered list of existing arguments to pass to the TriggerEvaluation method. Order is important!
+                                $invokeBaselineEvalSplat['Arguments'] = $ArgumentList
+                                #endregion generate a property list of existing arguments to pass to the TriggerEvaluation method. Type is important!
 
                                 #region Trigger the Configuration Baseline to run
-                                $invokeWmiMethodSplat['ComputerName'] = $Computer
                                 Write-Verbose "Identified the Configuration Baseline [BaselineName='$($BL.DisplayName)'] on [ComputerName='$Computer'] will trigger via the 'TriggerEvaluation' WMI method"
                                 $Return['Invoked'] = try {
-                                    $Invocation = Invoke-WmiMethod @invokeWmiMethodSplat
+                                    $Invocation = Invoke-CimMethod @invokeBaselineEvalSplat
                                     switch ($Invocation.ReturnValue) {
                                         0 {
                                             $true
@@ -163,24 +184,6 @@ function Invoke-CCMBaseline {
                                 catch {
                                     $false
                                 }
-
-                                #region convert LastEvalTime to local time zone DateTime object
-                                if ($null -ne $BL.LastEvalTime) {
-                                    try {
-                                        $LastEvalTimeUTC = [DateTime]::ParseExact((($BL.LastEvalTime).Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                                        $TimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById([system.timezone]::CurrentTimeZone.StandardName)
-                                        $Return['LastEvalTime'] = [System.TimeZoneInfo]::ConvertTimeFromUtc($LastEvalTimeUTC, $TimeZone)
-                                    }
-                                    catch {
-                                        Write-Verbose "[BL.LastEvalTime = '$($BL.LastEvalTime)'] [LastEvalTimeUTC = '$LastEvalTimeUTC'] [TimeZone = '$TimeZone'] [LastEvalTime = '$LastEvalTime']"
-                                        $Return['LastEvalTime'] = 'No Data'
-                                    }
-                                }
-                                else {
-                                    $Return['LastEvalTime'] = 'No Data'
-                                }
-                                #endregion convert LastEvalTime to local time zone DateTime object
-
 
                                 [pscustomobject]$Return
                                 #endregion Trigger the Configuration Baseline to run

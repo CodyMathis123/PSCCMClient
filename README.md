@@ -14,13 +14,16 @@ Current list of functions:
 * Get-CCMLogFile
 * Get-CCMMaintenanceWindow
 * Get-CCMPrimaryUser
+* Get-CCMProvisioningMode
 * Get-CCMServiceWindow
 * Get-CCMUpdate
 * Invoke-CCMBaseline
 * Invoke-CCMClientAction
 * Invoke-CCMResetPolicy
 * Invoke-CCMUpdate
+* Invoke-CIMPowerShell
 * Repair-CCMCacheLocation
 * Set-CCMCacheLocation
 * Set-CCMCacheSize
+* Set-CCMProvisioningMode
 * Write-CCMLogEntry

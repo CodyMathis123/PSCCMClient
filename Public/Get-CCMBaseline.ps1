@@ -1,70 +1,61 @@
 function Get-CCMBaseline {
     <#
         .SYNOPSIS
-            Get SCCM Configuration Baselines on the specified computer(s)
+            Get SCCM Configuration Baselines on the specified computer(s) or cimsession(s)
         .DESCRIPTION
-            This function is used to identify baselines on computers. You can provide an array of computer names, and configuration baseline names which will be
-            search for. If you do not specify a baseline name, then there will be no filter applied. A [PSCustomObject] is returned that
-            outlines the findings.
-        .PARAMETER ComputerName
-            Provides computer names to find the configuration baselines on.
+            This function is used to identify baselines on computers. You can provide an array of computer names, or cimsessions, and
+            configuration baseline names which will be queried for. If you do not specify a baseline name, then there will be no filter applied.
+            A [PSCustomObject] is returned that outlines the findings.
         .PARAMETER BaselineName
             Provides the configuration baseline names that you wish to search for.
-        .PARAMETER Credential
-            Provides optional credentials to use for the WMI cmdlets.
+        .PARAMETER ComputerName
+            Provides computer names to find the configuration baselines on.
+        .PARAMETER CimSession
+            Provides cimsessions to return baselines from.
         .EXAMPLE
             C:\PS> Get-CCMBaseline
                 Gets all baselines identified in WMI on the local computer.
         .EXAMPLE
-            C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321' -BaselineName 'Check Computer Compliance','Double Check Computer Compliance'
-                Gets the two baselines on the computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
+            C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321' -BaselineName 'Check Connection Compliance','Double Check Connection Compliance'
+                Gets the two baselines on the Computers specified. This demonstrates that both ComputerName and BaselineName accept string arrays.
         .EXAMPLE
             C:\PS> Get-CCMBaseline -ComputerName 'Workstation1234','Workstation4321'
-                Gets all baselines identified in WMI for the computers specified.
+                Gets all baselines identified in WMI for the Computers specified.
         .NOTES
             FileName:    Get-CCMBaseline.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2019-10-16
+            Updated:     2020-01-04
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
-            with those credentials. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff' that has user settings,
+            with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
+            that has user settings,
 
             This command would successfully find FixJimsStuff
-            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -Credential $JimsCreds
+            Get-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff' -CimSession $CimSessionWithJimsCreds
 
             This command would not find the baseline FixJimsStuff
-            Get-CCMBaseline.ps1 -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
+            Get-CCMBaseline -ComputerName 'Workstation1234' -BaselineName 'FixJimsStuff'
 
-            You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to the function's -Credential param.
+            You could remotely query for that baseline AS Jim1234, with either a runas on PowerShell, or providing Jim's credentials to a cimsesion passed to -cimsession param.
             If you try to query for this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-        [string[]]$BaselineName,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [string[]]$BaselineName = 'NotSpecified',
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         #region Setup our *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
-        $getWmiObjectSplat = @{
+        $getBaselineSplat = @{
             Namespace   = 'root\ccm\dcm'
             ErrorAction = 'Stop'
-        }
-        switch ($PSBoundParameters.ContainsKey('Credential')) {
-            $true {
-                $getWmiObjectSplat.Add('Credential', $Credential)
-            }
-        }
-        switch ($PSBoundParameters.ContainsKey('BaselineName')) {
-            $false {
-                $BaselineName = 'NotSpecified'
-            }
         }
         #endregion Setup our common *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
 
@@ -78,8 +69,37 @@ function Get-CCMBaseline {
         #endregion hash table for translating compliance status
     }
     process {
-        foreach ($Computer in $ComputerName) {
-            $getWmiObjectSplat['ComputerName'] = $Computer
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getBaselineSplat.Remove('ComputerName')
+                                $getBaselineSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getBaselineSplat.Remove('CimSession')
+                                $getBaselineSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $getBaselineSplat.Remove('CimSession')
+                            $getBaselineSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $getBaselineSplat.Remove('ComputerName')
+                    $getBaselineSplat['CimSession'] = $Connection
+                }
+            }
             foreach ($BLName in $BaselineName) {
                 #region Query WMI for Configuration Baselines based off DisplayName
                 $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
@@ -91,14 +111,14 @@ function Get-CCMBaseline {
                     }
                 }
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
-                $getWmiObjectSplat['Query'] = $BLQuery
+                $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-WmiObject @getWmiObjectSplat
+                    $Baselines = Get-CimInstance @getBaselineSplat
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
                     # Maybe write a function???
-                    Write-Error "Failed to query for baselines on $Computer"
+                    Write-Error "Failed to query for baselines on $Connection - $($_)"
                     continue
                 }
                 #endregion Query WMI for Configuration Baselines based off DisplayName
@@ -112,29 +132,12 @@ function Get-CCMBaseline {
                             $Return['BaselineName'] = $BL.DisplayName
                             $Return['Version'] = $BL.Version
                             $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
-
-                            #region convert LastEvalTime to local time zone DateTime object
-                            if ($null -ne $BL.LastEvalTime) {
-                                try {
-                                    $LastEvalTimeUTC = [DateTime]::ParseExact((($BL.LastEvalTime).Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                                    $TimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById([system.timezone]::CurrentTimeZone.StandardName)
-                                    $Return['LastEvalTime'] = [System.TimeZoneInfo]::ConvertTimeFromUtc($LastEvalTimeUTC, $TimeZone)
-                                }
-                                catch {
-                                    Write-Verbose "[BL.LastEvalTime = '$($BL.LastEvalTime)'] [LastEvalTimeUTC = '$LastEvalTimeUTC'] [TimeZone = '$TimeZone'] [LastEvalTime = '$LastEvalTime']"
-                                    $Return['LastEvalTime'] = 'No Data'
-                                }
-                            }
-                            else {
-                                $Return['LastEvalTime'] = 'No Data'
-                            }
-                            #endregion convert LastEvalTime to local time zone DateTime object
-
+                            $Return['LastEvalTime'] = $BL.LastEvalTime
                             [pscustomobject]$Return
                         }
                     }
                     $true {
-                        Write-Warning "Failed to identify any Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
+                        Write-Warning "Failed to identify any Configuration Baselines on [ConnectionName='$Connection'] with [Query=`"$BLQuery`"]"
                     }
                 }
                 #endregion Based on results of WMI Query, return additional information around compliance and eval time

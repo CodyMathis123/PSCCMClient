@@ -5,15 +5,15 @@ function Get-CCMLastScheduleTrigger {
     .DESCRIPTION
         This function will return the last time a schedule was triggered. Keep in mind this is when a scheduled run happens, such as the periodic machine
         policy refresh. This is why you won't see the timestamp increment if you force a eval, and then check the schedule LastTriggerTime.
-    .PARAMETER ComputerName
-        Provides computer names to gather schedule trigger info from.
     .PARAMETER Schedule
         Specifies the schedule to get trigger history info for. This has a validate set of all possible 'standard' options that the client can perform
         on a schedule.
     .PARAMETER ScheduleID
         Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing. 
-    .PARAMETER Credential
-        Provides optional credentials to use for the WMI cmdlets.
+    .PARAMETER CimSession
+        Provides CimSessions to gather schedule trigger info from
+    .PARAMETER ComputerName
+        Provides computer names to gather schedule trigger info from
     .EXAMPLE
         C:\PS> Get-CCMLastScheduleTrigger -Schedule 'Hardware Inventory'
         Returns a [pscustomobject] detailing the schedule trigger history info availble in WMI for Hardware Inventory
@@ -25,14 +25,13 @@ function Get-CCMLastScheduleTrigger {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-12-31
-        Updated:     2019-01-01
+        Updated:     2020-01-05
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
         [parameter(Mandatory = $true, ParameterSetName = 'ByName')]
+        [parameter(ParameterSetName = 'CimSession')]
+        [parameter(ParameterSetName = 'ComputerName')]
         [ValidateSet('Hardware Inventory',
             'Software Inventory',
             'Discovery Inventory',
@@ -81,9 +80,14 @@ function Get-CCMLastScheduleTrigger {
             'External event detection')]
         [string[]]$Schedule,
         [parameter(Mandatory = $true, ParameterSetName = 'ByID')]
+        [parameter(ParameterSetName = 'CimSession')]
+        [parameter(ParameterSetName = 'ComputerName')]
         [string[]]$ScheduleID,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         #region hashtable for mapping schedule names to IDs, and create WMI query
@@ -135,74 +139,73 @@ function Get-CCMLastScheduleTrigger {
             'Endpoint AM policy reevaluate'                                                = '{00000000-0000-0000-0000-000000000222}'
             'External event detection'                                                     = '{00000000-0000-0000-0000-000000000223}'
         }
-        $RequestedSchedulesRaw = switch ($PSCmdlet.ParameterSetName) {
-            'ByName' {
+        $PSBoundParameters.Keys
+        $RequestedSchedulesRaw = switch ($PSBoundParameters.Keys) {
+            'Schedule' {
                 foreach ($One in $Schedule) {
                     $ScheduleTypeMap[$One]
                 }
             }
-            'ByID' {
+            'ScheduleID' {
                 $ScheduleID
             }
         }
         $RequestedScheduleQuery = [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
         #endregion hashtable for mapping schedule names to IDs, and create WMI query
 
-        $getWmiObjectSchedHist = @{
+        $getSchedHistSplat = @{
             Namespace = 'root\CCM\Scheduler'
             Query     = $RequestedScheduleQuery
         }
-        if ($PSBoundParameters.ContainsKey('Credential')) {
-            $getWmiObjectSchedHist['Credential'] = $Credential
-        }
     }
     process {
-        foreach ($Computer in $ComputerName) {
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getSchedHistSplat.Remove('ComputerName')
+                                $getSchedHistSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getSchedHistSplat.Remove('CimSession')
+                                $getSchedHistSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $getSchedHistSplat.Remove('CimSession')
+                            $getSchedHistSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $getSchedHistSplat.Remove('ComputerName')
+                    $getSchedHistSplat['CimSession'] = $Connection
+                }
+            }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            $getWmiObjectSchedHist['ComputerName'] = $Computer
 
             try {
-                [System.Management.ManagementObject[]]$ScheduleHistory = Get-WmiObject @getWmiObjectSchedHist
+                [ciminstance[]]$ScheduleHistory = Get-CimInstance @getSchedHistSplat
                 if ($ScheduleHistory -is [Object] -and $ScheduleHistory.Count -gt 0) {
                     foreach ($Trigger in $ScheduleHistory) {
                         $Result['ScheduleID'] = $Trigger.ScheduleID
                         $Result['Schedule'] = $ScheduleTypeMap.Keys.Where( { $ScheduleTypeMap[$_] -eq $Trigger.ScheduleID } )
                         $Result['UserSID'] = $Trigger.UserSID
-                        $Result['FirstEvalTime'] = switch ($Trigger.FirstEvalTime) {
-                            $null {
-                                continue
-                            }
-                            default {
-                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                            }
-                        }
-                        $Result['ActivationMessageSent'] = switch ($Trigger.ActivationMessageSent) {
-                            $null {
-                                continue
-                            }
-                            default {
-                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                            }
-                        }
+                        $Result['FirstEvalTime'] = $Trigger.FirstEvalTime
+                        $Result['ActivationMessageSent'] = $Trigger.ActivationMessageSent
                         $Result['ActivationMessageSentIsGMT'] = $Trigger.ActivationMessageSentIsGMT
-                        $Result['ExpirationMessageSent'] = switch ($Trigger.ExpirationMessageSent) {
-                            $null {
-                                continue
-                            }
-                            default {
-                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                            }
-                        }
+                        $Result['ExpirationMessageSent'] = $Trigger.ExpirationMessageSent
                         $Result['ExpirationMessageSentIsGMT'] = $Trigger.ExpirationMessageSentIsGMT
-                        $Result['LastTriggerTime'] = switch ($Trigger.LastTriggerTime) {
-                            $null {
-                                continue
-                            }
-                            default {
-                                [DateTime]::ParseExact(($PSItem.Split('+|-')[0]), 'yyyyMMddHHmmss.ffffff', [System.Globalization.CultureInfo]::InvariantCulture)
-                            }
-                        }
+                        $Result['LastTriggerTime'] = $Trigger.LastTriggerTime
                         $Result['TriggerState'] = $Trigger.TriggerState
                         [PSCustomObject]$Result
                     }

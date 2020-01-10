@@ -1,14 +1,14 @@
 function Get-CCMCache {
     <#
     .SYNOPSIS
-        Get ConfigMgr client cache directory info from computers via WMI
+        Get ConfigMgr client cache directory info from computers via CIM
     .DESCRIPTION
-        This function will allow you to gather the ConfigMgr client cache directory info from multiple computers using WMI queries.
-        You can provide an array of computer names, or you can pass them through the pipeline, and pass credentials.
+        This function will allow you to gather the ConfigMgr client cache directory info from multiple computers using CIM queries.
+        You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
+    .PARAMETER CimSession
+        Provides CimSession to gather cache info from.
     .PARAMETER ComputerName
         Provides computer names to gather cache info from.
-    .PARAMETER Credential
-        Provides optional credentials to use for the WMI cmdlets.
     .EXAMPLE
         C:\PS> Get-CCMCache
             Return ConfigMgr client cache directory info for the local computer
@@ -19,49 +19,73 @@ function Get-CCMCache {
         FileName:    Get-CCMCache.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2019-11-6
-        Updated:     2019-11-6
+        Created:     2019-11-06
+        Updated:     2020-01-05
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $getWmiObjectSplat = @{
+        $getCacheInfoSplat = @{
             Namespace   = 'root\CCM\SoftMgmtAgent'
-            Class       = 'CacheConfig'
+            ClassName   = 'CacheConfig'
             ErrorAction = 'Stop'
-        }
-        if ($PSBoundParameters.ContainsKey('Credential')) {
-            $getWmiObjectSplat['Credential'] = $Credential
         }
     }
     process {
-        foreach ($Computer in $ComputerName) {
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getCacheInfoSplat.Remove('ComputerName')
+                                $getCacheInfoSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getCacheInfoSplat.Remove('CimSession')
+                                $getCacheInfoSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $getCacheInfoSplat.Remove('CimSession')
+                            $getCacheInfoSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $getCacheInfoSplat.Remove('ComputerName')
+                    $getCacheInfoSplat['CimSession'] = $Connection
+                }
+            }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            $getWmiObjectSplat['ComputerName'] = $Computer
 
             try {
-                [System.Management.ManagementObject[]]$WmiResult = Get-WmiObject @getWmiObjectSplat
-                if ($WmiResult -is [Object] -and $WmiResult.Count -gt 0) {
-                    $Return[$Computer] = foreach ($Object in $WmiResult) {
+                [ciminstance[]]$CimResult = Get-CimInstance @getCacheInfoSplat
+                if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
+                    foreach ($Object in $CimResult) {
                         $Result['Location'] = $Object.Location
                         $Result['Size'] = $Object.Size
-                        [PSCustomObject]$Result 
+                        [PSCustomObject]$Result
                     }
                 }
                 else {
                     $Result['Location'] = $null
                     $Result['Size'] = $null
-                    $Return[$Computer] = [PSCustomObject]$Result
+                    [PSCustomObject]$Result
                 }
-                Write-Output $Return
             }
             catch {
                 $ErrorMessage = $_.Exception.Message

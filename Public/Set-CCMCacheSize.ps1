@@ -1,17 +1,17 @@
 function Set-CCMCacheSize {
     <#
     .SYNOPSIS
-        Set ConfigMgr cache size from computers via WMI
+        Set ConfigMgr cache size from computers via UIResource.UIResourceMgr invoked over CIM
     .DESCRIPTION
-        This function will allow you to set the configuration manager cache size for multiple computers using WMI queries. 
-        You can provide an array of computer names, or you can pass them through the pipeline, and pass credentials.
-        It will return a hastable with the computer as key and boolean as value for success
+        This function will allow you to set the configuration manager cache size for multiple computers using Invoke-CIMPowerShell. 
+        You can provide an array of computer names, cimsesions, or you can pass them through the pipeline.
+        It will return a hashtable with the computer as key and boolean as value for success
     .PARAMETER Size
         Provides the desired cache size in MB
+    .PARAMETER CimSession
+        Provides CimSessions to set CCMCache size on
     .PARAMETER ComputerName
-        Provides computer names to set the cahce size for.
-    .PARAMETER Credential
-        Provides optional credentials to use for the WMI cmdlets.
+        Provides computer names to set CCMCache size on
     .EXAMPLE
         C:\PS> Set-CCMCacheSize -Size 20480
             Set the cache size to 20480 MB for the local computer
@@ -22,52 +22,93 @@ function Set-CCMCacheSize {
         FileName:    Set-CCMCacheSize.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2019-11-6
-        Updated:     2019-11-6
+        Created:     2019-11-06
+        Updated:     2020-01-08
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [parameter(Mandatory = $true)]
         [ValidateRange(1, 99999)]
         [int]$Size,
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         $GetCacheSplat = @{
-            Namespace = 'root\CCM\SoftMgmtAgent'
-            Class     = 'CacheConfig'
-        }
-        $SetCacheSplat = @{
-            Arguments = @{ Size = $Size }
-        }
-        $CacheSplat = @{
+            Namespace   = 'root\CCM\SoftMgmtAgent'
+            ClassName   = 'CacheConfig'
             ErrorAction = 'Stop'
         }
-        if ($PSBoundParameters.ContainsKey('Credential')) {
-            $CacheSplat['Credential'] = $Credential
+
+        $SetCacheSizeScriptBlock = [scriptblock]::Create([string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size))
+        $SetCacheSplat = @{
+            ScriptBlock = $SetCacheSizeScriptBlock
         }
     }
     process {
-        foreach ($Computer in $ComputerName) {
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $GetCacheSplat.Remove('ComputerName')
+                                $GetCacheSplat['CimSession'] = $ExistingCimSession
+                                $SetCacheSplat.Remove('ComputerName')
+                                $SetCacheSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $GetCacheSplat.Remove('CimSession')
+                                $GetCacheSplat['ComputerName'] = $Connection
+                                $SetCacheSplat.Remove('CimSession')
+                                $SetCacheSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $GetCacheSplat.Remove('CimSession')
+                            $GetCacheSplat.Remove('ComputerName')
+                            $SetCacheSplat.Remove('CimSession')
+                            $SetCacheSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $GetCacheSplat.Remove('ComputerName')
+                    $SetCacheSplat.Remove('ComputerName')
+                    $GetCacheSplat['CimSession'] = $Connection
+                    $SetCacheSplat['CimSession'] = $Connection
+                }
+            }
             $Return = [System.Collections.Specialized.OrderedDictionary]::new()
-            $GetCacheSplat['ComputerName'] = $Computer
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Size = '$Size']", "Set CCM Cache Size")) {
-                    $Cache = Get-WmiObject @GetCacheSplat @CacheSplat
+                    $Cache = Get-CimInstance @GetCacheSplat
                     if ($Cache -is [object]) {
                         switch ($Cache.Size) {
                             $Size {
                                 $Return[$Computer] = $true
                             }
                             default {
-                                $SetCacheSplat['InputObject'] = $Cache
-                                $WmiResult = Set-WmiInstance @CacheSplat @SetCacheSplat
-                                if ($WmiResult -is [Object] -and $WmiResult.Size -eq $Size) {
+                                switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        . $SetCacheSizeScriptBlock
+                                    }
+                                    $false {
+                                        Invoke-CIMPowerShell @SetCacheSplat
+                                    }
+                                }
+                                $Cache = Get-CimInstance @GetCacheSplat
+                                if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
                                     $Return[$Computer] = $true
                                 }
                                 else {

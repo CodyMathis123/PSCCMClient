@@ -1,12 +1,10 @@
 function Get-CCMMaintenanceWindow {
     <#
     .SYNOPSIS
-        Get ConfigMgr Maintenance Window information from computers via WMI
+        Get ConfigMgr Maintenance Window information from computers via CIM
     .DESCRIPTION
-        This function will allow you to gather maintenance window information from multiple computers using WMI queries. You can provide an array of computer names,
-        or you can pass them through the pipeline. You are also able to specify the Maintenance Window Type (MWType) you wish to query for, and pass credentials.
-    .PARAMETER ComputerName
-        Provides computer names to gather MW info from.
+        This function will allow you to gather maintenance window information from multiple computers using CIM queries. You can provide an array of computer names, or cimsessions,
+        or you can pass them through the pipeline. You are also able to specify the Maintenance Window Type (MWType) you wish to query for.
     .PARAMETER MWType
         Specifies the types of MW you want information for. Valid options are below
             'All Deployment Service Window',
@@ -15,8 +13,10 @@ function Get-CCMMaintenanceWindow {
             'Software Update Service Window',
             'Task Sequences Service Window',
             'Corresponds to non-working hours'
-    .PARAMETER Credential
-        Provides optional credentials to use for the WMI cmdlets.
+    .PARAMETER CimSession
+        Provides CimSession to gather Maintenance Window information info from
+    .PARAMETER ComputerName
+        Provides computer names to gather Maintenance Window information info from
     .EXAMPLE
         C:\PS> Get-CCMMaintenanceWindow
             Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types
@@ -29,13 +29,10 @@ function Get-CCMMaintenanceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-08-14
-        Updated:     2019-12-31
+        Updated:     2020-01-05
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
         [parameter(Mandatory = $false)]
         [ValidateSet('All Deployment Service Window',
             'Program Service Window',
@@ -44,8 +41,11 @@ function Get-CCMMaintenanceWindow {
             'Task Sequences Service Window',
             'Corresponds to non-working hours')]
         [string[]]$MWType = @('All Deployment Service Window', 'Software Update Service Window'),
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         #region Create hashtable for mapping MW types, and create WMI filter based on input params
@@ -62,34 +62,66 @@ function Get-CCMMaintenanceWindow {
         $RequestedTypesFilter = [string]::Format('Type = {0}', [string]::Join(' OR Type =', $RequestedTypesRaw))
         #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
 
-        $getWmiObjectServiceWindowSplat = @{
+        $getMaintenanceWindowSplat = @{
             Namespace = 'root\CCM\ClientSDK'
-            Class     = 'CCM_ServiceWindow'
+            ClassName = 'CCM_ServiceWindow'
             Filter    = $RequestedTypesFilter
         }
-        $getWmiObjectTimeZoneSplat = @{
+        $getTimeZoneSplat = @{
             Query = 'SELECT Caption FROM Win32_TimeZone'
-        }
-        if ($PSBoundParameters.ContainsKey('Credential')) {
-            $getWmiObjectServiceWindowSplat['Credential'] = $Credential
-            $getWmiObjectTimeZoneSplat['Credential'] = $Credential
         }
     }
     process {
-        foreach ($Computer in $ComputerName) {
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $getMaintenanceWindowSplat.Remove('ComputerName')
+                                $getMaintenanceWindowSplat['CimSession'] = $ExistingCimSession
+                                $getTimeZoneSplat.Remove('ComputerName')
+                                $getTimeZoneSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $getMaintenanceWindowSplat.Remove('CimSession')
+                                $getMaintenanceWindowSplat['ComputerName'] = $Connection
+                                $getTimeZoneSplat.Remove('CimSession')
+                                $getTimeZoneSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $getMaintenanceWindowSplat.Remove('CimSession')
+                            $getMaintenanceWindowSplat.Remove('ComputerName')
+                            $getTimeZoneSplat.Remove('CimSession')
+                            $getTimeZoneSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $getMaintenanceWindowSplat.Remove('ComputerName')
+                    $getTimeZoneSplat.Remove('ComputerName')
+                    $getMaintenanceWindowSplat['CimSession'] = $Connection
+                    $getTimeZoneSplat['CimSession'] = $Connection
+                }
+            }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            $getWmiObjectServiceWindowSplat['ComputerName'] = $Computer
-            $getWmiObjectTimeZoneSplat['ComputerName'] = $Computer
 
             try {
-                $Result['TimeZone'] = (Get-WmiObject @getWmiObjectTimeZoneSplat ).Caption
+                $Result['TimeZone'] = (Get-CimInstance @getTimeZoneSplat ).Caption
 
-                [System.Management.ManagementObject[]]$ServiceWindows = Get-WmiObject @getWmiObjectServiceWindowSplat
+                [ciminstance[]]$ServiceWindows = Get-CimInstance @getMaintenanceWindowSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
-                        $Result['StartTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.StartTime).ToUniversalTime()
-                        $Result['EndTime'] = [System.Management.ManagementDateTimeConverter]::ToDateTime($ServiceWindow.EndTime).ToUniversalTime()
+                        $Result['StartTime'] = ($ServiceWindow.StartTime).ToUniversalTime()
+                        $Result['EndTime'] = ($ServiceWindow.EndTime).ToUniversalTime()
                         $Result['Duration'] = $ServiceWindow.Duration
                         $Result['MWID'] = $ServiceWindow.ID
                         $Result['Type'] = $MW_Type.Item([int]$($ServiceWindow.Type))
