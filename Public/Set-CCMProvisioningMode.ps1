@@ -1,7 +1,7 @@
 function Set-CCMProvisioningMode {
     <#
     .SYNOPSIS
-        Set ConfigMgr client provisiong mode to enabled or disabled, and control ProvisioningMaxMinutes
+        Set ConfigMgr client provisioning mode to enabled or disabled, and control ProvisioningMaxMinutes
     .DESCRIPTION
         This function will allow you to set the configuration manager client provisioning mode using CIM queries.
         You can provide an array of computer names, or cimsession, or you can pass them through the pipeline.
@@ -13,9 +13,9 @@ function Set-CCMProvisioningMode {
         automatically disabled. This defaults to 48 hours. The client checks this every 60 minutes, so any
         value under 60 minutes will result in an effective ProvisioningMaxMinutes of 60 minutes.
     .PARAMETER CimSession
-        Provides CimSessions to set provisioned mode for
+        Provides CimSessions to set provisioning mode for
     .PARAMETER ComputerName
-        Provides computer names to set provisioned mode for
+        Provides computer names to set provisioning mode for
     .EXAMPLE
         C:\PS> Set-CCMProvisioningMode -Status Enabled
             Enables provisioning mode on the local computer
