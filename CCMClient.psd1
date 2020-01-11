@@ -73,12 +73,12 @@
         'Get-CCMBaseline',
         'Get-CCMCache',
         'Get-CCMClientDirectory',
-        'Get-CCMLoggingConfiguration',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
         'Get-CCMLastScheduleTrigger',
         'Get-CCMLastSoftwareInventory',
         'Get-CCMLogFile',
+        'Get-CCMLoggingConfiguration',
         'Get-CCMMaintenanceWindow',
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
@@ -92,6 +92,7 @@
         'Repair-CCMCacheLocation',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMLoggingConfiguration',
         'Set-CCMProvisioningMode',
         'Write-CCMLogEntry'
     )

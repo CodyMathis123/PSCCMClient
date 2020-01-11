@@ -6,12 +6,12 @@ Current list of functions:
 * Get-CCMBaseline
 * Get-CCMCache
 * Get-CCMClientDirectory
-* Get-CCMLoggingConfiguration
 * Get-CCMLastHardwareInventory
 * Get-CCMLastHeartbeat
 * Get-CCMLastSoftwareInventory
 * Get-CCMLastScheduleTrigger
 * Get-CCMLogFile
+* Get-CCMLoggingConfiguration
 * Get-CCMMaintenanceWindow
 * Get-CCMPrimaryUser
 * Get-CCMProvisioningMode
@@ -25,5 +25,6 @@ Current list of functions:
 * Repair-CCMCacheLocation
 * Set-CCMCacheLocation
 * Set-CCMCacheSize
+* Set-CCMLoggingConfiguration
 * Set-CCMProvisioningMode
 * Write-CCMLogEntry
