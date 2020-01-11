@@ -1,69 +1,120 @@
 function Invoke-CCMResetPolicy {
     <#
-        .SYNOPSIS
-            Invokes a ResetPolicy on the sms_client
-        .DESCRIPTION
-            This function will force a complete policy reset on a client and attempt to restart the CCMEXec service
-        .PARAMETER ComputerName
-            Specifies the computers to run this against
-        .PARAMETER Credential
-            Optional PSCredential
-        .EXAMPLE
-            C:\PS> Invoke-CCMResetPolicy
-                Reset the policy on the local machine and restarts CCMExec
-        .NOTES
-            FileName:    Invoke-CCMResetPolicy.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     10-30-2019
-            Updated:     10-30-2019
+    .SYNOPSIS
+        Invokes a ResetPolicy for the MEMCM client
+    .DESCRIPTION
+        This function will force a complete policy reset on a client for multiple computers using CIM queries.
+        You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
+    .PARAMETER ResetType
+        Determins the policy reset type.
+
+        'Purge' will wipe all policy from the machine, forcing a complete redownload, and rebuilt.
+
+        'ForceFull' will simply force the next policy refresh to be a full instead of a delta.
+
+        https://docs.microsoft.com/en-us/previous-versions/system-center/developer/cc143785%28v%3dmsdn.10%29
+    .PARAMETER CimSession
+        Provides CimSession to perform a policy reset on
+    .PARAMETER ComputerName
+        Provides computer names to perform a policy reset on
+    .EXAMPLE
+        C:\PS> Invoke-CCMResetPolicy
+            Reset the policy on the local machine and restarts CCMExec
+    .NOTES
+        FileName:    Invoke-CCMResetPolicy.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     2019-10-30
+        Updated:     2020-01-11
     #>
-    [CmdletBinding(SupportsShouldProcess)]
-    param
-    (
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [parameter(Mandatory = $false)]
-        [pscredential]$Credential
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
+    param (
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Purge', 'ForceFull')]
+        [string]$ResetType = 'Purge',
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $invokeWmiMethodSplatPolicyReset = @{
-            Name        = 'ResetPolicy'
-            Namespace   = 'root\ccm'
-            Class       = 'sms_client'
-            ArgumentList = @(1)
+        $uFlags = switch ($ResetType) {
+            'Purge' {
+                1
+            }
+            'ForceFull' {
+                0
+            }
         }
-        $invokeWmiMethodService = @{
-            Path = "Win32_Service.Name='ccmexec'"
+        $policyResetSplat = @{
+            MethodName = 'ResetPolicy'
+            Namespace  = 'root\ccm'
+            ClassName  = 'sms_client'
+            Arguments  = @{
+                uFlags = [uint32]$uFlags
+            }
         }
-        $invokeWmiMethodSplat = @{
-            ErrorAction = 'Stop'
+        $invokeCIMPowerShellSplat = @{
+            FunctionsToLoad = 'Invoke-CCMResetPolicy'
         }
-        if ($PSBoundParameters.ContainsKey('Credential')) {
-            $invokeWmiMethodSplat['Credential'] = $Credential
-        }
+        $ConnectionSplat = @{ }
     }
     process {
-        foreach ($Computer in $ComputerName) {
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "ResetPolicy")) {
-                try {
-                    $invokeWmiMethodSplat['ComputerName'] = $Computer
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $ConnectionSplat.Remove('ComputerName')
+                                $ConnectionSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $ConnectionSplat.Remove('CimSession')
+                                $ConnectionSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $ConnectionSplat.Remove('CimSession')
+                            $ConnectionSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $ConnectionSplat.Remove('ComputerName')
+                    $ConnectionSplat['CimSession'] = $Connection
+                }
+            }
+            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result['ComputerName'] = $Computer
+            $Result['PolicyReset'] = $false
 
-                    Write-Verbose "Performing ResetPolicy on $Computer"
-                    $Invocation = Invoke-WmiMethod @invokeWmiMethodSplatPolicyReset @invokeWmiMethodSplat
-
-                    Invoke-WmiMethod @invokeWmiMethodService @invokeWmiMethodSplat -Name 'StopService'
-                    Start-Sleep -Seconds 30
-                    Invoke-WmiMethod @invokeWmiMethodService @invokeWmiMethodSplat -Name 'StartService'
+            try {
+                $Invocation = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Invoke-CimMethod @policyResetSplat
+                    }
+                    $false {
+                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
+                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                    }
                 }
-                catch [System.UnauthorizedAccessException] {
-                    Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
+                if ($Invocation) {
+                    Write-Verbose "Successfully invoked policy reset on $Computer via the 'ResetPolicy' CIM method"
+                    $Result['PolicyReset'] = $true
                 }
-                catch {
-                    Write-Warning "Failed to invoke ResetPolicy for $Computer"
-                }
+                [pscustomobject]$Result
+            }
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                Write-Error $ErrorMessage
             }
         }
     }
