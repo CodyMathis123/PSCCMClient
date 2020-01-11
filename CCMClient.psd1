@@ -73,7 +73,7 @@
         'Get-CCMBaseline',
         'Get-CCMCache',
         'Get-CCMClientDirectory',
-        'Get-CCMClientLogDirectory',
+        'Get-CCMLoggingConfiguration',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
         'Get-CCMLastScheduleTrigger',
