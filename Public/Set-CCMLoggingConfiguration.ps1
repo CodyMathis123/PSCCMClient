@@ -33,7 +33,7 @@ function Set-CCMLoggingConfiguration {
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Default', 'Verbose')]
+        [ValidateSet('Default', 'Verbose', 'None')]
         [string]$LogLevel,
         [Parameter(Mandatory = $false)]
         [int]$LogMaxSize,
@@ -60,6 +60,9 @@ function Set-CCMLoggingConfiguration {
         $ConnectionSplat = @{ }
         $LogConfigArgs = @{ }
         $LogLevelInt = switch ($LogLevel) {
+            'None' {
+                2
+            }
             'Default' {
                 1
             }
