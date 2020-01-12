@@ -1,25 +1,25 @@
 function Get-CCMCacheContent {
     <#
-    .SYNOPSIS
-        Returns the content of the MEMCM cache
-    .DESCRIPTION
-        This function will return the content of the MEMCM cache. This is pulled from the UIResource.UIResourceMGR COM Object.
-    .PARAMETER CimSession
-        Provides CimSessions to gather the content of the MEMCM cache from
-    .PARAMETER ComputerName
-        Provides computer names to gather the content of the MEMCM cache from
-    .EXAMPLE
-        C:\PS> Get-CCMCacheContent
-            Returns the content of the MEMCM cache for the local computer
-    .EXAMPLE
-        C:\PS> Get-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321'
-            Returns the content of the MEMCM cache for Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMCacheContent.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2019-01-12
-        Updated:     2020-01-12
+        .SYNOPSIS
+            Returns the content of the MEMCM cache
+        .DESCRIPTION
+            This function will return the content of the MEMCM cache. This is pulled from the UIResource.UIResourceMGR COM Object.
+        .PARAMETER CimSession
+            Provides CimSessions to gather the content of the MEMCM cache from
+        .PARAMETER ComputerName
+            Provides computer names to gather the content of the MEMCM cache from
+        .EXAMPLE
+            C:\PS> Get-CCMCacheContent
+                Returns the content of the MEMCM cache for the local computer
+        .EXAMPLE
+            C:\PS> Get-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321'
+                Returns the content of the MEMCM cache for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMCacheContent.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-01-12
+            Updated:     2020-01-12
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(

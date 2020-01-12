@@ -1,4 +1,26 @@
 function Remove-CCMCacheContent {
+    <#
+        .SYNOPSIS
+            Removes the provided ContentID from the MEMCM cache
+        .DESCRIPTION
+            This function will remove the provided ContentID from the MEMCM cache. This is done using the UIResource.UIResourceMGR COM Object.
+        .PARAMETER CimSession
+            Provides CimSessions to remove the provided ContentID from the MEMCM cache for
+        .PARAMETER ComputerName
+            Provides computer names to remove the provided ContentID from the MEMCM cache for
+        .EXAMPLE
+            C:\PS> Remove-CCMCacheContent -Clear
+                Clears the local MEMCM cache
+        .EXAMPLE
+            C:\PS> Remove-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321' -ContentID TST002FE
+                Removes ContentID TST002FE from the MEMCM cache for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMCacheContent.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-01-12
+            Updated:     2020-01-12
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
