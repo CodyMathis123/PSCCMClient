@@ -18,7 +18,11 @@ function Invoke-CCMTriggerSchedule {
             Provides computer names to invoke IDs on
         .EXAMPLE
             C:\PS> Invoke-CCMTriggerSchedule -ScheduleID TST20000
-                Performs a TriggerScheduler operation on the TST20000 ScheduleID for the local computer using the default values for Delay and Timeout
+                Performs a TriggerSchedule operation on the TST20000 ScheduleID for the local computer using the default values for Delay and Timeout
+        .EXAMPLE
+            C:\PS> Invoke-CCMTriggerSchedule -ScheduleID '{00000000-0000-0000-0000-000000000021}'
+                Performs a TriggerSchedule operation on the {00000000-0000-0000-0000-000000000021} ScheduleID (Machine Policy Refresh) for the local
+                computer using the default values for Delay and Timeout
         .NOTES
             FileName:    Invoke-CCMTriggerSchedule.ps1
             Author:      Cody Mathis
