@@ -115,32 +115,33 @@ function Invoke-CCMTriggerSchedule {
                                     Invoke-CIMPowerShell @invokeCIMPowerShellSplat
                                 }
                             }
-                            catch [System.UnauthorizedAccessException] {
-                                Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
-                                $MustExit = $true
-                            }
-                            catch {
-                                Write-Warning "Failed to invoke the $ID ScheduleID via CIM. Will retry every 10 seconds until [StopWatch $($StopWatch.Elapsed) -ge $Timeout minutes] Error: $($_.Exception.Message)"
-                                Start-Sleep -Seconds 10
-                            }
                         }
-                        until ($Invocation -or $StopWatch.Elapsed -ge $TimeSpan -or $MustExit)
-                        if ($Invocation) {
-                            Write-Verbose "Successfully invoked the $ID ScheduleID on $Computer via the 'TriggerSchedule' CIM method"
-                            $Result['Invoked'] = $true
-                            Start-Sleep -Seconds $Delay
+                        catch [System.UnauthorizedAccessException] {
+                            Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
+                            $MustExit = $true
                         }
-                        elseif ($StopWatch.Elapsed -ge $TimeSpan) {
-                            Write-Error "Failed to invoke the $ID ScheduleID via CIM after $Timeout minutes of retrying."
-                            $Result['Invoked'] = $false
+                        catch {
+                            Write-Warning "Failed to invoke the $ID ScheduleID via CIM. Will retry every 10 seconds until [StopWatch $($StopWatch.Elapsed) -ge $Timeout minutes] Error: $($_.Exception.Message)"
+                            Start-Sleep -Seconds 10
                         }
-                        $StopWatch.Reset()
-                        [pscustomobject]$Result
                     }
+                    until ($Invocation -or $StopWatch.Elapsed -ge $TimeSpan -or $MustExit)
+                    if ($Invocation) {
+                        Write-Verbose "Successfully invoked the $ID ScheduleID on $Computer via the 'TriggerSchedule' CIM method"
+                        $Result['Invoked'] = $true
+                        Start-Sleep -Seconds $Delay
+                    }
+                    elseif ($StopWatch.Elapsed -ge $TimeSpan) {
+                        Write-Error "Failed to invoke the $ID ScheduleID via CIM after $Timeout minutes of retrying."
+                        $Result['Invoked'] = $false
+                    }
+                    $StopWatch.Reset()
+                    [pscustomobject]$Result
                 }
             }
         }
-        end {
-            Write-Verbose "Following actions invoked - $Schedule"
-        }
     }
+    end {
+        Write-Verbose "Following actions invoked - $Schedule"
+    }
+}

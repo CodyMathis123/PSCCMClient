@@ -24,7 +24,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-01-07
+            Updated:     2020-01-11
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -49,19 +49,15 @@ function Invoke-CCMClientAction {
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
 
+        $connectionSplat = @{ }
+        $invokeClientActionSplat = @{ }
         $getFullHINVSplat = @{
             Namespace   = 'root\ccm\invagt'
             ClassName   = 'InventoryActionStatus'
             ErrorAction = 'Stop'
         }
-        $invokeClientActionSplat = @{
-            MethodName  = 'TriggerSchedule'
-            Namespace   = 'root\ccm'
-            ClassName   = 'sms_client'
-            ErrorAction = 'Stop'
-        }
         $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMClientAction'
+            FunctionsToLoad = 'Invoke-CCMClientAction', 'Invoke-CCMTriggerSchedule'
         }
     }
     process {
@@ -73,24 +69,18 @@ function Invoke-CCMClientAction {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getFullHINVSplat.Remove('ComputerName')
-                                $getFullHINVSplat['CimSession'] = $ExistingCimSession
-                                $invokeCIMPowerShellSplat.Remove('ComputerName')
-                                $invokeCIMPowerShellSplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getFullHINVSplat.Remove('CimSession')
-                                $getFullHINVSplat['ComputerName'] = $Connection
-                                $invokeCIMPowerShellSplat.Remove('CimSession')
-                                $invokeCIMPowerShellSplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $getFullHINVSplat.Remove('CimSession')
-                            $getFullHINVSplat.Remove('ComputerName')
-                            $invokeCIMPowerShellSplat.Remove('CimSession')
-                            $invokeCIMPowerShellSplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -98,10 +88,8 @@ function Invoke-CCMClientAction {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getFullHINVSplat.Remove('ComputerName')
-                    $invokeCIMPowerShellSplat.Remove('ComputerName')
-                    $getFullHINVSplat['CimSession'] = $Connection
-                    $invokeCIMPowerShellSplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
@@ -148,7 +136,7 @@ function Invoke-CCMClientAction {
                                 $getFullHINVSplat['Filter'] = "InventoryActionID ='$Action'"
 
                                 Write-Verbose "Attempting to delete Hardware Inventory history for $Computer as a FullHardwareInv was requested"
-                                $HWInv = Get-CimInstance @getFullHINVSplat
+                                $HWInv = Get-CimInstance @getFullHINVSplat @connectionSplat
                                 if ($null -ne $HWInv) {
                                     Remove-CimInstance -InputObject $HWInv
                                     Write-Verbose "Hardware Inventory history deleted for $Computer"
@@ -157,19 +145,17 @@ function Invoke-CCMClientAction {
                                     Write-Verbose "No Hardware Inventory history to delete for $Computer"
                                 }
                             }
-                            $invokeClientActionSplat['Arguments'] = @{
-                                sScheduleID = $Action
-                            }
+                            $invokeClientActionSplat['ScheduleID'] = $Action
 
                             Write-Verbose "Triggering a $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
                             $Invocation = switch ($Computer -eq $env:ComputerName) {
                                 $true {
-                                    Invoke-CimMethod @invokeClientActionSplat
+                                    Invoke-CCMTriggerSchedule @invokeClientActionSplat
                                 }
                                 $false {
                                     $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
                                     $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat
+                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                                 }
                             }
                         }
