@@ -132,13 +132,13 @@ function Invoke-CCMBaseline {
                     $Baselines = Get-CimInstance @getBaselineSplat
                 }
                 catch {
-                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
+                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
                     # Maybe write a function???
                     Write-Error "Failed to query for baselines on $Computer - $_"
                 }
                 #endregion Query WMI for Configuration Baselines based off DisplayName
 
-                #region Based on results of WMI Query, identify arguments and invoke TriggerEvaluation
+                #region Based on results of CIM Query, identify arguments and invoke TriggerEvaluation
                 switch ($null -eq $Baselines) {
                     $false {
                         foreach ($BL in $Baselines) {
@@ -169,7 +169,7 @@ function Invoke-CCMBaseline {
                                 #endregion generate a property list of existing arguments to pass to the TriggerEvaluation method. Type is important!
 
                                 #region Trigger the Configuration Baseline to run
-                                Write-Verbose "Identified the Configuration Baseline [BaselineName='$($BL.DisplayName)'] on [ComputerName='$Computer'] will trigger via the 'TriggerEvaluation' WMI method"
+                                Write-Verbose "Identified the Configuration Baseline [BaselineName='$($BL.DisplayName)'] on [ComputerName='$Computer'] will trigger via the 'TriggerEvaluation' CIM method"
                                 $Return['Invoked'] = try {
                                     $Invocation = Invoke-CimMethod @invokeBaselineEvalSplat
                                     switch ($Invocation.ReturnValue) {
@@ -194,7 +194,7 @@ function Invoke-CCMBaseline {
                         Write-Warning "Failed to identify any Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
                     }
                 }
-                #endregion Based on results of WMI Query, identify arguments and invoke TriggerEvaluation
+                #endregion Based on results of CIM Query, identify arguments and invoke TriggerEvaluation
             }
         }
     }

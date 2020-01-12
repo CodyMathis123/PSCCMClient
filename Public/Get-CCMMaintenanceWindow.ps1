@@ -48,7 +48,7 @@ function Get-CCMMaintenanceWindow {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region Create hashtable for mapping MW types, and create WMI filter based on input params
+        #region Create hashtable for mapping MW types, and create CIM filter based on input params
         $MW_Type = @{
             1	=	'All Deployment Service Window'
             2	=	'Program Service Window'
@@ -60,7 +60,7 @@ function Get-CCMMaintenanceWindow {
 
         $RequestedTypesRaw = $MW_Type.Keys.Where( { $MW_Type[$_] -in $MWType } )
         $RequestedTypesFilter = [string]::Format('Type = {0}', [string]::Join(' OR Type =', $RequestedTypesRaw))
-        #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
+        #endregion Create hashtable for mapping MW types, and create CIM filter based on input params
 
         $getMaintenanceWindowSplat = @{
             Namespace = 'root\CCM\ClientSDK'

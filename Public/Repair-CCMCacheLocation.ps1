@@ -3,7 +3,7 @@ function Repair-CCMCacheLocation {
     .SYNOPSIS
         Repairs ConfigMgr cache location from computers via CIM. This cleans up \\ and ccmcache\ccmcache in path
     .DESCRIPTION
-        This function will allow you to clean the existing cache path for multiple computers using CIM queries. 
+        This function will allow you to clean the existing cache path for multiple computers using CIM queries.
         You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
         It will return a hashtable with the computer as key and boolean as value for success
     .PARAMETER CimSession
@@ -21,7 +21,7 @@ function Repair-CCMCacheLocation {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-01-09
+        Updated:     2020-01-11
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -32,8 +32,7 @@ function Repair-CCMCacheLocation {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $GetCCMCacheSplat = @{ }
-        $SetCCMCacheSplat = @{ }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -44,24 +43,18 @@ function Repair-CCMCacheLocation {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $GetCCMCacheSplat.Remove('ComputerName')
-                                $GetCCMCacheSplat['CimSession'] = $ExistingCimSession
-                                $SetCCMCacheSplat.Remove('ComputerName')
-                                $SetCCMCacheSplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $GetCCMCacheSplat.Remove('CimSession')
-                                $GetCCMCacheSplat['ComputerName'] = $Connection
-                                $SetCCMCacheSplat.Remove('CimSession')
-                                $SetCCMCacheSplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $GetCCMCacheSplat.Remove('CimSession')
-                            $GetCCMCacheSplat.Remove('ComputerName')
-                            $SetCCMCacheSplat.Remove('CimSession')
-                            $SetCCMCacheSplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -69,27 +62,25 @@ function Repair-CCMCacheLocation {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $GetCCMCacheSplat.Remove('ComputerName')
-                    $SetCCMCacheSplat.Remove('ComputerName')
-                    $GetCCMCacheSplat['CimSession'] = $Connection
-                    $SetCCMCacheSplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Return = [System.Collections.Specialized.OrderedDictionary]::new()
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Repair CCM Cache Location")) {
-                    $Cache = Get-CCMCache @GetCCMCacheSplat
-                    if ($Cache -is [hashtable]) {
-                        $CurrentLocation = $Cache.$Computer.Location
-                        $NewLocation = $CurrentLocation -replace '\\\\', '\' -replace 'ccmcache\\ccmcache', 'ccmcache' 
+                    $Cache = Get-CCMCache @connectionSplat
+                    if ($Cache -is [pscustomobject]) {
+                        $CurrentLocation = $Cache.Location
+                        $NewLocation = $CurrentLocation -replace '\\\\', '\' -replace 'ccmcache\\ccmcache', 'ccmcache'
                         switch ($NewLocation -eq $CurrentLocation) {
                             $true {
                                 $Return[$Computer] = $true
                             }
                             $false {
-                                $SetCCMCacheSplat['Location'] = $NewLocation
-                                $SetCache = Set-CCMCacheLocation @SetCCMCacheSplat
+                                $connectionSplat['Location'] = $NewLocation
+                                $SetCache = Set-CCMCacheLocation @connectionSplat
                                 $Return[$Computer] = $SetCache.$Computer
                             }
                         }

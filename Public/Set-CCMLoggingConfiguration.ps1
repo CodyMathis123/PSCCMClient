@@ -1,37 +1,46 @@
-function Invoke-CCMResetPolicy {
+function Set-CCMLoggingConfiguration {
     <#
     .SYNOPSIS
-        Invokes a ResetPolicy for the MEMCM client
+        Set ConfigMgr client log configuration from computers via CIM
     .DESCRIPTION
-        This function will force a complete policy reset on a client for multiple computers using CIM queries.
+        This function will allow you to set the ConfigMgr client log configuration for multiple computers using CIM queries.
         You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
-    .PARAMETER ResetType
-        Determins the policy reset type.
-
-        'Purge' will wipe all policy from the machine, forcing a complete redownload, and rebuilt.
-
-        'ForceFull' will simply force the next policy refresh to be a full instead of a delta.
-
-        https://docs.microsoft.com/en-us/previous-versions/system-center/developer/cc143785%28v%3dmsdn.10%29
+    .PARAMETER LogLevel
+        Preferred logging level, either Default, or Verbose
+    .PARAMETER LogMaxSize
+        Maximum log size in Bytes
+    .PARAMETER LogMaxHistory
+        Max number of logs to retain
+    .PARAMETER DebugLogging
+        Set debug logging to on, or off
     .PARAMETER CimSession
-        Provides CimSession to perform a policy reset on
+        Provides CimSession to set log configuration for
     .PARAMETER ComputerName
-        Provides computer names to perform a policy reset on
+        Provides computer names to set log configuration for
     .EXAMPLE
-        C:\PS> Invoke-CCMResetPolicy
-            Reset the policy on the local machine and restarts CCMExec
+        C:\PS> Set-CCMLoggingConfiguration -LogLevel Verbose
+            Sets local computer to use Verbose logging
+    .EXAMPLE
+        C:\PS> Set-CCMLoggingConfiguration -ComputerName 'Workstation1234','Workstation4321' -LogMaxSize 8192000 -LogMaxHistory 2
+            Configure the client to have a max log size of 8mb and retain 2 log files for Workstation1234, and Workstation4321
     .NOTES
-        FileName:    Invoke-CCMResetPolicy.ps1
+        FileName:    Set-CCMLoggingConfiguration.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2019-10-30
+        Created:     2020-01-11
         Updated:     2020-01-11
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Purge', 'ForceFull')]
-        [string]$ResetType = 'Purge',
+        [ValidateSet('Default', 'Verbose', 'None')]
+        [string]$LogLevel,
+        [Parameter(Mandatory = $false)]
+        [int]$LogMaxSize,
+        [Parameter(Mandatory = $false)]
+        [int]$LogMaxHistory,
+        [Parameter(Mandatory = $false)]
+        [bool]$DebugLogging,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -39,26 +48,47 @@ function Invoke-CCMResetPolicy {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $uFlags = switch ($ResetType) {
-            'Purge' {
+        $setLogConfigSplat = @{
+            Namespace   = 'root\ccm'
+            ClassName   = 'SMS_Client'
+            MethodName  = 'SetGlobalLoggingConfiguration'
+            ErrorAction = 'Stop'
+        }
+        $invokeCIMPowerShellSplat = @{
+            FunctionsToLoad = 'Set-CCMLoggingConfiguration'
+        }
+        $ConnectionSplat = @{ }
+        $LogConfigArgs = @{ }
+        $LogLevelInt = switch ($LogLevel) {
+            'None' {
+                2
+            }
+            'Default' {
                 1
             }
-            'ForceFull' {
+            'Verbose' {
                 0
             }
         }
-        $policyResetSplat = @{
-            MethodName = 'ResetPolicy'
-            Namespace  = 'root\ccm'
-            ClassName  = 'sms_client'
-            Arguments  = @{
-                uFlags = [uint32]$uFlags
+        $StringArgs = switch ($PSBoundParameters.Keys) {
+            'LogLevel' {
+                $LogConfigArgs['LogLevel'] = [uint32]$LogLevelInt
+                [string]::Format('-LogLevel {0}', $LogLevel)
+            }
+            'LogMaxSize' {
+                $LogConfigArgs['LogMaxSize'] = [uint32]$LogMaxSize
+                [string]::Format('-LogMaxSize {0}', $LogMaxSize)
+            }
+            'LogMaxHistory' {
+                $LogConfigArgs['LogMaxHistory'] = [uint32]$LogMaxHistory
+                [string]::Format('-LogMaxHistory {0}', $LogMaxHistory)
+            }
+            'DebugLogging' {
+                $LogConfigArgs['DebugLogging'] = [bool]$DebugLogging
+                [string]::Format('-DebugLogging {0}', $DebugLogging)
             }
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMResetPolicy'
-        }
-        $ConnectionSplat = @{ }
+        $setLogConfigSplat['Arguments'] = $LogConfigArgs
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -94,21 +124,23 @@ function Invoke-CCMResetPolicy {
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            $Result['PolicyReset'] = $false
+            $Result['LogConfigChanged'] = $false
 
             try {
                 $Invocation = switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        Invoke-CimMethod @policyResetSplat
+                        Invoke-CimMethod @setLogConfigSplat
                     }
                     $false {
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
+
+                        $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
+                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                         Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
                     }
                 }
                 if ($Invocation) {
-                    Write-Verbose "Successfully invoked policy reset on $Computer via the 'ResetPolicy' CIM method"
-                    $Result['PolicyReset'] = $true
+                    Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"
+                    $Result['LogConfigChanged'] = $true
                 }
                 [pscustomobject]$Result
             }

@@ -21,7 +21,7 @@ Function ConvertFrom-CCMSchedule {
         Description           : Occurs every 2 days effective 11/19/2019 1:04:00 AM
     .NOTES
         This function was created to allow for converting SCCM schedule strings without relying on the SDK / Site Server
-        It also happens to be a TON faster than the Convert-CMSchedule cmdlet and the WMI method on the site server
+        It also happens to be a TON faster than the Convert-CMSchedule cmdlet and the CIM method on the site server
     #>
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
@@ -41,6 +41,10 @@ Function ConvertFrom-CCMSchedule {
 
         #region function to return a formatted day such as 1st, 2nd, or 3rd
         function Get-FancyDay {
+            <#
+                .SYNOPSIS
+                Convert the input 'Day' integer to a 'fancy' value such as 1st, 2nd, 4d, 4th, etc.
+            #>
             param(
                 [int]$Day
             )

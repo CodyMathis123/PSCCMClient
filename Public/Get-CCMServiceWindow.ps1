@@ -54,7 +54,7 @@ function Get-CCMServiceWindow {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region Create hashtable for mapping MW types, and create WMI filter based on input params
+        #region Create hashtable for mapping MW types, and create CIM filter based on input params
         $SW_Type = @{
             1	=	'All Deployment Service Window'
             2	=	'Program Service Window'
@@ -67,7 +67,7 @@ function Get-CCMServiceWindow {
         $RequestedTypesRaw = $SW_Type.Keys.Where( { $SW_Type[$_] -in $SWType } )
 
         $RequestedTypesFilter = [string]::Format('ServiceWindowType = {0}', [string]::Join(' OR ServiceWindowType =', $RequestedTypesRaw))
-        #endregion Create hashtable for mapping MW types, and create WMI filter based on input params
+        #endregion Create hashtable for mapping MW types, and create CIM filter based on input params
         $getServiceWindowSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
             ClassName = 'CCM_ServiceWindow'
