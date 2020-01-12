@@ -87,6 +87,7 @@
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
         'Invoke-CCMResetPolicy',
+        'Invoke-CCMTriggerSchedule',
         'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Repair-CCMCacheLocation',
