@@ -52,12 +52,12 @@ function Get-CCMBaseline {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region Setup our *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
+        #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
         $getBaselineSplat = @{
             Namespace   = 'root\ccm\dcm'
             ErrorAction = 'Stop'
         }
-        #endregion Setup our common *-WMI* parameters that will apply to the WMI cmdlets in use based on input parameters
+        #endregion Setup our common *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
 
         #region hash table for translating compliance status
         $LastComplianceStatus = @{
@@ -116,14 +116,14 @@ function Get-CCMBaseline {
                     $Baselines = Get-CimInstance @getBaselineSplat
                 }
                 catch {
-                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL WMI related queries across the module.
+                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
                     # Maybe write a function???
                     Write-Error "Failed to query for baselines on $Connection - $($_)"
                     continue
                 }
                 #endregion Query WMI for Configuration Baselines based off DisplayName
 
-                #region Based on results of WMI Query, return additional information around compliance and eval time
+                #region Based on results of CIM Query, return additional information around compliance and eval time
                 switch ($null -eq $Baselines) {
                     $false {
                         foreach ($BL in $Baselines) {
@@ -140,7 +140,7 @@ function Get-CCMBaseline {
                         Write-Warning "Failed to identify any Configuration Baselines on [ConnectionName='$Connection'] with [Query=`"$BLQuery`"]"
                     }
                 }
-                #endregion Based on results of WMI Query, return additional information around compliance and eval time
+                #endregion Based on results of CIM Query, return additional information around compliance and eval time
             }
         }
     }

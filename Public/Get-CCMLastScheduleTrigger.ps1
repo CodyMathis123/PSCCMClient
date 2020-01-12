@@ -16,7 +16,7 @@ function Get-CCMLastScheduleTrigger {
         Provides computer names to gather schedule trigger info from
     .EXAMPLE
         C:\PS> Get-CCMLastScheduleTrigger -Schedule 'Hardware Inventory'
-        Returns a [pscustomobject] detailing the schedule trigger history info availble in WMI for Hardware Inventory
+        Returns a [pscustomobject] detailing the schedule trigger history info available in WMI for Hardware Inventory
     .EXAMPLE
         C:\PS> Get-CCMLastScheduleTrigger -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
             Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
@@ -90,7 +90,7 @@ function Get-CCMLastScheduleTrigger {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region hashtable for mapping schedule names to IDs, and create WMI query
+        #region hashtable for mapping schedule names to IDs, and create CIM query
         $ScheduleTypeMap = @{
             'Hardware Inventory'                                                           = '{00000000-0000-0000-0000-000000000001}'
             'Software Inventory'                                                           = '{00000000-0000-0000-0000-000000000002}'
@@ -151,7 +151,7 @@ function Get-CCMLastScheduleTrigger {
             }
         }
         $RequestedScheduleQuery = [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
-        #endregion hashtable for mapping schedule names to IDs, and create WMI query
+        #endregion hashtable for mapping schedule names to IDs, and create CIM query
 
         $getSchedHistSplat = @{
             Namespace = 'root\CCM\Scheduler'

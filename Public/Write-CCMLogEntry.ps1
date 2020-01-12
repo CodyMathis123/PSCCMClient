@@ -3,7 +3,7 @@ Function Write-CCMLogEntry {
     .DESCRIPTION
         Write CMTrace friendly log files with options for log rotation
     .EXAMPLE
-        $Bias = (Get-WmiObject -Class Win32_TimeZone).Bias
+        $Bias = (Get-CimInstance -ClassName Win32_TimeZone).Bias
         $FileName = "myscript_" + (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss') + ".log"
         Write-CCMLogEntry -Value "Writing text to log file" -Severity 1 -Component "Some component name" -FileName $FileName -Folder "C:\Windows\temp" -Bias $Bias -Enable -MaxLogFileSize 1MB -MaxNumOfRotatedLogs 3
     #>

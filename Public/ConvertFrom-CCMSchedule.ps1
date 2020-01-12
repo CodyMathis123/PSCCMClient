@@ -21,7 +21,7 @@ Function ConvertFrom-CCMSchedule {
         Description           : Occurs every 2 days effective 11/19/2019 1:04:00 AM
     .NOTES
         This function was created to allow for converting SCCM schedule strings without relying on the SDK / Site Server
-        It also happens to be a TON faster than the Convert-CMSchedule cmdlet and the WMI method on the site server
+        It also happens to be a TON faster than the Convert-CMSchedule cmdlet and the CIM method on the site server
     #>
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]

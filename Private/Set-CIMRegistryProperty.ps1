@@ -83,13 +83,13 @@ function Set-CIMRegistryProperty {
         # convert RootKey friendly name to the [uint32] equivalent so it can be used later
         $Root = $RootKey[$RegRoot]
 
-        #region define our hash tables for parameters to pass to Get-WMIObject and our return hash table
+        #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $setCIMRegPropSplat = @{
             Namespace   = 'root\default'
             ClassName   = 'StdRegProv'
             ErrorAction = 'Stop'
         }
-        #endregion define our hash tables for parameters to pass to Get-WMIObject and our return hash table
+        #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
 
         $PropertyTypeMap = @{
             SetDWORDValue          = [UInt32]

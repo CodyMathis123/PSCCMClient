@@ -27,12 +27,12 @@ function Get-CCMPrimaryUser {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        #region define our hash tables for parameters to pass to Get-WMIObject and our return hash table
+        #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $getPrimaryUserSplat = @{
             NameSpace = 'root\CCM\CIModels'
             Query     = 'SELECT User from CCM_PrimaryUser'
         }
-        #endregion define our hash tables for parameters to pass to Get-WMIObject and our return hash table
+        #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
