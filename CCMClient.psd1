@@ -90,6 +90,7 @@
         'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Repair-CCMCacheLocation',
+        'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
         'Set-CCMLoggingConfiguration',
