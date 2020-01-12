@@ -12,6 +12,7 @@ Current list of functions:
 * ConvertFrom-CCMSchedule
 * Get-CCMBaseline
 * Get-CCMCache
+* Get-CCMCacheContent
 * Get-CCMClientDirectory
 * Get-CCMLastHardwareInventory
 * Get-CCMLastHeartbeat
@@ -30,6 +31,7 @@ Current list of functions:
 * Invoke-CCMTriggerSchedule
 * Invoke-CCMUpdate
 * Invoke-CIMPowerShell
+* Remove-CCMCacheContent
 * Repair-CCMCacheLocation
 * Reset-CCMLoggingConfiguration
 * Set-CCMCacheLocation

@@ -1,7 +1,7 @@
 function Remove-CCMCacheContent {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string[]]$ContentID,
         [parameter(Mandatory = $false)]
         [switch]$Clear,
@@ -22,18 +22,6 @@ function Remove-CCMCacheContent {
         $connectionSplat = @{ }
         $invokeCIMPowerShellSplat = @{
             FunctionsToLoad = 'Remove-CCMCacheContent'
-        }
-
-        $removeCacheContentArgs = switch ($PSBoundParameters.Keys) {
-            'ContentID' {
-                [string]::Format('-ContentID "{0}"', [string]::Join('", "', $ContentID))
-            }
-            'Clear' {
-                '-Clear'
-            }
-            'Force' {
-                '-Force'
-            }
         }
     }
     process {
@@ -68,7 +56,18 @@ function Remove-CCMCacheContent {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ContentID = '$($ContentID -join '; ')'", "Remove-CCMCacheContent")) {
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ContentID = '$($ContentID -join '; ')]'", "Remove-CCMCacheContent")) {
+                $removeCacheContentArgs = switch ($PSBoundParameters.Keys) {
+                    'ContentID' {
+                        [string]::Format('-ContentID "{0}"', [string]::Join('", "', $ContentID))
+                    }
+                    'Clear' {
+                        '-Clear'
+                    }
+                    'Force' {
+                        '-Force'
+                    }
+                }
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
                         # This needs replaced with Get-CCMCacheContent once it is written!!!
