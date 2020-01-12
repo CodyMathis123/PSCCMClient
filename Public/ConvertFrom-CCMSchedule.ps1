@@ -41,6 +41,10 @@ Function ConvertFrom-CCMSchedule {
 
         #region function to return a formatted day such as 1st, 2nd, or 3rd
         function Get-FancyDay {
+            <#
+                .SYNOPSIS
+                Convert the input 'Day' integer to a 'fancy' value such as 1st, 2nd, 4d, 4th, etc.
+            #>
             param(
                 [int]$Day
             )
