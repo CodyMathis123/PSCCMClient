@@ -4,6 +4,12 @@ function Remove-CCMCacheContent {
             Removes the provided ContentID from the MEMCM cache
         .DESCRIPTION
             This function will remove the provided ContentID from the MEMCM cache. This is done using the UIResource.UIResourceMGR COM Object.
+        .PARAMETER ContentID
+            ContentID that you want removed from the MEMCM cache. An array can be provided
+        .PARAMETER Clear
+            Remove all content from the MEMCM cache
+        .PARAMETER Force
+            Remove content from the cache, even if it is marked for 'persist content in client cache'
         .PARAMETER CimSession
             Provides CimSessions to remove the provided ContentID from the MEMCM cache for
         .PARAMETER ComputerName
@@ -92,7 +98,6 @@ function Remove-CCMCacheContent {
                 }
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        # This needs replaced with Get-CCMCacheContent once it is written!!!
                         $Client = New-Object -ComObject UIResource.UIResourceMGR
                         $Cache = $Client.GetCacheInfo()
                         $CacheContent = $Cache.GetCacheElements()
