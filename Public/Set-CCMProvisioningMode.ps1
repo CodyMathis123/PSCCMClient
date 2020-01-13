@@ -31,7 +31,7 @@ function Set-CCMProvisioningMode {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-09
-        Updated:     2020-01-09
+        Updated:     2020-01-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -48,6 +48,7 @@ function Set-CCMProvisioningMode {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
+        $connectionSplat = @{ }
         [bool]$ProvisioningMode = switch ($Status) {
             'Enabled' {
                 $true
@@ -85,30 +86,18 @@ function Set-CCMProvisioningMode {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $SetProvisioningModeSplat.Remove('ComputerName')
-                                $SetProvisioningModeSplat['CimSession'] = $ExistingCimSession
-                                $invokeCIMPowerShellSplat.Remove('ComputerName')
-                                $invokeCIMPowerShellSplat['CimSession'] = $ExistingCimSession
-                                $setCIMRegistryPropertySplat.Remove('ComputerName')
-                                $setCIMRegistryPropertySplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $SetProvisioningModeSplat.Remove('CimSession')
-                                $SetProvisioningModeSplat['ComputerName'] = $Connection
-                                $invokeCIMPowerShellSplat.Remove('CimSession')
-                                $invokeCIMPowerShellSplat['ComputerName'] = $Connection
-                                $setCIMRegistryPropertySplat.Remove('CimSession')
-                                $setCIMRegistryPropertySplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $SetProvisioningModeSplat.Remove('CimSession')
-                            $SetProvisioningModeSplat.Remove('ComputerName')
-                            $invokeCIMPowerShellSplat.Remove('CimSession')
-                            $invokeCIMPowerShellSplat.Remove('ComputerName')
-                            $setCIMRegistryPropertySplat.Remove('CimSession')
-                            $setCIMRegistryPropertySplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -116,12 +105,8 @@ function Set-CCMProvisioningMode {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $SetProvisioningModeSplat.Remove('ComputerName')
-                    $invokeCIMPowerShellSplat.Remove('ComputerName')
-                    $setCIMRegistryPropertySplat.Remove('ComputerName')
-                    $SetProvisioningModeSplat['CimSession'] = $Connection
-                    $invokeCIMPowerShellSplat['CimSession'] = $Connection
-                    $setCIMRegistryPropertySplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Return = [System.Collections.Specialized.OrderedDictionary]::new()
@@ -139,7 +124,7 @@ function Set-CCMProvisioningMode {
                                 $false {
                                     $ScriptBlock = [string]::Format('Set-CCMProvisioningMode -Status {0}', $Status)
                                     $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat
+                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                                 }
                             }
                             if ($Invocation) {
@@ -148,7 +133,7 @@ function Set-CCMProvisioningMode {
                             }
                         }
                         'ProvisioningMaxMinutes' {
-                            $MaxMinutesChange = Set-CIMRegistryProperty @setCIMRegistryPropertySplat
+                            $MaxMinutesChange = Set-CIMRegistryProperty @setCIMRegistryPropertySplat @connectionSplat
                             if ($MaxMinutesChange[$Computer]) {
                                 Write-Verbose "Successfully set ProvisioningMaxMinutes for $Computer to $ProvisioningMaxMinutes"
                                 $Return['ProvisioningMaxMinutesChanged'] = $true
