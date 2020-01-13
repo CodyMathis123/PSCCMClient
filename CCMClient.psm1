@@ -56,6 +56,7 @@ $ExportModule = @{
     'Get-CCMLogFile',
     'Get-CCMLoggingConfiguration',
     'Get-CCMMaintenanceWindow',
+    'Get-CCMPackage',
     'Get-CCMPrimaryUser',
     'Get-CCMProvisioningMode',
     'Get-CCMServiceWindow',
