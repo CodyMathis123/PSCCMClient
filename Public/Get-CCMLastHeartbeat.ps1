@@ -21,7 +21,7 @@ function Get-CCMLastHeartbeat {
         FileName:    Get-CCMLastHeartbeat.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2019-01-01
+        Created:     2020-01-01
         Updated:     2020-01-05
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]

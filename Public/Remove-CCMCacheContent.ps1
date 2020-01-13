@@ -24,7 +24,7 @@ function Remove-CCMCacheContent {
             FileName:    Get-CCMCacheContent.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
-            Created:     2019-01-12
+            Created:     2020-01-12
             Updated:     2020-01-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
