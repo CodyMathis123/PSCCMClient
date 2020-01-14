@@ -75,6 +75,16 @@ function Invoke-CCMPackage {
         #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
     }
     process {
+        #temp fix for when PSComputerName from pipeline is empty - we assume it is $env:ComputerName
+        switch ($PSCmdlet.ParameterSetName) {
+            'ComputerName' {
+                switch ([string]::IsNullOrWhiteSpace($ComputerName)) {
+                    $true {
+                        $ComputerName = $env:ComputerName
+                    }
+                }
+            }
+        }
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $Computer = switch ($PSCmdlet.ParameterSetName) {
                 'ComputerName' {
