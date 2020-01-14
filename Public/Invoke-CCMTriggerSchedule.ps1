@@ -52,6 +52,7 @@ function Invoke-CCMTriggerSchedule {
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
 
+        $connectionSplat = @{ }
         $invokeClientActionSplat = @{
             MethodName  = 'TriggerSchedule'
             Namespace   = 'root\ccm'
@@ -105,7 +106,7 @@ function Invoke-CCMTriggerSchedule {
                             Remove-Variable MustExit -ErrorAction SilentlyContinue
                             Remove-Variable Invocation -ErrorAction SilentlyContinue
                             $invokeClientActionSplat['Arguments'] = @{
-                                sScheduleID = $Action
+                                sScheduleID = $ID
                             }
 
                             Write-Verbose "Triggering a [ScheduleID = '$SID'] on $Computer via the 'TriggerSchedule' CIM method"
@@ -146,6 +147,6 @@ function Invoke-CCMTriggerSchedule {
         }
     }
     end {
-        Write-Verbose "Following actions invoked - $Schedule"
+        Write-Verbose "Following scheduleID invoked - $ScheduleID"
     }
 }
