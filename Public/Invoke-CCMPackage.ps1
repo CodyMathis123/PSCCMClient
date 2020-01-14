@@ -1,10 +1,11 @@
 function Invoke-CCMPackage {
     <#
     .SYNOPSIS
-        Return deployed packages from a computer
+        Invoke deployed packages on a computer
     .DESCRIPTION
-        Pulls a list of deployed packages from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
-        to Invoke-CCMPackage if desired.
+        This function can invoke a package that is deployed to a computer. It has an optional 'Force' parameter which will
+        temporarily change the RepeatRunBehavioar, and MandatoryAssignments parameters to force a pacakge to run regardless
+        of the schedule and settings assigned to it.
 
         Note that the parameters for filter are all joined together with OR.
     .PARAMETER PackageID
@@ -13,31 +14,41 @@ function Invoke-CCMPackage {
         An array of package names to filter on
     .PARAMETER ProgramName
         An array of program names to filter on
+    .PARAMETER Force
+        Force the package to run by temporarily changing the RepeatRunBehavioar, and MandatoryAssignments parameters as shown below
+
+            Property = @{
+                ADV_RepeatRunBehavior    = 'RerunAlways'
+                ADV_MandatoryAssignments = $true
+            }
     .PARAMETER CimSession
         Provides CimSession to gather deployed package info from
     .PARAMETER ComputerName
         Provides computer names to gather deployed package info from
     .EXAMPLE
         PS> Invoke-CCMPackage
-            Returns all deployed packages listed in WMI on the local computer
+            Invoke all packages listed in WMI on the local computer
     .EXAMPLE
         PS> Invoke-CCMPackage -PackageName 'Software Install' -ProgramName 'Software Install - Silent'
-            Returns all deployed packages listed in WMI on the local computer which have either a package name of 'Software Install' or
+            Invoke the deployed packages listed in WMI on the local computer which has either a package name of 'Software Install' or
             a Program Name of 'Software Install - Silent'
     .NOTES
         FileName:    Invoke-CCMPackage.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-12
-        Updated:     2020-01-12
+        Updated:     2020-01-14
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Alias('PKG_PackageID')]
         [string[]]$PackageID,
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Alias('PKG_Name')]
         [string[]]$PackageName,
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Alias('PRG_ProgramName')]
         [string[]]$ProgramName,
         [Parameter(Mandatory = $false)]
         [switch]$Force,
@@ -104,7 +115,7 @@ function Invoke-CCMPackage {
                         [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $PackageID))
                     }
                     'PackageName' {
-                        [string]::Format('PKG_MIFName = "{0}"', [string]::Join('" OR PKG_MIFName = "', $PackageName))
+                        [string]::Format('PKG_Name = "{0}"', [string]::Join('" OR PKG_Name = "', $PackageName))
                     }
                     'ProgramName' {
                         [string]::Format('PRG_ProgramName = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $ProgramName))
