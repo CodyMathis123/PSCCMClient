@@ -94,7 +94,7 @@ function Get-CCMPackage {
                         [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $PackageID))
                     }
                     'PackageName' {
-                        [string]::Format('PKG_MIFName = "{0}"', [string]::Join('" OR PKG_MIFName = "', $PackageName))
+                        [string]::Format('PKG_Name = "{0}"', [string]::Join('" OR PKG_Name = "', $PackageName))
                     }
                     'ProgramName' {
                         [string]::Format('PRG_ProgramName = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $ProgramName))
