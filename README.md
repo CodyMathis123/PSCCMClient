@@ -28,6 +28,7 @@ Current list of functions:
 * Get-CCMUpdate
 * Invoke-CCMBaseline
 * Invoke-CCMClientAction
+* Invoke-CCMPackage
 * Invoke-CCMResetPolicy
 * Invoke-CCMTriggerSchedule
 * Invoke-CCMUpdate
