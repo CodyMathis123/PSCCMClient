@@ -60,6 +60,7 @@ $ExportModule = @{
     'Get-CCMPrimaryUser',
     'Get-CCMProvisioningMode',
     'Get-CCMServiceWindow',
+    'Get-CCMTaskSequence',
     'Get-CCMUpdate',
     'Invoke-CCMBaseline',
     'Invoke-CCMClientAction',
