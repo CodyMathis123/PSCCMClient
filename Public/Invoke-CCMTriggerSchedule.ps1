@@ -109,17 +109,18 @@ function Invoke-CCMTriggerSchedule {
                                 sScheduleID = $ID
                             }
 
-                            Write-Verbose "Triggering a [ScheduleID = '$SID'] on $Computer via the 'TriggerSchedule' CIM method"
+                            Write-Verbose "Triggering a [ScheduleID = '$ID'] on $Computer via the 'TriggerSchedule' CIM method"
                             $Invocation = switch ($Computer -eq $env:ComputerName) {
                                 $true {
                                     Invoke-CimMethod @invokeClientActionSplat
                                 }
                                 $false {
-                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
+                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID {0} -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
                                     $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat
+                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                                 }
                             }
+                            $Invocation
                         }
                         catch [System.UnauthorizedAccessException] {
                             Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
