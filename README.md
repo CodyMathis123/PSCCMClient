@@ -34,6 +34,7 @@ Current list of functions:
 * Invoke-CCMTriggerSchedule
 * Invoke-CCMUpdate
 * Invoke-CIMPowerShell
+* Invoke-CCMTaskSequence
 * Remove-CCMCacheContent
 * Repair-CCMCacheLocation
 * Reset-CCMLoggingConfiguration
