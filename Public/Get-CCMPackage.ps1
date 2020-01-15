@@ -85,8 +85,6 @@ function Get-CCMPackage {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
-            $Result['ComputerName'] = $Computer
 
             try {
                 $FilterParts = switch ($PSBoundParameters.Keys) {
@@ -112,9 +110,7 @@ function Get-CCMPackage {
 
                 [ciminstance[]]$Packages = Get-CimInstance @getPackageSplat @connectionSplat
                 if ($Packages -is [Object] -and $Packages.Count -gt 0) {
-
-                    $Packages
-                    #[PSCustomObject]$Result
+                    Write-Output -InputObject $Packages
                 }
                 else {
                     Write-Warning "No deployed package found for $Computer based on input filters"
