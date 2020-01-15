@@ -120,7 +120,6 @@ function Invoke-CCMTriggerSchedule {
                                     Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                                 }
                             }
-                            $Invocation
                         }
                         catch [System.UnauthorizedAccessException] {
                             Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
