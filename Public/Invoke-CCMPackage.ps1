@@ -39,7 +39,7 @@ function Invoke-CCMPackage {
         Created:     2020-01-12
         Updated:     2020-01-14
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [Alias('PKG_PackageID')]
@@ -76,15 +76,15 @@ function Invoke-CCMPackage {
     }
     process {
         #temp fix for when PSComputerName from pipeline is empty - we assume it is $env:ComputerName
-        switch ($PSCmdlet.ParameterSetName) {
-            'ComputerName' {
-                switch ([string]::IsNullOrWhiteSpace($ComputerName)) {
-                    $true {
-                        $ComputerName = $env:ComputerName
-                    }
-                }
-            }
-        }
+        # switch ($PSCmdlet.ParameterSetName) {
+        #     'ComputerName' {
+        #         switch ([string]::IsNullOrWhiteSpace($ComputerName)) {
+        #             $true {
+        #                 $ComputerName = $env:ComputerName
+        #             }
+        #         }
+        #     }
+        # }
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $Computer = switch ($PSCmdlet.ParameterSetName) {
                 'ComputerName' {
@@ -119,55 +119,57 @@ function Invoke-CCMPackage {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            try {
-                $FilterParts = switch ($PSBoundParameters.Keys) {
-                    'PackageID' {
-                        [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $PackageID))
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Invoke-CCMPackage")) {
+                try {
+                    $FilterParts = switch ($PSBoundParameters.Keys) {
+                        'PackageID' {
+                            [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $PackageID))
+                        }
+                        'PackageName' {
+                            [string]::Format('PKG_Name = "{0}"', [string]::Join('" OR PKG_Name = "', $PackageName))
+                        }
+                        'ProgramName' {
+                            [string]::Format('PRG_ProgramName = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $ProgramName))
+                        }
                     }
-                    'PackageName' {
-                        [string]::Format('PKG_Name = "{0}"', [string]::Join('" OR PKG_Name = "', $PackageName))
+                    $Filter = switch ($null -ne $FilterParts) {
+                        $true {
+                            [string]::Format(' WHERE {0}', [string]::Join(' OR ', $FilterParts))
+                        }
+                        $false {
+                            ' '
+                        }
                     }
-                    'ProgramName' {
-                        [string]::Format('PRG_ProgramName = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $ProgramName))
-                    }
-                }
-                $Filter = switch ($null -ne $FilterParts) {
-                    $true {
-                        [string]::Format(' WHERE {0}', [string]::Join(' OR ', $FilterParts))
-                    }
-                    $false {
-                        ' '
-                    }
-                }
-                $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_SoftwareDistribution{0}', $Filter)
+                    $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_SoftwareDistribution{0}', $Filter)
 
-                [ciminstance[]]$Packages = Get-CimInstance @getPackageSplat @connectionSplat
-                if ($Packages -is [Object] -and $Packages.Count -gt 0) {
-                    foreach ($Advertisement in $Packages) {
-                        switch ($Force.IsPresent) {
-                            $true {
-                                Write-Verbose "Force parameter present - Setting package to always rerun"
-                                $setAlwaysRerunSplat['InputObject'] = $Advertisement
-                                Set-CimInstance @setAlwaysRerunSplat @connectionSplat
+                    [ciminstance[]]$Packages = Get-CimInstance @getPackageSplat @connectionSplat
+                    if ($Packages -is [Object] -and $Packages.Count -gt 0) {
+                        foreach ($Advertisement in $Packages) {
+                            switch ($Force.IsPresent) {
+                                $true {
+                                    Write-Verbose "Force parameter present - Setting package to always rerun"
+                                    $setAlwaysRerunSplat['InputObject'] = $Advertisement
+                                    Set-CimInstance @setAlwaysRerunSplat @connectionSplat
+                                }
+                            }
+                            $getPackageSplat['Query'] = [string]::Format("SELECT ScheduledMessageID FROM CCM_Scheduler_ScheduledMessage WHERE ScheduledMessageID LIKE '{0}%'", $Advertisement.ADV_AdvertisementID)
+                            $ScheduledMessageID = Get-CimInstance @getPackageSplat @connectionSplat
+                            if ($null -ne $ScheduledMessageID) {
+                                Invoke-CCMTriggerSchedule -ScheduleID $ScheduledMessageID.ScheduledMessageID @connectionSplat
+                            }
+                            else {
+                                Write-Warning "No ScheduledMessageID found for $Computer based on input filters"
                             }
                         }
-                        $getPackageSplat['Query'] = [string]::Format("SELECT ScheduledMessageID FROM CCM_Scheduler_ScheduledMessage WHERE ScheduledMessageID LIKE '{0}%'", $Advertisement.ADV_AdvertisementID)
-                        $ScheduledMessageID = Get-CimInstance @getPackageSplat @connectionSplat
-                        if ($null -ne $ScheduledMessageID) {
-                            Invoke-CCMTriggerSchedule -ScheduleID $ScheduledMessageID.ScheduledMessageID @connectionSplat
-                        }
-                        else {
-                            Write-Warning "No ScheduledMessageID found for $Computer based on input filters"
-                        }
+                    }
+                    else {
+                        Write-Warning "No deployed package found for $Computer based on input filters"
                     }
                 }
-                else {
-                    Write-Warning "No deployed package found for $Computer based on input filters"
+                catch {
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Error $ErrorMessage
                 }
-            }
-            catch {
-                $ErrorMessage = $_.Exception.Message
-                Write-Error $ErrorMessage
             }
         }
     }

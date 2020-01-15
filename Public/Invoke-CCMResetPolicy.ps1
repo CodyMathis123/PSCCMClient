@@ -95,26 +95,27 @@ function Invoke-CCMResetPolicy {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
             $Result['PolicyReset'] = $false
-
-            try {
-                $Invocation = switch ($Computer -eq $env:ComputerName) {
-                    $true {
-                        Invoke-CimMethod @policyResetSplat
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ResetType = '$ResetType']", "Reset CCM Policy")) {
+                try {
+                    $Invocation = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Invoke-CimMethod @policyResetSplat
+                        }
+                        $false {
+                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
+                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                        }
                     }
-                    $false {
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                    if ($Invocation) {
+                        Write-Verbose "Successfully invoked policy reset on $Computer via the 'ResetPolicy' CIM method"
+                        $Result['PolicyReset'] = $true
                     }
+                    [pscustomobject]$Result
                 }
-                if ($Invocation) {
-                    Write-Verbose "Successfully invoked policy reset on $Computer via the 'ResetPolicy' CIM method"
-                    $Result['PolicyReset'] = $true
+                catch {
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Error $ErrorMessage
                 }
-                [pscustomobject]$Result
-            }
-            catch {
-                $ErrorMessage = $_.Exception.Message
-                Write-Error $ErrorMessage
             }
         }
     }
