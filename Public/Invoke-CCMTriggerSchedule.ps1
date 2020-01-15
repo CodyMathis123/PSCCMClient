@@ -146,7 +146,4 @@ function Invoke-CCMTriggerSchedule {
             }
         }
     }
-    end {
-        Write-Verbose "Following scheduleID invoked - $ScheduleID"
-    }
 }
