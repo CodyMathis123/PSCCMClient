@@ -37,13 +37,14 @@ function Set-CCMCacheLocation {
         [ValidateScript( { -not $_.EndsWith('\') } )]
         [string]$Location,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {       
-        $FullCachePath = switch ($Location.ToLowerInvariant().EndsWith('ccmcache')) {
+        $connectionSplat = @{ }
+        $FullCachePath = switch ($Location.EndsWith('ccmcache', 'CurrentCultureIgnoreCase')) {
             $true {
                 Write-Output $Location
             }
@@ -60,10 +61,6 @@ function Set-CCMCacheLocation {
         $SetCacheSplat = @{
             ScriptBlock = $SetCacheScriptblock
         }
-
-        $CacheSplat = @{
-            ErrorAction = 'Stop'
-        }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -74,24 +71,18 @@ function Set-CCMCacheLocation {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $GetCacheSplat.Remove('ComputerName')
-                                $GetCacheSplat['CimSession'] = $ExistingCimSession
-                                $SetCacheSplat.Remove('ComputerName')
-                                $SetCacheSplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $GetCacheSplat.Remove('CimSession')
-                                $GetCacheSplat['ComputerName'] = $Connection
-                                $SetCacheSplat.Remove('CimSession')
-                                $SetCacheSplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $GetCacheSplat.Remove('CimSession')
-                            $GetCacheSplat.Remove('ComputerName')
-                            $SetCacheSplat.Remove('CimSession')
-                            $SetCacheSplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -99,17 +90,15 @@ function Set-CCMCacheLocation {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $GetCacheSplat.Remove('ComputerName')
-                    $SetCacheSplat.Remove('ComputerName')
-                    $GetCacheSplat['CimSession'] = $Connection
-                    $SetCacheSplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Return = [System.Collections.Specialized.OrderedDictionary]::new()
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Location = '$Location']", "Set CCM Cache Location")) {
-                    $Cache = Get-CimInstance @GetCacheSplat @CacheSplat
+                    $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
                     if ($Cache -is [object]) {
                         switch ($Cache.Location) {
                             $FullCachePath {
@@ -121,10 +110,10 @@ function Set-CCMCacheLocation {
                                         . $SetCacheScriptblock
                                     }
                                     $false {
-                                        Invoke-CIMPowerShell @SetCacheSplat
+                                        Invoke-CIMPowerShell @SetCacheSplat @connectionSplat
                                     }
                                 }
-                                $Cache = Get-CimInstance @GetCacheSplat @CacheSplat
+                                $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
                                 switch ($Cache.Location) {
                                     $FullCachePath {
                                         $Return[$Computer] = $true

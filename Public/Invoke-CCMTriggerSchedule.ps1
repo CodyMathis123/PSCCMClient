@@ -44,14 +44,15 @@ function Invoke-CCMTriggerSchedule {
         [ValidateNotNullOrEmpty()]
         [int]$Timeout = 5,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
 
+        $connectionSplat = @{ }
         $invokeClientActionSplat = @{
             MethodName  = 'TriggerSchedule'
             Namespace   = 'root\ccm'
@@ -105,18 +106,18 @@ function Invoke-CCMTriggerSchedule {
                             Remove-Variable MustExit -ErrorAction SilentlyContinue
                             Remove-Variable Invocation -ErrorAction SilentlyContinue
                             $invokeClientActionSplat['Arguments'] = @{
-                                sScheduleID = $Action
+                                sScheduleID = $ID
                             }
 
-                            Write-Verbose "Triggering a [ScheduleID = '$SID'] on $Computer via the 'TriggerSchedule' CIM method"
+                            Write-Verbose "Triggering a [ScheduleID = '$ID'] on $Computer via the 'TriggerSchedule' CIM method"
                             $Invocation = switch ($Computer -eq $env:ComputerName) {
                                 $true {
                                     Invoke-CimMethod @invokeClientActionSplat
                                 }
                                 $false {
-                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
+                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID {0} -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
                                     $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat
+                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                                 }
                             }
                         }
@@ -144,8 +145,5 @@ function Invoke-CCMTriggerSchedule {
                 }
             }
         }
-    }
-    end {
-        Write-Verbose "Following actions invoked - $Schedule"
     }
 }

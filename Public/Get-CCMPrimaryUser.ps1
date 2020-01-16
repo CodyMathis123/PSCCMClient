@@ -15,15 +15,15 @@ function Get-CCMPrimaryUser {
         FileName:    Get-CCMPrimaryUser.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2019-01-05
+        Created:     2020-01-05
         Updated:     2020-01-05
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {

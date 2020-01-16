@@ -50,12 +50,13 @@ function Invoke-CCMBaseline {
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string[]]$BaselineName = 'NotSpecified',
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
+        $connectionSplat = @{ }
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
         $getBaselineSplat = @{
             Namespace   = 'root\ccm\dcm'
@@ -93,18 +94,18 @@ function Invoke-CCMBaseline {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getBaselineSplat['CimSession'] = $ExistingCimSession
-                                $invokeBaselineEvalSplat['CimSession'] = $ExistingCimSession
+                                $ConnectionSplat.Remove('ComputerName')
+                                $ConnectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getBaselineSplat.Remove('CimSession')
-                                $getBaselineSplat['ComputerName'] = $Connection
-                                $invokeBaselineEvalSplat.Remove('CimSession')
-                                $invokeBaselineEvalSplat['ComputerName'] = $Connection
+                                $ConnectionSplat.Remove('CimSession')
+                                $ConnectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
+                            $ConnectionSplat.Remove('CimSession')
+                            $ConnectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -112,8 +113,8 @@ function Invoke-CCMBaseline {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getBaselineSplat[($PSCmdlet.ParameterSetName)] = $Connection
-                    $invokeBaselineEvalSplat[($PSCmdlet.ParameterSetName)] = $Connection
+                    $ConnectionSplat.Remove('ComputerName')
+                    $ConnectionSplat['CimSession'] = $Connection
                 }
             }
             foreach ($BLName in $BaselineName) {
@@ -129,7 +130,7 @@ function Invoke-CCMBaseline {
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
                 $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-CimInstance @getBaselineSplat
+                    $Baselines = Get-CimInstance @getBaselineSplat @connectionSplat
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
@@ -171,7 +172,7 @@ function Invoke-CCMBaseline {
                                 #region Trigger the Configuration Baseline to run
                                 Write-Verbose "Identified the Configuration Baseline [BaselineName='$($BL.DisplayName)'] on [ComputerName='$Computer'] will trigger via the 'TriggerEvaluation' CIM method"
                                 $Return['Invoked'] = try {
-                                    $Invocation = Invoke-CimMethod @invokeBaselineEvalSplat
+                                    $Invocation = Invoke-CimMethod @invokeBaselineEvalSplat @connectionSplat
                                     switch ($Invocation.ReturnValue) {
                                         0 {
                                             $true

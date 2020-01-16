@@ -1,4 +1,32 @@
 function Remove-CCMCacheContent {
+    <#
+        .SYNOPSIS
+            Removes the provided ContentID from the MEMCM cache
+        .DESCRIPTION
+            This function will remove the provided ContentID from the MEMCM cache. This is done using the UIResource.UIResourceMGR COM Object.
+        .PARAMETER ContentID
+            ContentID that you want removed from the MEMCM cache. An array can be provided
+        .PARAMETER Clear
+            Remove all content from the MEMCM cache
+        .PARAMETER Force
+            Remove content from the cache, even if it is marked for 'persist content in client cache'
+        .PARAMETER CimSession
+            Provides CimSessions to remove the provided ContentID from the MEMCM cache for
+        .PARAMETER ComputerName
+            Provides computer names to remove the provided ContentID from the MEMCM cache for
+        .EXAMPLE
+            C:\PS> Remove-CCMCacheContent -Clear
+                Clears the local MEMCM cache
+        .EXAMPLE
+            C:\PS> Remove-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321' -ContentID TST002FE
+                Removes ContentID TST002FE from the MEMCM cache for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMCacheContent.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-12
+            Updated:     2020-01-12
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
@@ -8,9 +36,9 @@ function Remove-CCMCacheContent {
         [parameter(Mandatory = $false)]
         [switch]$Force,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Alias('Connection', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
@@ -70,7 +98,6 @@ function Remove-CCMCacheContent {
                 }
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        # This needs replaced with Get-CCMCacheContent once it is written!!!
                         $Client = New-Object -ComObject UIResource.UIResourceMGR
                         $Cache = $Client.GetCacheInfo()
                         $CacheContent = $Cache.GetCacheElements()
