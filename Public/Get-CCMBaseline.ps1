@@ -46,7 +46,7 @@ function Get-CCMBaseline {
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string[]]$BaselineName = 'NotSpecified',
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [CimSession[]]$CimSession,
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
