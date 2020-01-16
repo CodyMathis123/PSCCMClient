@@ -89,7 +89,7 @@ function Get-CCMPackage {
             try {
                 $FilterParts = switch ($PSBoundParameters.Keys) {
                     'PackageID' {
-                        [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PRG_ProgramName = "', $PackageID))
+                        [string]::Format('PKG_PackageID = "{0}"', [string]::Join('" OR PKG_PackageID = "', $PackageID))
                     }
                     'PackageName' {
                         [string]::Format('PKG_Name = "{0}"', [string]::Join('" OR PKG_Name = "', $PackageName))
