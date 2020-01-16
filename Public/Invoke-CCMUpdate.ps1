@@ -30,8 +30,8 @@ function Invoke-CCMUpdate {
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param(
-        [parameter(Mandatory = $false, ValueFromPipeline)]
-        [ciminstance[]]$Updates,
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ArticleID,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -75,9 +75,7 @@ function Invoke-CCMUpdate {
             ClassName  = 'CCM_SoftwareUpdatesManager'
         }
         $getUpdateSplat = @{
-            Filter    = "ComplianceState=0"
             Namespace = 'root\CCM\ClientSDK'
-            ClassName = 'CCM_SoftwareUpdate'
         }
         $invokeCIMPowerShellSplat = @{
             FunctionsToLoad = 'Invoke-CCMUpdate'
@@ -121,28 +119,34 @@ function Invoke-CCMUpdate {
 
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Invoke-CCMUpdate")) {
                 try {
-                    if ($PSBoundParameters.ContainsKey('Updates')) {
+                    $getUpdateSplat['Query'] = switch ($PSBoundParameters.ContainsKey('ArticleID')) {
+                        $true {
+                            [string]::Format('SELECT * FROM CCM_SoftwareUpdate WHERE ComplianceState = 0 AND (ArticleID = "{0}")', [string]::Join('" OR ArticleID = "', $ArticleID))
+                        }
+                        $false {
+                            [string]::Format('SELECT * FROM CCM_SoftwareUpdate WHERE ComplianceState = 0')
+                        }
+                    }
+                    [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @connectionSplat
+                    if ($MissingUpdates -is [ciminstance[]]) {
+                        switch ($PSBoundParameters.ContainsKey('ArticleID')) {
+                            $false {
+                                $ArticleID = $MissingUpdates.ArticleID
+                            }
+                        }
                         $invokeCIMMethodSplat['Arguments'] = @{
-                            CCMUpdates = [ciminstance[]]$Updates
+                            CCMUpdates = [ciminstance[]]$MissingUpdates
                         }
                     }
                     else {
-                        [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @connectionSplat
-                        if ($MissingUpdates -is [ciminstance[]]) {
-                            $invokeCIMMethodSplat['Arguments'] = @{
-                                CCMUpdates = [ciminstance[]]$MissingUpdates
-                            }
-                        }
-                        else {
-                            Write-Output "$Computer has no updates available to invoke"
-                        }
+                        Write-Output "$Computer has no updates available to invoke"
                     }
                     $Invocation = switch ($Computer -eq $env:ComputerName) {
                         $true {
                             Invoke-CimMethod @invokeCIMMethodSplat
                         }
                         $false {
-                            $ScriptBlock = 'Invoke-CCMUpdate'
+                            $ScriptBlock = [string]::Format('Invoke-CCMUpdate -ArticleID {0}', [string]::Join(', ', $ArticleID))
                             $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                         }
