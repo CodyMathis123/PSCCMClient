@@ -3,25 +3,32 @@ function Get-CCMUpdate {
     .SYNOPSIS
         Get pending SCCM patches for a machine
     .DESCRIPTION
-        Uses WMI to find SCCM patches that are currently available on a machine. 
-    .PARAMETER ComputerName
-        Computer name(s) which you want to get pending SCCM patches for
+        Uses CIM to find SCCM patches that are currently available on a machine.
     .PARAMETER IncludeDefs
         A switch that will determine if you want to include AV Definitions in your query
-    .PARAMETER Credential
-        Optional PSCredential
+    .PARAMETER CimSession
+        Computer CimSession(s) which you want to get pending SCCM patches for
+    .PARAMETER ComputerName
+        Computer name(s) which you want to get pending SCCM patches for
     .EXAMPLE
-        PS C:\> Get-CCMUpdates -Computer Testing123
+        PS C:\> Get-CCMUpdate -Computer Testing123
         will return all non-AV Dev patches for computer Testing123
+    .NOTES
+        FileName:    Get-CCMUpdate.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     2020-01-15
+        Updated:     2020-01-15
     #>
-    [cmdletbinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
-        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-        [Alias('Computer', 'PSComputerName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
+        [Parameter(Mandatory = $false)]
         [switch]$IncludeDefs,
-        [parameter(Mandatory = $false)]
-        [system.management.automation.pscredential]$Credential
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [CimSession[]]$CimSession,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
+        [string[]]$ComputerName = $env:ComputerName
     )
     begin {
         $UpdateStatus = @{
@@ -61,22 +68,50 @@ function Get-CCMUpdate {
                 "NOT Name LIKE '%Definition%' and ComplianceState=0"
             }
         }
+
+        $ConnectionSplat = @{ }
+        $getUpdateSplat = @{
+            Filter    = $Filter
+            Namespace = 'root\CCM\ClientSDK'
+            ClassName = 'CCM_SoftwareUpdate'
+        }
     }
     process {
-        foreach ($Computer in $ComputerName) {
+        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
+            $Computer = switch ($PSCmdlet.ParameterSetName) {
+                'ComputerName' {
+                    Write-Output -InputObject $Connection
+                    switch ($Connection -eq $env:ComputerName) {
+                        $false {
+                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
+                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                                $ConnectionSplat.Remove('ComputerName')
+                                $ConnectionSplat['CimSession'] = $ExistingCimSession
+                            }
+                            else {
+                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
+                                $ConnectionSplat.Remove('CimSession')
+                                $ConnectionSplat['ComputerName'] = $Connection
+                            }
+                        }
+                        $true {
+                            $ConnectionSplat.Remove('CimSession')
+                            $ConnectionSplat.Remove('ComputerName')
+                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
+                        }
+                    }
+                }
+                'CimSession' {
+                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
+                    Write-Output -InputObject $Connection.ComputerName
+                    $ConnectionSplat.Remove('ComputerName')
+                    $ConnectionSplat['CimSession'] = $Connection
+                }
+            }
             try {
-                $getWmiObjectSplat = @{
-                    Filter       = $Filter
-                    ComputerName = $Computer
-                    Namespace    = 'root\CCM\ClientSDK'
-                    Class        = 'CCM_SoftwareUpdate'
-                }
-                if ($PSBoundParameters.ContainsKey('Credential')) {
-                    $getWmiObjectSplat.Add('Credential', $Credential)
-                }
-                [System.Management.ManagementObject[]]$MissingUpdates = Get-WmiObject @getWmiObjectSplat
+                [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @ConnectionSplat
                 if ($MissingUpdates -is [Object] -and $MissingUpdates.Count -gt 0) {
-                    $MissingUpdates
+                    Write-Output -InputObject $MissingUpdates
                 }
                 else {
                     Write-Verbose "No updates found for $Computer"
