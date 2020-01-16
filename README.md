@@ -4,6 +4,8 @@ PowerShell module focused around interaction with the Configuration Manager clie
 
 ```Powershell
 Get-CCMUpdate | Invoke-CCMUpdate
+Get-CCMPackage -PackageName 'Install Company Software' -ComputerName Workstation1 | Invoke-CCMPackage
+Get-CCMServiceWindow | ConvertFrom-CCMSchedule
 ```
 
 Largely this is leveraging CIM to gather info, and act upon it. This is why there are custom functions to make registry edits, and gather registry info via CIM.
