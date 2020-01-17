@@ -74,6 +74,7 @@
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
         'Get-CCMClientDirectory',
+        'Get-CCMCurrentManagementPoint',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
         'Get-CCMLastScheduleTrigger',
