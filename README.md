@@ -19,7 +19,7 @@ Current list of functions:
 
 * ConvertFrom-CCMSchedule
 * Get-CCMBaseline
-* Get-CCMCache
+* Get-CCMCacheInfo
 * Get-CCMCacheContent
 * Get-CCMClientDirectory
 * Get-CCMLastHardwareInventory

@@ -46,7 +46,7 @@ $ExportModule = @{
     Alias    = @()
     Function =@('ConvertFromCCMSchedule',
     'Get-CCMBaseline',
-    'Get-CCMCache',
+    'Get-CCMCacheInfo',
     'Get-CCMCacheContent',
     'Get-CCMClientDirectory',
     'Get-CCMLastHardwareInventory',
