@@ -5,3 +5,4 @@
 # TODO - GUID
 # TODO - Client Version
 # TODO - Last HINV,SINV,DDR
+# TODO - Current MP/SUP
