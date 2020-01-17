@@ -3,7 +3,7 @@ function Get-CCMCacheContent {
         .SYNOPSIS
             Returns the content of the MEMCM cache
         .DESCRIPTION
-            This function will return the content of the MEMCM cache. This is pulled from the UIResource.UIResourceMGR COM Object.
+            This function will return the content of the MEMCM cache. This is pulled from the CacheInfoEx WMI Class
         .PARAMETER CimSession
             Provides CimSessions to gather the content of the MEMCM cache from
         .PARAMETER ComputerName
@@ -19,10 +19,10 @@ function Get-CCMCacheContent {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-12
-            Updated:     2020-01-12
+            Updated:     2020-01-16
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
-    param(
+    param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -31,8 +31,10 @@ function Get-CCMCacheContent {
     )
     begin {
         $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Get-CCMCacheContent'
+        $getCacheContentSplat = @{
+            Namespace   = 'root\CCM\SoftMgmtAgent'
+            ClassName   = 'CacheInfoEx'
+            ErrorAction = 'Stop'
         }
     }
     process {
@@ -70,26 +72,25 @@ function Get-CCMCacheContent {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            $CacheContent = switch ($Computer -eq $env:ComputerName) {
-                $true {
-                    $Client = New-Object -ComObject UIResource.UIResourceMGR
-                    $Cache = $Client.GetCacheInfo()
-                    $Cache.GetCacheElements()
-                }
-                $false {
-                    $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create('Get-CCMCacheContent')
-                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+            try {
+                [ciminstance[]]$CacheContent = Get-CimInstance @getCacheContentSplat @connectionSplat
+                if ($CacheContent -is [Object] -and $CacheContent.Count -gt 0) {
+                    foreach ($Item in $CacheContent) {
+                        $Result['ContentId'] = $Item.ContentId
+                        $Result['ContentVersion'] = $Item.ContentVer
+                        $Result['Location'] = $Item.Location
+                        $Result['LastReferenceTime'] = $Item.LastReferenced
+                        $Result['ReferenceCount'] = $Item.ReferenceCount
+                        $Result['ContentSize'] = $Item.ContentSize
+                        $Result['ContentComplete'] = $Item.ContentComplete
+                        $Result['CacheElementId'] = $Item.CacheID
+                        [pscustomobject]$Result
+                    }
                 }
             }
-            foreach ($Item in $CacheContent) {
-                $Result['ContentId'] = $Item.ContentId
-                $Result['ContentVersion'] = $Item.ContentVersion
-                $Result['Location'] = $Item.Location
-                $Result['LastReferenceTime'] = $Item.LastReferenceTime
-                $Result['ReferenceCount'] = $Item.ReferenceCount
-                $Result['ContentSize'] = $Item.ContentSize
-                $Result['CacheElementId'] = $Item.CacheElementId
-                [pscustomobject]$Result
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                Write-Error $ErrorMessage
             }
         }
     }
