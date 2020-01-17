@@ -1,0 +1,1 @@
+# TODO - Write function - can use WMI - option to parse smscfg.ini?

@@ -1,0 +1,1 @@
+# TODO - Write function - ComObject can do it, maybe WMI?

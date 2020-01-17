@@ -1,25 +1,25 @@
-function Get-CCMCacheContent {
+function Get-CCMCurrentSoftwareUpdatePoint {
     <#
-        .SYNOPSIS
-            Returns the content of the MEMCM cache
-        .DESCRIPTION
-            This function will return the content of the MEMCM cache. This is pulled from the CacheInfoEx WMI Class
-        .PARAMETER CimSession
-            Provides CimSessions to gather the content of the MEMCM cache from
-        .PARAMETER ComputerName
-            Provides computer names to gather the content of the MEMCM cache from
-        .EXAMPLE
-            C:\PS> Get-CCMCacheContent
-                Returns the content of the MEMCM cache for the local computer
-        .EXAMPLE
-            C:\PS> Get-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321'
-                Returns the content of the MEMCM cache for Workstation1234, and Workstation4321
-        .NOTES
-            FileName:    Get-CCMCacheContent.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-12
-            Updated:     2020-01-16
+    .SYNOPSIS
+        Returns the current assigned SUP from a client
+    .DESCRIPTION
+        This function will return the current assigned SUP for the client using CIM.
+    .PARAMETER CimSession
+        Provides CimSessions to gather the current assigned SUP from
+    .PARAMETER ComputerName
+        Provides computer names to gather the current assigned SUP from
+    .EXAMPLE
+        C:\PS> Get-CCMCurrentSoftwareUpdatePoint
+            Returns the current assigned SUP from local computer
+    .EXAMPLE
+        C:\PS> Get-CCMCurrentSoftwareUpdatePoint -ComputerName 'Workstation1234','Workstation4321'
+            Returns the current assigned SUP from Workstation1234, and Workstation4321
+    .NOTES
+        FileName:    Get-CCMCurrentSoftwareUpdatePoint.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     2020-01-16
+        Updated:     2020-01-16
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -31,10 +31,9 @@ function Get-CCMCacheContent {
     )
     begin {
         $connectionSplat = @{ }
-        $getCacheContentSplat = @{
-            Namespace   = 'root\CCM\SoftMgmtAgent'
-            ClassName   = 'CacheInfoEx'
-            ErrorAction = 'Stop'
+        $CurrentSUPSplat = @{
+            Namespace = 'root\ccm\SoftwareUpdates\WUAHandler'
+            Query     = 'SELECT ContentLocation FROM CCM_UpdateSource'
         }
     }
     process {
@@ -73,19 +72,15 @@ function Get-CCMCacheContent {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CacheContent = Get-CimInstance @getCacheContentSplat @connectionSplat
-                if ($CacheContent -is [Object] -and $CacheContent.Count -gt 0) {
-                    foreach ($Item in $CacheContent) {
-                        $Result['ContentId'] = $Item.ContentId
-                        $Result['ContentVersion'] = $Item.ContentVer
-                        $Result['Location'] = $Item.Location
-                        $Result['LastReferenceTime'] = $Item.LastReferenced
-                        $Result['ReferenceCount'] = $Item.ReferenceCount
-                        $Result['ContentSize'] = $Item.ContentSize
-                        $Result['ContentComplete'] = $Item.ContentComplete
-                        $Result['CacheElementId'] = $Item.CacheID
-                        [pscustomobject]$Result
+                [ciminstance[]]$CurrentSUP = Get-CimInstance @CurrentSUPSplat @connectionSplat
+                if ($CurrentSUP -is [Object] -and $CurrentSUP.Count -gt 0) {
+                    foreach ($SUP in $CurrentSUP) {
+                        $Result['CurrentSoftwareUpdatePoint'] = $SUP.ContentLocation
+                        [PSCustomObject]$Result
                     }
+                }
+                else {
+                    Write-Warning "No Discovery Data Collection Cycle run found for $Computer"
                 }
             }
             catch {
