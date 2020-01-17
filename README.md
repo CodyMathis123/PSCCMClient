@@ -23,6 +23,7 @@ Current list of functions:
 * Get-CCMCacheContent
 * Get-CCMClientDirectory
 * Get-CCMCurrentManagementPoint
+* Get-CCMCurrentSoftwareUpdatePoint
 * Get-CCMLastHardwareInventory
 * Get-CCMLastHeartbeat
 * Get-CCMLastSoftwareInventory
