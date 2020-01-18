@@ -1,0 +1,1 @@
+# TODO - Wiret function - ComObject or WMI?
