@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.1'
+    ModuleVersion     = '0.1.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -144,6 +144,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.2
+* Adding release notes to manifest
 v0.1.1
 * Update Get-CCMUpdate to translate ComplianceState and EvaluationState
 v0.1.0
