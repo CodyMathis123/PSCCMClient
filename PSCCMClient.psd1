@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.0'
+    ModuleVersion     = '0.1.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -131,7 +131,7 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('SCCM','MEMCM','CIM','ConfigMgr','')
+            Tags = @('SCCM','MEMCM','CIM','ConfigMgr','PowerShell')
 
             # A URL to the license for this module.
             # LicenseUri = ''
@@ -143,7 +143,14 @@
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = @'
+v0.1.2
+* Adding release notes to manifest
+v0.1.1
+* Update Get-CCMUpdate to translate ComplianceState and EvaluationState
+v0.1.0
+* Initial publish to PowerShell Gallary
+'@
 
         } # End of PSData hashtable
 
