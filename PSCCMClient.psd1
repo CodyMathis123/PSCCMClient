@@ -115,7 +115,12 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @()
+    AliasesToExport   = @('Get-CCMLastDDR',
+        'Get-CCMCurrentMP',
+        'Get-CCMCurrentSUP',
+        'Get-CCMMP',
+        'Get-CCMSUP'
+    )
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -132,13 +137,13 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('SCCM','MEMCM','CIM','ConfigMgr','PowerShell')
+            Tags         = @('SCCM', 'MEMCM', 'CIM', 'ConfigMgr', 'PowerShell', 'System Center')
 
             # A URL to the license for this module.
             # LicenseUri = ''
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/CodyMathis123/CCMClient'
+            ProjectUri   = 'https://github.com/CodyMathis123/PSCCMClient'
 
             # A URL to an icon representing this module.
             # IconUri = ''
