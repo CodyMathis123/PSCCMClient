@@ -6,6 +6,7 @@ PowerShell module focused around interaction with the Configuration Manager clie
 Get-CCMUpdate | Invoke-CCMUpdate
 Get-CCMPackage -PackageName 'Install Company Software' -ComputerName Workstation1 | Invoke-CCMPackage
 Get-CCMServiceWindow | ConvertFrom-CCMSchedule
+Get-CCMBaseline -BaselineName 'Cache Management' -CimSession $CimSession1 | Invoke-CCMBaseline
 ```
 
 Largely this is leveraging CIM to gather info, and act upon it. This is why there are custom functions to make registry edits, and gather registry info via CIM.
@@ -13,7 +14,7 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 Some parts of the MEMCM Client do not 'play nice' with CIM remotely. This can be seen with the methods on SMS_CLIENT in the root\CCM Namespace, and by trying to invoke updates, remotely
 with CIM. As a workaround for this, Invoke-CIMPowerShell is used. This functions allows us to remotely execute scriptblocks via CIM with the Create method on Win32_Process.
 
-I encourage anyone that wants to contribute to start picking away!
+I encourage anyone that wants to contribute to start picking away! I'm currently using VSCode to develop this module, and as part of that I'm using the 'TODO Tree' extension to make brief notes regarding future work that needs done. 
 
 Current list of functions:
 
