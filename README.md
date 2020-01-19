@@ -53,5 +53,6 @@ Current list of functions:
 * Set-CCMCacheSize
 * Set-CCMDNSSuffix
 * Set-CCMLoggingConfiguration
+* Set-CCMManagementPoint
 * Set-CCMProvisioningMode
 * Write-CCMLogEntry

@@ -80,6 +80,7 @@ $ExportModule = @{
     'Set-CCMCacheSize',
     'Set-CCMDNSSuffix',
     'Set-CCMLoggingConfiguration',
+    'Set-CCMManagementPoint',
     'Set-CCMProvisioningMode',
     'Write-CCMLogEntry')
     Variable = @()

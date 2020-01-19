@@ -106,6 +106,7 @@
         'Set-CCMCacheSize',
         'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
+        'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
         'Write-CCMLogEntry'
     )
@@ -124,7 +125,8 @@
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
-        'Get-CCMSUP'
+        'Get-CCMSUP',
+        'Set-CCMMP'
     )
 
     # DSC resources to export from this module
@@ -160,6 +162,7 @@ v0.1.3
 * Add Get-CCMDNSSuffix to module
 * Add Get-CCMGUID to module
 * Add Set-CCMDNSSuffix to module
+* Add Set-CCMManagementPoint to module
 * Adding some aliases for MP/SUP/DDR commands
 * Add -whatif support to some functions that should have already had it implemented
 v0.1.2
