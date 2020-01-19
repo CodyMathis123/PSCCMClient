@@ -23,7 +23,7 @@ function Set-CCMDNSSuffix {
             Created:     2020-01-18
             Updated:     2020-01-18
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
         [parameter(Mandatory = $false)]
         [string]$DNSSuffix,
@@ -73,26 +73,27 @@ function Set-CCMDNSSuffix {
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-
-            try {
-                switch ($Computer -eq $env:ComputerName) {
-                    $true {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Client.SetDNSSuffix($DNSSuffix)
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [DNSSuffix = '$DNSSuffix']", "Set-CCMDNSSuffix")) {
+                try {
+                    switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            $Client = New-Object -ComObject Microsoft.SMS.Client
+                            $Client.SetDNSSuffix($DNSSuffix)
+                        }
+                        $false {
+                            $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix ', $DNSSuffix)
+                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                        }
                     }
-                    $false {
-                        $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix ', $DNSSuffix)
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
-                    }
+                    $Result['DNSSuffixSet'] = $true
                 }
-                $Result['DNSSuffixSet'] = $true
+                catch {
+                    $Result['DNSSuffixSet'] = $false
+                    Write-Error "Failure to set DNS Suffix to $DNSSuffix for $Computer - $($_.Exception.Message)"
+                }
+                [pscustomobject]$Result
             }
-            catch {
-                $Result['DNSSuffixSet'] = $false
-                Write-Error "Failure to set DNS Suffix to $DNSSuffix for $Computer - $($_.Exception.Message)"
-            }
-            [pscustomobject]$Result
         }
     }
 }
