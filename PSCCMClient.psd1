@@ -108,6 +108,7 @@
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMSite',
         'Write-CCMLogEntry'
     )
 
@@ -163,6 +164,7 @@ v0.1.3
 * Add Get-CCMGUID to module
 * Add Set-CCMDNSSuffix to module
 * Add Set-CCMManagementPoint to module
+* Add Set-CCMSite to module
 * Adding some aliases for MP/SUP/DDR commands
 * Add -whatif support to some functions that should have already had it implemented
 v0.1.2
