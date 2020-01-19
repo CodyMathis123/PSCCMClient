@@ -29,9 +29,10 @@ function Get-CCMMaintenanceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-08-14
-        Updated:     2020-01-05
+        Updated:     2020-01-18
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMMW')]
     param (
         [parameter(Mandatory = $false)]
         [ValidateSet('All Deployment Service Window',

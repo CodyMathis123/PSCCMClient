@@ -1,28 +1,32 @@
-function Get-CCMDNSSuffix {
+function Set-CCMDNSSuffix {
     <#
         .SYNOPSIS
-            Returns the current DNS suffix set for the MEMCM Client
+            Sets the current DNS suffix for the MEMCM Client
         .DESCRIPTION
-            This function will return the current DNS suffix in use for the MEMCM Client. This is done using the Microsoft.SMS.Client COM Object.
+            This function will set the current DNS suffix for the MEMCM Client. This is done using the Microsoft.SMS.Client COM Object.
+        .PARAMETER DNSSuffix
+            The desired DNS Suffix that will be set for the specified computers/cimsessions
         .PARAMETER CimSession
-            Provides CimSessions to return the current DNS suffix in use for
+            Provides CimSessions to set the current DNS suffix for
         .PARAMETER ComputerName
-            Provides computer names to return the current DNS suffix in use for
+            Provides computer names to set the current DNS suffix for
         .EXAMPLE
-            C:\PS> Get-CCMDNSSuffix
-                Return the local computers DNS Suffix setting
+            C:\PS> Set-CCMDNSSuffix -DNSSuffix 'contoso.com'
+                Sets the local computer's DNS Suffix to contoso.com
         .EXAMPLE
-            C:\PS> Get-CCMDNSSuffix -ComputerName 'Workstation1234','Workstation4321'
-                Return the DNS Suffix setting for Workstation1234, and Workstation4321
+            C:\PS> Set-CCMDNSSuffix -ComputerName 'Workstation1234','Workstation4321' -DNSSuffix 'contoso.com'
+                Sets the DNS Suffix for Workstation1234, and Workstation4321 to contoso.com
         .NOTES
-            FileName:    Get-CCMDNSSuffix.ps1
+            FileName:    Set-CCMDNSSuffix.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
             Updated:     2020-01-18
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
+        [parameter(Mandatory = $false)]
+        [string]$DNSSuffix,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -31,7 +35,9 @@ function Get-CCMDNSSuffix {
     )
     begin {
         $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{ }
+        $invokeCIMPowerShellSplat = @{
+            FunctionsToLoad = 'Set-CCMDNSSuffix'
+        }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -67,21 +73,27 @@ function Get-CCMDNSSuffix {
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-
-            $Result['DNSSuffix'] = switch ($Computer -eq $env:ComputerName) {
-                $true {
-                    $Client = New-Object -ComObject Microsoft.SMS.Client
-                    $Client.GetDNSSuffix()
-                }
-                $false {
-                    $invokeCIMPowerShellSplat['ScriptBlock'] = {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Client.GetDNSSuffix()
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [DNSSuffix = '$DNSSuffix']", "Set-CCMDNSSuffix")) {
+                try {
+                    switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            $Client = New-Object -ComObject Microsoft.SMS.Client
+                            $Client.SetDNSSuffix($DNSSuffix)
+                        }
+                        $false {
+                            $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix {0}', $DNSSuffix)
+                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                        }
                     }
-                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                    $Result['DNSSuffixSet'] = $true
                 }
+                catch {
+                    $Result['DNSSuffixSet'] = $false
+                    Write-Error "Failure to set DNS Suffix to $DNSSuffix for $Computer - $($_.Exception.Message)"
+                }
+                [pscustomobject]$Result
             }
-            [pscustomobject]$Result
         }
     }
 }

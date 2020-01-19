@@ -51,6 +51,7 @@ $ExportModule = @{
     'Get-CCMClientDirectory',
     'Get-CCMCurrentManagementPoint',
     'Get-CCMCurrentSoftwareUpdatePoint',
+    'Get-CCMDNSSuffix',
     'Get-CCMLastHardwareInventory',
     'Get-CCMLastHeartbeat',
     'Get-CCMLastScheduleTrigger',
@@ -77,8 +78,11 @@ $ExportModule = @{
     'Reset-CCMLoggingConfiguration',
     'Set-CCMCacheLocation',
     'Set-CCMCacheSize',
+    'Set-CCMDNSSuffix',
     'Set-CCMLoggingConfiguration',
+    'Set-CCMManagementPoint',
     'Set-CCMProvisioningMode',
+    'Set-CCMSite',
     'Write-CCMLogEntry')
     Variable = @()
 }

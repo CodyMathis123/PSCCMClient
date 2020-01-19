@@ -19,9 +19,9 @@ function Reset-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-11
-        Updated:     2020-01-11
+        Updated:     2020-01-18
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
@@ -76,27 +76,28 @@ function Reset-CCMLoggingConfiguration {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
             $Result['LogConfigChanged'] = $false
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Reset-CCMLoggingConfiguration")) {
+                try {
+                    $Invocation = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Invoke-CimMethod @resetLogConfigSplat
+                        }
+                        $false {
 
-            try {
-                $Invocation = switch ($Computer -eq $env:ComputerName) {
-                    $true {
-                        Invoke-CimMethod @resetLogConfigSplat
+                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
+                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                        }
                     }
-                    $false {
-
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                    if ($Invocation) {
+                        Write-Verbose "Successfully reset log options on $Computer via the 'ResetGlobalLoggingConfiguration' CIM method"
+                        $Result['LogConfigChanged'] = $true
                     }
+                    [pscustomobject]$Result
                 }
-                if ($Invocation) {
-                    Write-Verbose "Successfully reset log options on $Computer via the 'ResetGlobalLoggingConfiguration' CIM method"
-                    $Result['LogConfigChanged'] = $true
+                catch {
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Error $ErrorMessage
                 }
-                [pscustomobject]$Result
-            }
-            catch {
-                $ErrorMessage = $_.Exception.Message
-                Write-Error $ErrorMessage
             }
         }
     }

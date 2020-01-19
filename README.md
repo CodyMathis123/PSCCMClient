@@ -25,6 +25,7 @@ Current list of functions:
 * Get-CCMClientDirectory
 * Get-CCMCurrentManagementPoint
 * Get-CCMCurrentSoftwareUpdatePoint
+* Get-CCMDNSSuffix
 * Get-CCMLastHardwareInventory
 * Get-CCMLastHeartbeat
 * Get-CCMLastSoftwareInventory
@@ -51,6 +52,9 @@ Current list of functions:
 * Reset-CCMLoggingConfiguration
 * Set-CCMCacheLocation
 * Set-CCMCacheSize
+* Set-CCMDNSSuffix
 * Set-CCMLoggingConfiguration
+* Set-CCMManagementPoint
 * Set-CCMProvisioningMode
+* Set-CCMSite
 * Write-CCMLogEntry

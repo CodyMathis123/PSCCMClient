@@ -76,6 +76,8 @@
         'Get-CCMClientDirectory',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
+        'Get-CCMDNSSuffix',
+        'Get-CCMGUID',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
         'Get-CCMLastScheduleTrigger',
@@ -102,8 +104,11 @@
         'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
+        'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMSite',
         'Write-CCMLogEntry'
     )
 
@@ -114,7 +119,16 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @()
+    AliasesToExport   = @('Get-CCMLastDDR',
+        'Get-CCMCurrentMP',
+        'Get-CCMCurrentSUP',
+        'Get-CCMLastHINV',
+        'Get-CCMLastSINV'
+        'Get-CCMMP',
+        'Get-CCMMW',
+        'Get-CCMSUP',
+        'Set-CCMMP'
+    )
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -131,25 +145,34 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('SCCM','MEMCM','CIM','ConfigMgr','PowerShell')
+            Tags         = @('SCCM', 'MEMCM', 'CIM', 'ConfigMgr', 'PowerShell', 'System Center')
 
             # A URL to the license for this module.
             # LicenseUri = ''
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/CodyMathis123/CCMClient'
+            ProjectUri   = 'https://github.com/CodyMathis123/PSCCMClient'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.3
+* Rename Get-CCMSoftwareUpdatePoint.ps1 file to Get-CCMCurrentSoftwareUpdatePoint.ps1 to match function name
+* Add Get-CCMDNSSuffix to module
+* Add Get-CCMGUID to module
+* Add Set-CCMDNSSuffix to module
+* Add Set-CCMManagementPoint to module
+* Add Set-CCMSite to module
+* Adding some aliases for MP/SUP/DDR commands
+* Add -whatif support to some functions that should have already had it implemented
 v0.1.2
 * Adding release notes to manifest
 v0.1.1
 * Update Get-CCMUpdate to translate ComplianceState and EvaluationState
 v0.1.0
-* Initial publish to PowerShell Gallary
+* Initial publish to PowerShell Gallery
 '@
 
         } # End of PSData hashtable

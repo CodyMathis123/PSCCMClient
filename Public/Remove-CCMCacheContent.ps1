@@ -21,7 +21,7 @@ function Remove-CCMCacheContent {
             C:\PS> Remove-CCMCacheContent -ComputerName 'Workstation1234','Workstation4321' -ContentID TST002FE
                 Removes ContentID TST002FE from the MEMCM cache for Workstation1234, and Workstation4321
         .NOTES
-            FileName:    Get-CCMCacheContent.ps1
+            FileName:    Remove-CCMCacheContent.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-12
