@@ -120,7 +120,10 @@
     AliasesToExport   = @('Get-CCMLastDDR',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
+        'Get-CCMLastHINV',
+        'Get-CCMLastSINV'
         'Get-CCMMP',
+        'Get-CCMMW',
         'Get-CCMSUP'
     )
 

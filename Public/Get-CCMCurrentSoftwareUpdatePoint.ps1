@@ -19,7 +19,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-16
-        Updated:     2020-01-16
+        Updated:     2020-01-18
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMCurrentSUP', 'Get-CCMSUP')]

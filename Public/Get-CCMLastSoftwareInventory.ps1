@@ -20,9 +20,10 @@ function Get-CCMLastSoftwareInventory {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-01
-        Updated:     2020-01-05
+        Updated:     2020-01-18
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMLastSINV')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
