@@ -78,6 +78,7 @@ $ExportModule = @{
     'Reset-CCMLoggingConfiguration',
     'Set-CCMCacheLocation',
     'Set-CCMCacheSize',
+    'Set-CCMDNSSuffix',
     'Set-CCMLoggingConfiguration',
     'Set-CCMProvisioningMode',
     'Write-CCMLogEntry')
