@@ -76,6 +76,7 @@
         'Get-CCMClientDirectory',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
+        'Get-CCMDNSSuffix',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
         'Get-CCMLastScheduleTrigger',
@@ -144,6 +145,9 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.3
+* Rename Get-CCMSoftwareUpdatePoint.ps1 file to Get-CCMCurrentSoftwareUpdatePoint.ps1 to match function name
+* Add Get-CCMDNSSuffix to module
 v0.1.2
 * Adding release notes to manifest
 v0.1.1
