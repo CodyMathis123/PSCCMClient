@@ -25,6 +25,7 @@ function Get-CCMLastHeartbeat {
         Updated:     2020-01-05
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMLastDDR')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,

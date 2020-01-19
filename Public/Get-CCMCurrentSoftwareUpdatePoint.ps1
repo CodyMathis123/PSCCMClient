@@ -22,6 +22,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
         Updated:     2020-01-16
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMCurrentSUP', 'Get-CCMSUP')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
@@ -80,7 +81,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
                     }
                 }
                 else {
-                    Write-Warning "No Discovery Data Collection Cycle run found for $Computer"
+                    Write-Warning "No Software Update Point information found for $Computer"
                 }
             }
             catch {
