@@ -153,7 +153,7 @@ v0.1.2
 v0.1.1
 * Update Get-CCMUpdate to translate ComplianceState and EvaluationState
 v0.1.0
-* Initial publish to PowerShell Gallary
+* Initial publish to PowerShell Gallery
 '@
 
         } # End of PSData hashtable
