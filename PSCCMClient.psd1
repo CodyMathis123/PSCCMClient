@@ -89,6 +89,7 @@
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
         'Get-CCMServiceWindow',
+        'Get-CCMSite',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
         'Invoke-CCMBaseline',
@@ -165,6 +166,7 @@ v0.1.3
 * Add Set-CCMDNSSuffix to module
 * Add Set-CCMManagementPoint to module
 * Add Set-CCMSite to module
+* Add Get-CCMSite to module
 * Adding some aliases for MP/SUP/DDR commands
 * Add -whatif support to some functions that should have already had it implemented
 v0.1.2
