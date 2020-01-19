@@ -81,7 +81,7 @@ function Set-CCMDNSSuffix {
                             $Client.SetDNSSuffix($DNSSuffix)
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix ', $DNSSuffix)
+                            $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix {0}', $DNSSuffix)
                             $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                         }
