@@ -90,6 +90,7 @@
         'Get-CCMProvisioningMode',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
+        'Get-CCMSoftwareUpdateGroup',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
         'Invoke-CCMBaseline',
@@ -128,6 +129,7 @@
         'Get-CCMMP',
         'Get-CCMMW',
         'Get-CCMSUP',
+        'Get-CCMSUG',
         'Set-CCMMP'
     )
 
@@ -159,6 +161,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.5
+* Add Get-CCMSoftwareUpdateGroup to module
 v0.1.4
 * Correct alias implementation
 v0.1.3

@@ -38,6 +38,7 @@ Current list of functions:
 * Get-CCMProvisioningMode
 * Get-CCMServiceWindow
 * Get-CCMSite
+* Get-CCMSoftwareUpdateGroup
 * Get-CCMTaskSequence
 * Get-CCMUpdate
 * Invoke-CCMBaseline

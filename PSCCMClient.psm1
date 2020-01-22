@@ -51,6 +51,7 @@ $ExportModule = @{
     'Get-CCMMP',
     'Get-CCMMW',
     'Get-CCMSUP',
+    'Get-CCMSUG',
     'Set-CCMMP'
     )
     Function =@('ConvertFromCCMSchedule',
@@ -73,6 +74,7 @@ $ExportModule = @{
     'Get-CCMProvisioningMode',
     'Get-CCMServiceWindow',
     'Get-CCMSite',
+    'Get-CCMSoftwareUpdateGroup',
     'Get-CCMTaskSequence',
     'Get-CCMUpdate',
     'Invoke-CCMBaseline',
