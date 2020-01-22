@@ -44,6 +44,13 @@ function Get-CCMSoftwareUpdateGroup {
         $getSUGComplianceSplat = @{
             Namespace = 'ROOT\ccm\SoftwareUpdates\DeploymentAgent'
         }
+
+        $suppressRebootMap = @{
+            0 = 'Not Suppressed'
+            1 = 'Workstations Suppressed'
+            2 = 'Servers Suppressed'
+            3 = 'Workstations and Servers Suppressed'
+        }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -115,8 +122,7 @@ function Get-CCMSoftwareUpdateGroup {
                         $Result['NotifyUser'] = $SUG.NotifyUser
                         $Result['OverrideServiceWindows'] = $SUG.OverrideServiceWindows
                         $Result['RebootOutsideOfServiceWindows'] = $SUG.RebootOutsideOfServiceWindows
-                        # TODO - Determine values for SuppressReboot
-                        $Result['SuppressReboot'] = $SUG.SuppressReboot
+                        $Result['SuppressReboot'] = $suppressRebootMap[[int]$SUG.SuppressReboot]
                         $Result['UserUIExperience'] = $xml_Reserved1.SUMReserved.UserUIExperience
                         $Result['WoLEnabled'] = $SUG.WoLEnabled
                         # TODO - Determine if AssignmentAction needs figured out
