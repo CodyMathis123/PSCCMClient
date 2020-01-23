@@ -19,6 +19,7 @@ I encourage anyone that wants to contribute to start picking away! I'm currently
 Current list of functions:
 
 * ConvertFrom-CCMSchedule
+* Get-CCMApplication
 * Get-CCMBaseline
 * Get-CCMCacheInfo
 * Get-CCMCacheContent

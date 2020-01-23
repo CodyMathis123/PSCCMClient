@@ -70,6 +70,7 @@
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @('ConvertFromCCMSchedule',
+        'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
@@ -121,9 +122,10 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMLastDDR',
+    AliasesToExport   = @('Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
+        'Get-CCMLastDDR',
         'Get-CCMLastHINV',
         'Get-CCMLastSINV'
         'Get-CCMMP',
@@ -163,6 +165,8 @@
             ReleaseNotes = @'
 v0.1.5
 * Add Get-CCMSoftwareUpdateGroup to module
+* Add Get-CCMApplication to module
+* Add Get-CCMCB alias to Get-CCMBaseline
 v0.1.4
 * Correct alias implementation
 v0.1.3
