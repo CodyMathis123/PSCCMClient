@@ -1,13 +1,13 @@
-﻿function ConvertTo-Base64StringFromObject
-{
+﻿function ConvertTo-Base64StringFromObject {
+	# TODO - Add help
 	[CmdletBinding()]
 	[OutputType([string])]
 	param
 	(
 		[Parameter(Mandatory = $true,
-				   Position = 0)]
+			Position = 0)]
 		[ValidateNotNullOrEmpty()]
-		[Alias('object', 'data','input')]
+		[Alias('object', 'data', 'input')]
 		[psobject]$inputObject
 	)
 	$tempString = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes([management.automation.psserializer]::Serialize($inputObject)))
