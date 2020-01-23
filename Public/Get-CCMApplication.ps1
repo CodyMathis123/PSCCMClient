@@ -51,6 +51,40 @@ function Get-CCMApplication {
             ClassName = 'CCM_Application'
         }
         #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
+
+        #region EvaluationState hashtable for mapping
+        $evaluationStateMap = @{
+            0  = 'No state information is available.'
+            1  = 'Application is enforced to desired/resolved state.'
+            2  = 'Application is not required on the client.'
+            3  = 'Application is available for enforcement (install or uninstall based on resolved state). Content may/may not have been downloaded.'
+            4  = 'Application last failed to enforce (install/uninstall).'
+            5  = 'Application is currently waiting for content download to complete.'
+            6  = 'Application is currently waiting for content download to complete.'
+            7  = 'Application is currently waiting for its dependencies to download.'
+            8  = 'Application is currently waiting for a service (maintenance) window.'
+            9  = 'Application is currently waiting for a previously pending reboot.'
+            10 =	'Application is currently waiting for serialized enforcement.'
+            11 =	'Application is currently enforcing dependencies.'
+            12 =	'Application is currently enforcing.'
+            13 =	'Application install/uninstall enforced and soft reboot is pending.'
+            14 =	'Application installed/uninstalled and hard reboot is pending.'
+            15 =	'Update is available but pending installation.'
+            16 =	'Application failed to evaluate.'
+            17 =	'Application is currently waiting for an active user session to enforce.'
+            18 =	'Application is currently waiting for all users to logoff.'
+            19 =	'Application is currently waiting for a user logon.'
+            20 =	'Application in progress, waiting for retry.'
+            21 =	'Application is waiting for presentation mode to be switched off.'
+            22 =	'Application is pre-downloading content (downloading outside of install job).'
+            23 =	'Application is pre-downloading dependent content (downloading outside of install job).'
+            24 =	'Application download failed (downloading during install job).'
+            25 =	'Application pre-downloading failed (downloading outside of install job).'
+            26 =	'Download success (downloading during install job).'
+            27 =	'Post-enforce evaluation.'
+            28 =	'Waiting for network connectivity.'
+        }
+        #endregion EvaluationState hashtable for mapping
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
