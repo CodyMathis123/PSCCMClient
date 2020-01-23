@@ -1,4 +1,4 @@
-# TODO - Write function
+# TODO - Finish writing function
 
 Function Invoke-CCMApplication {
 
