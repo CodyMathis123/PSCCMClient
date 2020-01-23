@@ -43,6 +43,7 @@ function Stop-CCMService {
         [pscredential]$Credential
     )
     begin {
+        # ENHANCE - Convert function to CIM
         $getWmiObjectSplat = @{
             Namespace   = 'root\cimv2'
             ErrorAction = 'Stop'

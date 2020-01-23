@@ -1,10 +1,10 @@
-﻿function ConvertFrom-Base64ToObject
-{
+﻿function ConvertFrom-Base64ToObject {
+	# TODO - Add help
 	[CmdletBinding()]
 	param
 	(
 		[Parameter(Mandatory = $true,
-				   Position = 0)]
+			Position = 0)]
 		[ValidateNotNullOrEmpty()]
 		[Alias('string')]
 		[string]$inputString
