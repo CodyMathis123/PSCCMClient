@@ -135,7 +135,7 @@ function Get-CCMSoftwareUpdateGroup {
                         $Result['DPLocality'] = $SUG.DPLocality
                         $Result['ExpirationTime'] = $SUG.ExpirationTime
                         $Result['LogComplianceToWinEvent'] = $SUG.LogComplianceToWinEvent
-                        # TODO - Parse NonComplianceCriticality
+                        # ENHANCE - Parse NonComplianceCriticality
                         $Result['NonComplianceCriticality'] = $SUG.NonComplianceCriticality
                         $Result['PersistOnWriteFilterDevices'] = $SUG.PersistOnWriteFilterDevices
                         $Result['RaiseMomAlertsOnFailure'] = $SUG.RaiseMomAlertsOnFailure
