@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.6'
+    ModuleVersion     = '0.1.7'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -164,6 +164,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.7
+* Correct missing references to Get-CCMGUID
 v0.1.6
 * Improve output of Get-CCMApplication
 v0.1.5
