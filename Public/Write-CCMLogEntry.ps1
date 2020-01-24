@@ -26,9 +26,9 @@ Function Write-CCMLogEntry {
             C:\PS> Write-CCMLogEntry -Value 'Testing Function' -Component 'Test Script' -FileName 'LogTest.Log' -Folder 'c:\temp'
                 Write out 'Testing Function' to the c:\temp\LogTest.Log file in a CMTrace format, noting 'Test Script' as the component.
         .NOTES
-            FileName:    Get-CCMSite.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
+            FileName:    Write-CCMLogEntry.ps1
+            Author:      Cody Mathis, Adam Cook
+            Contact:     @CodyMathis123, @codaamok
             Created:     2020-01-23
             Updated:     2020-01-23
     #>
