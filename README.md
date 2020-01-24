@@ -42,6 +42,7 @@ Current list of functions:
 * Get-CCMSoftwareUpdateGroup
 * Get-CCMTaskSequence
 * Get-CCMUpdate
+* Invoke-CCMApplication
 * Invoke-CCMBaseline
 * Invoke-CCMClientAction
 * Invoke-CCMPackage

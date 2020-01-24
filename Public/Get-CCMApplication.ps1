@@ -27,7 +27,7 @@ function Get-CCMApplication {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-21
-        Updated:     2020-01-22
+        Updated:     2020-01-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -173,7 +173,7 @@ function Get-CCMApplication {
                 [ciminstance[]]$applications = Get-CimInstance @getapplicationsplat @connectionSplat
                 if ($applications -is [Object] -and $applications.Count -gt 0) {
                     #region Filterering is not possible on the CCM_Application class, so instead we loop and compare properties to filter
-                    $Condition = switch ($FilterParts -is [string[]]) {
+                    $Condition = switch ($null -ne $FilterParts) {
                         $true {
                             [scriptblock]::Create([string]::Join(' -or ', $FilterParts))
                         }
