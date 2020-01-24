@@ -69,9 +69,9 @@ Function Write-CCMLogEntry {
                         $AllLogs = Get-ChildItem -Path $Folder -Name "$($LogFileNameWithoutExt)_*" -File
 
                         # Sort them numerically (so the oldest is first in the list)
-                        $AllLogs = Sort-Object -InputObject $AllLogs -Descending { $_ -replace '_\d+\.lo_$' }, { [int]($_ -replace '^.+\d_|\.lo_$') } -ErrorAction Ignore
+                        $AllLogs = Sort-Object -InputObject $AllLogs -Descending -Property { $_ -replace '_\d+\.lo_$' }, { [int]($_ -replace '^.+\d_|\.lo_$') } -ErrorAction Ignore
 
-                        ForEach ($Log in $AllLogs) {
+                        foreach ($Log in $AllLogs) {
                             # Get log number
                             $LogFileNumber = [int][Regex]::Matches($Log, "_([0-9]+)\.lo_$").Groups[1].Value
                             switch (($LogFileNumber -eq $LogsToKeep) -and ($LogsToKeep -ne 0)) {
