@@ -1,5 +1,5 @@
-﻿function ConvertTo-CliXml
-{
+﻿function ConvertTo-CliXml {
+	# TODO - Add help
 	param (
 		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[ValidateNotNullOrEmpty()]

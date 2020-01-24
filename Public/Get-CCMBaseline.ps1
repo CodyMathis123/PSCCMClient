@@ -101,6 +101,9 @@ function Get-CCMBaseline {
                     $getBaselineSplat['CimSession'] = $Connection
                 }
             }
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return['ComputerName'] = $Computer
+
             foreach ($BLName in $BaselineName) {
                 #region Query WMI for Configuration Baselines based off DisplayName
                 $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
@@ -128,8 +131,6 @@ function Get-CCMBaseline {
                 switch ($null -eq $Baselines) {
                     $false {
                         foreach ($BL in $Baselines) {
-                            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
-                            $Return['ComputerName'] = $Computer
                             $Return['BaselineName'] = $BL.DisplayName
                             $Return['Version'] = $BL.Version
                             $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]

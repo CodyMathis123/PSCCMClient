@@ -11,6 +11,9 @@ function Get-CCMApplication {
         An array of ApplicationName to filter on
     .PARAMETER ApplicationID
         An array of application ID to filter on
+    .PARAMETER IncludeIcon
+        Switch that determines if the Icon property will be included in the output. As this can be a sizeable field, it is excluded by
+        default to minimize the time it takes for this to run, and the amount of memory that will be consumed.
     .PARAMETER CimSession
         Provides CimSession to gather deployed application info from
     .PARAMETER ComputerName
@@ -27,7 +30,7 @@ function Get-CCMApplication {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-21
-        Updated:     2020-01-23
+        Updated:     2020-01-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -36,7 +39,7 @@ function Get-CCMApplication {
         [Parameter(Mandatory = $false)]
         [string[]]$ApplicationID,
         [Parameter(Mandatory = $false)]
-        [string[]]$ProgramName,
+        [switch]$IncludeIcon,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -118,50 +121,10 @@ function Get-CCMApplication {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
+            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return['ComputerName'] = $Computer
 
             try {
-                <#
-                    AllowedActions             Property   string[] AllowedActions {get;set;}
-                    AppDTs                     Property   CimInstance#InstanceArray AppDTs {get;set;}
-                    ApplicabilityState         Property   string ApplicabilityState {get;set;}
-                    ConfigureState             Property   string ConfigureState {get;set;}
-                    ContentSize                Property   uint32 ContentSize {get;set;}
-                    Deadline                   Property   CimInstance#DateTime Deadline {get;set;}
-                    DeploymentReport           Property   string DeploymentReport {get;set;}
-                    Description                Property   string Description {get;set;}
-                    EnforcePreference          Property   uint32 EnforcePreference {get;set;}
-                    ErrorCode                  Property   uint32 ErrorCode {get;set;}
-                    EstimatedInstallTime       Property   uint32 EstimatedInstallTime {get;set;}
-                    EvaluationState            Property   uint32 EvaluationState {get;set;}
-                    FileTypes                  Property   string FileTypes {get;set;}
-                    FullName                   Property   string FullName {get;set;}
-                    HighImpactDeployment       Property   bool HighImpactDeployment {get;set;}
-                    Icon                       Property   string Icon {get;set;}
-                    Id                         Property   string Id {get;set;}
-                    InformativeUrl             Property   string InformativeUrl {get;set;}
-                    InProgressActions          Property   string[] InProgressActions {get;set;}
-                    InstallState               Property   string InstallState {get;set;}
-                    IsMachineTarget            Property   bool IsMachineTarget {get;set;}
-                    IsPreflightOnly            Property   bool IsPreflightOnly {get;set;}
-                    LastEvalTime               Property   CimInstance#DateTime LastEvalTime {get;set;}
-                    LastInstallTime            Property   CimInstance#DateTime LastInstallTime {get;set;}
-                    Name                       Property   string Name {get;set;}
-                    NextUserScheduledTime      Property   CimInstance#DateTime NextUserScheduledTime {get;set;}
-                    NotifyUser                 Property   bool NotifyUser {get;set;}
-                    OverrideServiceWindow      Property   bool OverrideServiceWindow {get;set;}
-                    PercentComplete            Property   uint32 PercentComplete {get;set;}
-                    PSComputerName             Property   string PSComputerName {get;}
-                    Publisher                  Property   string Publisher {get;set;}
-                    RebootOutsideServiceWindow Property   bool RebootOutsideServiceWindow {get;set;}
-                    ReleaseDate                Property   CimInstance#DateTime ReleaseDate {get;set;}
-                    ResolvedState              Property   string ResolvedState {get;set;}
-                    Revision                   Property   string Revision {get;set;}
-                    SoftwareVersion            Property   string SoftwareVersion {get;set;}
-                    StartTime                  Property   CimInstance#DateTime StartTime {get;set;}
-                    SupersessionState          Property   string SupersessionState {get;set;}
-                    Type                       Property   uint32 Type {get;set;}
-                    UserUIExperience           Property   bool UserUIExperience {get;set;}
-                #>
                 $FilterParts = switch ($PSBoundParameters.Keys) {
                     'ApplicationName' {
                         [string]::Format('$AppFound.Name -eq "{0}"', [string]::Join('" -or $AppFound.Name -eq "', $ApplicationName))
@@ -179,7 +142,7 @@ function Get-CCMApplication {
                         }
                     }
                     foreach ($AppFound in $applications) {
-                        switch ($null -ne $Condition) {
+                        $AppToReturn = switch ($null -ne $Condition) {
                             $true {
                                 switch (. $Condition) {
                                     $true {
@@ -191,10 +154,56 @@ function Get-CCMApplication {
                                 $AppFound
                             }
                         }
+                        switch ($null -ne $AppToReturn) {
+                            $true {
+                                $Return['Name'] = $AppToReturn.Name
+                                $Return['FullName'] = $AppToReturn.FullName
+                                $Return['SoftwareVersion'] = $AppToReturn.SoftwareVersion
+                                $Return['Publisher'] = $AppToReturn.Publisher
+                                $Return['Description'] = $AppToReturn.Description
+                                $Return['Id'] = $AppToReturn.Id
+                                $Return['Revision'] = $AppToReturn.Revision
+                                $Return['EvaluationState'] = $evaluationStateMap[[int]$AppToReturn.EvaluationState]
+                                $Return['ErrorCode'] = $AppToReturn.ErrorCode
+                                $Return['AllowedActions'] = $AppToReturn.AllowedActions
+                                $Return['ResolvedState'] = $AppToReturn.ResolvedState
+                                $Return['InstallState'] = $AppToReturn.InstallState
+                                $Return['ApplicabilityState'] = $AppToReturn.ApplicabilityState
+                                $Return['ConfigureState'] = $AppToReturn.ConfigureState
+                                $Return['LastEvalTime'] = $AppToReturn.LastEvalTime
+                                $Return['LastInstallTime'] = $AppToReturn.LastInstallTime
+                                $Return['StartTime'] = $AppToReturn.StartTime
+                                $Return['Deadline'] = $AppToReturn.Deadline
+                                $Return['NextUserScheduledTime'] = $AppToReturn.NextUserScheduledTime
+                                $Return['IsMachineTarget'] = $AppToReturn.IsMachineTarget
+                                $Return['IsPreflightOnly'] = $AppToReturn.IsPreflightOnly
+                                $Return['NotifyUser'] = $AppToReturn.NotifyUser
+                                $Return['UserUIExperience'] = $AppToReturn.UserUIExperience
+                                $Return['OverrideServiceWindow'] = $AppToReturn.OverrideServiceWindow
+                                $Return['RebootOutsideServiceWindow'] = $AppToReturn.RebootOutsideServiceWindow
+                                $Return['AppDTs'] = $AppToReturn.AppDTs
+                                $Return['ContentSize'] = $AppToReturn.ContentSize
+                                $Return['DeploymentReport'] = $AppToReturn.DeploymentReport
+                                $Return['EnforcePreference'] = $AppToReturn.EnforcePreference
+                                $Return['EstimatedInstallTime'] = $AppToReturn.EstimatedInstallTime
+                                $Return['FileTypes'] = $AppToReturn.FileTypes
+                                $Return['HighImpactDeployment'] = $AppToReturn.HighImpactDeployment
+                                $Return['InformativeUrl'] = $AppToReturn.InformativeUrl
+                                $Return['InProgressActions'] = $AppToReturn.InProgressActions
+                                $Return['PercentComplete'] = $AppToReturn.PercentComplete
+                                $Return['ReleaseDate'] = $AppToReturn.ReleaseDate
+                                $Return['SupersessionState'] = $AppToReturn.SupersessionState
+                                $Return['Type'] = $AppToReturn.Type
+                                switch ($IncludeIcon.IsPresent) {
+                                    $true {
+                                        $Return['Icon'] = $AppToReturn.Icon
+                                    }
+                                }
+                                [pscustomobject]$Return
+                            }
+                        }
                     }
                     #endregion Filterering is not possible on the CCM_Application class, so instead we loop and compare properties to filter
-
-                    # ENHANCE - Select relevant properties and order them
                 }
                 else {
                     Write-Warning "No deployed applications found for $Computer based on input filters"
