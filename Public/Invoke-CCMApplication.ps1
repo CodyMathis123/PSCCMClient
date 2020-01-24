@@ -1,5 +1,3 @@
-# TODO - Finish writing function
-
 Function Invoke-CCMApplication {
     <#
     .SYNOPSIS
@@ -31,10 +29,11 @@ Function Invoke-CCMApplication {
     .PARAMETER ComputerName
         Provides computer names to invoke the application method on
     .EXAMPLE
-        PS> Invoke-CCMApplication
-            Returns all deployed applications listed in WMI on the local computer
+        PS> Get-CCMApplication -ApplicationName '7-Zip' | Invoke-CCMApplication -Method Install 
+            Invokes the install of 7-Zip on the local computer
     .EXAMPLE
-        PS> Invoke-CCMApplication -ID ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e
+        PS> Invoke-CCMApplication -ID ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e -Method Uninstall
+            Invokes the uninstall of the application with the specified ID
     .NOTES
         FileName:    Invoke-CCMApplication.ps1
         Author:      Cody Mathis
@@ -53,6 +52,7 @@ Function Invoke-CCMApplication {
         [string[]]$Revision,
         [Parameter(Mandatory = $true)]
         [ValidateSet('Install', 'Uninstall')]
+        [Alias('Action')]
         [string]$Method,
         [Parameter(Mandatory = $false)]
         [ValidateSet('Immediate', 'NonBusinessHours', 'AdminSchedule')]

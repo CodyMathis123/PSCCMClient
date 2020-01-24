@@ -79,6 +79,7 @@ $ExportModule = @{
     'Get-CCMSoftwareUpdateGroup',
     'Get-CCMTaskSequence',
     'Get-CCMUpdate',
+    'Invoke-CCMApplication',
     'Invoke-CCMBaseline',
     'Invoke-CCMClientAction',
     'Invoke-CCMPackage',
