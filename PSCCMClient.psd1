@@ -167,6 +167,8 @@ v0.1.5
 * Add Get-CCMSoftwareUpdateGroup to module
 * Add Get-CCMApplication to module
 * Add Get-CCMCB alias to Get-CCMBaseline
+* Update Write-CCMLogEntry function to support pipeline by property name for the message
+            Usecase would be custom objects with a 'ToLog' property
 v0.1.4
 * Correct alias implementation
 v0.1.3
