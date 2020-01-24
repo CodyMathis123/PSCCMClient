@@ -43,17 +43,20 @@ Catch {
 
 #region Export Module Members
 $ExportModule = @{
-    Alias    = @('Get-CCMLastDDR',
+    Alias    = @('Get-CCMCB',
     'Get-CCMCurrentMP',
     'Get-CCMCurrentSUP',
+    'Get-CCMLastDDR',
     'Get-CCMLastHINV',
     'Get-CCMLastSINV'
     'Get-CCMMP',
     'Get-CCMMW',
     'Get-CCMSUP',
+    'Get-CCMSUG',
     'Set-CCMMP'
     )
     Function =@('ConvertFromCCMSchedule',
+    'Get-CCMApplication',
     'Get-CCMBaseline',
     'Get-CCMCacheInfo',
     'Get-CCMCacheContent',
@@ -73,8 +76,10 @@ $ExportModule = @{
     'Get-CCMProvisioningMode',
     'Get-CCMServiceWindow',
     'Get-CCMSite',
+    'Get-CCMSoftwareUpdateGroup',
     'Get-CCMTaskSequence',
     'Get-CCMUpdate',
+    'Invoke-CCMApplication',
     'Invoke-CCMBaseline',
     'Invoke-CCMClientAction',
     'Invoke-CCMPackage',

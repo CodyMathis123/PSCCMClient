@@ -70,6 +70,7 @@
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @('ConvertFromCCMSchedule',
+        'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
@@ -90,8 +91,10 @@
         'Get-CCMProvisioningMode',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
+        'Get-CCMSoftwareUpdateGroup',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
+        'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
         'Invoke-CCMPackage',
@@ -120,14 +123,16 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMLastDDR',
+    AliasesToExport   = @('Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
+        'Get-CCMLastDDR',
         'Get-CCMLastHINV',
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
         'Get-CCMSUP',
+        'Get-CCMSUG',
         'Set-CCMMP'
     )
 
@@ -159,6 +164,13 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.5
+* Add Get-CCMSoftwareUpdateGroup to module
+* Add Get-CCMApplication to module
+* Add Invoke-CCMApplication to module
+* Add Get-CCMCB alias to Get-CCMBaseline
+* Update Write-CCMLogEntry function to support pipeline by property name for the message
+            Usecase would be custom objects with a 'ToLog' property
 v0.1.4
 * Correct alias implementation
 v0.1.3

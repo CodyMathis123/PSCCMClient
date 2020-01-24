@@ -1,7 +1,7 @@
 function Reset-CCMLoggingConfiguration {
     <#
     .SYNOPSIS
-        Reset ConfigMgr client log configuration from computers via CIM
+        Reset ConfigMgr client log configuration for computers via CIM
     .DESCRIPTION
         This function will allow you to reset the ConfigMgr client log configuration for multiple computers using CIM queries.
         You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.

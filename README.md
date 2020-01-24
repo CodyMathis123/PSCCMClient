@@ -19,6 +19,7 @@ I encourage anyone that wants to contribute to start picking away! I'm currently
 Current list of functions:
 
 * ConvertFrom-CCMSchedule
+* Get-CCMApplication
 * Get-CCMBaseline
 * Get-CCMCacheInfo
 * Get-CCMCacheContent
@@ -38,8 +39,10 @@ Current list of functions:
 * Get-CCMProvisioningMode
 * Get-CCMServiceWindow
 * Get-CCMSite
+* Get-CCMSoftwareUpdateGroup
 * Get-CCMTaskSequence
 * Get-CCMUpdate
+* Invoke-CCMApplication
 * Invoke-CCMBaseline
 * Invoke-CCMClientAction
 * Invoke-CCMPackage
