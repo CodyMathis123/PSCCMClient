@@ -171,6 +171,7 @@ v0.1.8
 * Get-CCMClientDirectory now returns [pscustomobject] instead of hash table
 * Add Get-CCMClientVersion to module
 * Add Get-CCMClientInfo to module
+            This is a WIP function that will have info added when other functions are developed
 v0.1.7
 * Correct missing references to Get-CCMGUID
 v0.1.6
