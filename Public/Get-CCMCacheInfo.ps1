@@ -1,4 +1,4 @@
-function Get-CCMCache {
+function Get-CCMCacheInfo {
     <#
     .SYNOPSIS
         Get ConfigMgr client cache directory info from computers via CIM
@@ -10,17 +10,17 @@ function Get-CCMCache {
     .PARAMETER ComputerName
         Provides computer names to gather cache info from.
     .EXAMPLE
-        C:\PS> Get-CCMCache
+        C:\PS> Get-CCMCacheInfo
             Return ConfigMgr client cache directory info for the local computer
     .EXAMPLE
-        C:\PS> Get-CCMCache -ComputerName 'Workstation1234','Workstation4321'
+        C:\PS> Get-CCMCacheInfo -ComputerName 'Workstation1234','Workstation4321'
             Return ConfigMgr client cache directory info for Workstation1234, and Workstation4321
     .NOTES
-        FileName:    Get-CCMCache.ps1
+        FileName:    Get-CCMCacheInfo.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-01-05
+        Updated:     2020-01-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
