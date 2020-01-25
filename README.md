@@ -25,6 +25,7 @@ Current list of functions:
 * Get-CCMCacheInfo
 * Get-CCMCacheContent
 * Get-CCMClientDirectory
+* Get-CCMClientVersion
 * Get-CCMCurrentManagementPoint
 * Get-CCMCurrentSoftwareUpdatePoint
 * Get-CCMDNSSuffix

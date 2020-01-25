@@ -75,6 +75,7 @@
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
         'Get-CCMClientDirectory',
+        'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
@@ -167,6 +168,7 @@
 v0.1.8
 * Correct Get-CCMCacheInfo function name in file            
 * Get-CCMClientDirectory now returns [pscustomobject] instead of hash table
+* Add Get-CCMClientVersion to module
 v0.1.7
 * Correct missing references to Get-CCMGUID
 v0.1.6
