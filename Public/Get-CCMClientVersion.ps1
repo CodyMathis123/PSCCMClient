@@ -1,25 +1,24 @@
-function Get-CCMClientDirectory {
+function Get-CCMClientVersion {
     <#
     .SYNOPSIS
-        Return the MEMCM Client Directory
+        Returns the current MEMCM client version
     .DESCRIPTION
-        Checks the registry of the local machine and will return the 'Local SMS Path' property of the 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties'
-        registry key. This function uses the Get-CIMRegistryProperty function which uses CIM to query the registry
+        This function will return the current version for the MEMCM client using CIM.
     .PARAMETER CimSession
-        Provides CimSessions to gather the MEMCM Client Directory from
+        Provides CimSessions to gather the version from
     .PARAMETER ComputerName
-        Provides computer names to gather the MEMCM Client Directory from
+        Provides computer names to gather the version from
     .EXAMPLE
-        C:\PS> Get-CCMClientDirectory
-            Returns the MEMCM Client Directory for the local computer
+        C:\PS> Get-CCMClientVersion
+            Returns the MEMCM client version from local computer
     .EXAMPLE
-        C:\PS> Get-CCMClientDirectory -ComputerName 'Workstation1234','Workstation4321'
-            Returns the MEMCM Client Directory for Workstation1234, and Workstation4321
+        C:\PS> Get-CCMClientVersion -ComputerName 'Workstation1234','Workstation4321'
+            Returns the MEMCM client version from Workstation1234, and Workstation4321
     .NOTES
-        FileName:    Get-CCMClientDirectory.ps1
+        FileName:    Get-CCMClientVersion.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
-        Created:     2020-01-12
+        Created:     2020-01-24
         Updated:     2020-01-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
@@ -32,10 +31,9 @@ function Get-CCMClientDirectory {
     )
     begin {
         $connectionSplat = @{ }
-        $getRegistryPropertySplat = @{
-            Key      = "SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties"
-            Property = "Local SMS Path"
-            RegRoot  = 'HKEY_LOCAL_MACHINE'
+        $getClientVersionSplat = @{
+            Namespace = 'root\CCM'
+            Query     = 'SELECT ClientVersion FROM SMS_Client'
         }
     }
     process {
@@ -73,11 +71,22 @@ function Get-CCMClientDirectory {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            $ReturnHashTable = Get-CIMRegistryProperty @getRegistryPropertySplat @connectionSplat
-            foreach ($PC in $ReturnHashTable.GetEnumerator()) {
-                $Result['ClientDirectory'] = $ReturnHashTable[$PC.Key].'Local SMS Path'.TrimEnd('\')
+            try {
+                [ciminstance[]]$Currentversion = Get-CimInstance @getClientVersionSplat @connectionSplat
+                if ($Currentversion -is [Object] -and $Currentversion.Count -gt 0) {
+                    foreach ($SMSClient in $Currentversion) {
+                        $Result['ClientVersion'] = $SMSClient.ClientVersion
+                        [PSCustomObject]$Result
+                    }
+                }
+                else {
+                    Write-Warning "No client version found for $Computer"
+                }
             }
-            [pscustomobject]$Result
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                Write-Error $ErrorMessage
+            }
         }
     }
 }

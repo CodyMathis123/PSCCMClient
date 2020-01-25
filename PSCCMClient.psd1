@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.7'
+    ModuleVersion     = '0.1.9'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -75,6 +75,8 @@
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
         'Get-CCMClientDirectory',
+        'Get-CCMClientInfo',
+        'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
@@ -164,6 +166,14 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.1.9
+* Fix bad function reference in Get-CCMClientInfo
+v0.1.8
+* Correct Get-CCMCacheInfo function name in file            
+* Get-CCMClientDirectory now returns [pscustomobject] instead of hash table
+* Add Get-CCMClientVersion to module
+* Add Get-CCMClientInfo to module
+            This is a WIP function that will have info added when other functions are developed
 v0.1.7
 * Correct missing references to Get-CCMGUID
 v0.1.6
