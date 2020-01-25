@@ -82,7 +82,7 @@ function Get-CCMClientInfo {
             #endregion DNS Suffix
 
             #region MEMCM Client GUID
-            $GUIDInfo = Get-CCMClientInfo @connectionSplat
+            $GUIDInfo = Get-CCMGUID @connectionSplat
             $Result['GUID'] = $GUIDInfo.GUID
             $Result['ClientGUIDChangeDate'] = $GUIDInfo.ClientGUIDChangeDate
             $Result['PreviousGUID'] = $GUIDInfo.PreviousGUID
