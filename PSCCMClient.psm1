@@ -61,6 +61,7 @@ $ExportModule = @{
     'Get-CCMCacheInfo',
     'Get-CCMCacheContent',
     'Get-CCMClientDirectory',
+    'Get-CCMClientInfo',
     'Get-CCMClientVersion',
     'Get-CCMCurrentManagementPoint',
     'Get-CCMCurrentSoftwareUpdatePoint',
