@@ -30,7 +30,7 @@ function Set-CCMLoggingConfiguration {
         Created:     2020-01-11
         Updated:     2020-01-11
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false)]
         [ValidateSet('Default', 'Verbose', 'None')]
@@ -122,31 +122,33 @@ function Set-CCMLoggingConfiguration {
                     $ConnectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
-            $Result['ComputerName'] = $Computer
-            $Result['LogConfigChanged'] = $false
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [LogLevel = '$LogLevel'] [LogMaxSize = '$LogMaxSize'] [LoxMaxHistory = '$LoxMaxHistory'] [DebugLogging = '$DebugLogging']", "Set-CCMLoggingConfiguration")) {
+                $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+                $Result['ComputerName'] = $Computer
+                $Result['LogConfigChanged'] = $false
 
-            try {
-                $Invocation = switch ($Computer -eq $env:ComputerName) {
-                    $true {
-                        Invoke-CimMethod @setLogConfigSplat
-                    }
-                    $false {
+                try {
+                    $Invocation = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Invoke-CimMethod @setLogConfigSplat
+                        }
+                        $false {
 
-                        $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                            $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
+                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                        }
                     }
+                    if ($Invocation) {
+                        Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"
+                        $Result['LogConfigChanged'] = $true
+                    }
+                    [pscustomobject]$Result
                 }
-                if ($Invocation) {
-                    Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"
-                    $Result['LogConfigChanged'] = $true
+                catch {
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Error $ErrorMessage
                 }
-                [pscustomobject]$Result
-            }
-            catch {
-                $ErrorMessage = $_.Exception.Message
-                Write-Error $ErrorMessage
             }
         }
     }
