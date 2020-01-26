@@ -28,7 +28,7 @@ function Set-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-11
-        Updated:     2020-01-11
+        Updated:     2020-01-25
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
