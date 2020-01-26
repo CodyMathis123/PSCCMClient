@@ -169,6 +169,9 @@
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
+* Move New-LoopAction from Private to Public
+* Move Get-CIMRegistryProperty from Private to Public
+* Move Set-CIMRegistryProperty from Private to Public
 v0.1.9
 * Fix bad function reference in Get-CCMClientInfo
 v0.1.8
