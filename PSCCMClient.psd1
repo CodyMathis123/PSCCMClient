@@ -96,6 +96,7 @@
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
@@ -105,6 +106,7 @@
         'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Invoke-CCMTaskSequence',
+        'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
         'Reset-CCMLoggingConfiguration',
@@ -115,6 +117,7 @@
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
+        'Set-CIMRegistryProperty',
         'Write-CCMLogEntry'
     )
 
