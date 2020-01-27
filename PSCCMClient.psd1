@@ -118,6 +118,7 @@
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
         'Set-CIMRegistryProperty',
+        'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )
 
@@ -175,6 +176,7 @@ v0.2.0
 * Move New-LoopAction from Private to Public
 * Move Get-CIMRegistryProperty from Private to Public
 * Move Set-CIMRegistryProperty from Private to Public
+* Add Test-CCMStaleLog to module
 v0.1.9
 * Fix bad function reference in Get-CCMClientInfo
 v0.1.8

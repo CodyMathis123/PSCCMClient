@@ -104,6 +104,7 @@ $ExportModule = @{
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
         'Set-CIMRegistryProperty',
+        'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )
     Variable = @()
