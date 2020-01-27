@@ -156,33 +156,35 @@ function Set-CIMRegistryProperty {
             $setCIMRegPropSplat['Arguments']['sValueName'] = $Property
             $setCIMRegPropSplat['Arguments'][$ReturnValName[$Method]] = $Value -as $PropertyTypeMap[$Method]
 
-            switch ($EnumValues.sNames -contains $Property) {
-                $true {
-                    $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
-                }
-                $false {
-                    switch ($Force.IsPresent) {
-                        $true {
-                            $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [sValueName = '$Property'] [Value = '$Value']", "Set-CIMRegistryProperty")) {
+                switch ($EnumValues.sNames -contains $Property) {
+                    $true {
+                        $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
+                    }
+                    $false {
+                        switch ($Force.IsPresent) {
+                            $true {
+                                $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
+                            }
+                            $false {
+                                Write-Warning ([string]::Format('[Property = {0}] does not exist under [Key = {1}\{2}] and the force parameter was not specified. No changes will be made', $Property, $RootKey, $Key))
+                            }
                         }
-                        $false {
-                            Write-Warning ([string]::Format('[Property = {0}] does not exist under [Key = {1}\{2}] and the force parameter was not specified. No changes will be made', $Property, $RootKey, $Key))
+                    }
+                }
+                if ($null -ne $SetProperty) {
+                    switch ($SetProperty.ReturnValue) {
+                        0 {
+                            $Return[$Computer] = $true
+                        }
+                        default {
+                            Write-Error ([string]::Format('Failed to set value [Property = {0}] [Key = {1}\{2}] [Value = {3}] [PropertyType = {4}] [Method = {5}}', $Property, $RootKey, $Key, $Value, $PropertyType, $Method))
                         }
                     }
                 }
-            }
-            if ($null -ne $SetProperty) {
-                switch ($SetProperty.ReturnValue) {
-                    0 {
-                        $Return[$Computer] = $true
-                    }
-                    default {
-                        Write-Error ([string]::Format('Failed to set value [Property = {0}] [Key = {1}\{2}] [Value = {3}] [PropertyType = {4}] [Method = {5}}', $Property, $RootKey, $Key, $Value, $PropertyType, $Method))
-                    }
-                }
-            }
 
-            Write-Output $Return
+                Write-Output $Return
+            }
         }
     }
 }
