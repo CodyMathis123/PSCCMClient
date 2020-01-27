@@ -133,7 +133,6 @@ function Set-CCMLoggingConfiguration {
                             Invoke-CimMethod @setLogConfigSplat
                         }
                         $false {
-
                             $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
                             $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
