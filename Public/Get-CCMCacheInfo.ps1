@@ -1,4 +1,4 @@
-function Get-CCMCache {
+function Get-CCMCacheInfo {
     <#
     .SYNOPSIS
         Get ConfigMgr client cache directory info from computers via CIM
@@ -10,17 +10,17 @@ function Get-CCMCache {
     .PARAMETER ComputerName
         Provides computer names to gather cache info from.
     .EXAMPLE
-        C:\PS> Get-CCMCache
+        C:\PS> Get-CCMCacheInfo
             Return ConfigMgr client cache directory info for the local computer
     .EXAMPLE
-        C:\PS> Get-CCMCache -ComputerName 'Workstation1234','Workstation4321'
+        C:\PS> Get-CCMCacheInfo -ComputerName 'Workstation1234','Workstation4321'
             Return ConfigMgr client cache directory info for Workstation1234, and Workstation4321
     .NOTES
-        FileName:    Get-CCMCache.ps1
+        FileName:    Get-CCMCacheInfo.ps1
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-01-05
+        Updated:     2020-01-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -31,6 +31,7 @@ function Get-CCMCache {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
+        $connectionSplat = @{ }
         $getCacheInfoSplat = @{
             Namespace   = 'root\CCM\SoftMgmtAgent'
             ClassName   = 'CacheConfig'
@@ -46,18 +47,18 @@ function Get-CCMCache {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getCacheInfoSplat.Remove('ComputerName')
-                                $getCacheInfoSplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getCacheInfoSplat.Remove('CimSession')
-                                $getCacheInfoSplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $getCacheInfoSplat.Remove('CimSession')
-                            $getCacheInfoSplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -65,15 +66,15 @@ function Get-CCMCache {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getCacheInfoSplat.Remove('ComputerName')
-                    $getCacheInfoSplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CimResult = Get-CimInstance @getCacheInfoSplat
+                [ciminstance[]]$CimResult = Get-CimInstance @getCacheInfoSplat @connectionSplat
                 if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
                     foreach ($Object in $CimResult) {
                         $Result['Location'] = $Object.Location

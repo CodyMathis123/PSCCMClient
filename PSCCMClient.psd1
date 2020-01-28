@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.6'
+    ModuleVersion     = '0.2.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -75,6 +75,8 @@
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
         'Get-CCMClientDirectory',
+        'Get-CCMClientInfo',
+        'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
@@ -94,6 +96,7 @@
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
@@ -103,6 +106,7 @@
         'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Invoke-CCMTaskSequence',
+        'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
         'Reset-CCMLoggingConfiguration',
@@ -113,6 +117,8 @@
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
+        'Set-CIMRegistryProperty',
+        'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )
 
@@ -164,6 +170,23 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.0
+* Fix WhatIf support for Set-CIMRegistryProperty
+* Add WhatIf support to Set-CCMLoggingConfiguration
+* Move New-LoopAction from Private to Public
+* Move Get-CIMRegistryProperty from Private to Public
+* Move Set-CIMRegistryProperty from Private to Public
+* Add Test-CCMStaleLog to module
+v0.1.9
+* Fix bad function reference in Get-CCMClientInfo
+v0.1.8
+* Correct Get-CCMCacheInfo function name in file            
+* Get-CCMClientDirectory now returns [pscustomobject] instead of hash table
+* Add Get-CCMClientVersion to module
+* Add Get-CCMClientInfo to module
+            This is a WIP function that will have info added when other functions are developed
+v0.1.7
+* Correct missing references to Get-CCMGUID
 v0.1.6
 * Improve output of Get-CCMApplication
 v0.1.5

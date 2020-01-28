@@ -25,9 +25,12 @@ Current list of functions:
 * Get-CCMCacheInfo
 * Get-CCMCacheContent
 * Get-CCMClientDirectory
+* Get-CCMClientInfo
+* Get-CCMClientVersion
 * Get-CCMCurrentManagementPoint
 * Get-CCMCurrentSoftwareUpdatePoint
 * Get-CCMDNSSuffix
+* Get-CCMGUID
 * Get-CCMLastHardwareInventory
 * Get-CCMLastHeartbeat
 * Get-CCMLastSoftwareInventory
@@ -43,6 +46,7 @@ Current list of functions:
 * Get-CCMSoftwareUpdateGroup
 * Get-CCMTaskSequence
 * Get-CCMUpdate
+* Get-CIMRegistryProperty
 * Invoke-CCMApplication
 * Invoke-CCMBaseline
 * Invoke-CCMClientAction
@@ -52,6 +56,7 @@ Current list of functions:
 * Invoke-CCMUpdate
 * Invoke-CIMPowerShell
 * Invoke-CCMTaskSequence
+* New-LoopAction
 * Remove-CCMCacheContent
 * Repair-CCMCacheLocation
 * Reset-CCMLoggingConfiguration
@@ -62,4 +67,6 @@ Current list of functions:
 * Set-CCMManagementPoint
 * Set-CCMProvisioningMode
 * Set-CCMSite
+* Set-CIMRegistryProperty
+* Test-CCMStaleLog
 * Write-CCMLogEntry
