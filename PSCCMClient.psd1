@@ -80,6 +80,7 @@
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
+        'Get-CCMExecStartupTime',
         'Get-CCMGUID',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
@@ -170,6 +171,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.1
+* Add Get-CCMExecStartupTime to module
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration

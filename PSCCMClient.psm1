@@ -66,6 +66,7 @@ $ExportModule = @{
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
+        'Get-CCMExecStartupTime',
         'Get-CCMGUID',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
