@@ -134,8 +134,6 @@ function Get-CCMClientInfo {
             $Result['ClientDirectory'] = (Get-CCMClientDirectory @connectionSplat).ClientDirectory
             #endregion MEMCM Client DirectoryF
 
-            # TODO - In MW? Next MW? Will need to write function
-
             [pscustomobject]$Result
         }
     }
