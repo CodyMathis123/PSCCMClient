@@ -90,7 +90,7 @@ function Test-CCMIsWindowAvailableNow {
             Arguments  = @{ }
         }
         $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Test-CCMIsWindowAvailableNow', 'Get-CCMMaintenanceWindow'
+            FunctionsToLoad = 'Test-CCMIsWindowAvailableNow', 'Get-CCMMaintenanceWindow', 'Get-CCMSoftwareUpdateSettings'
         }
 
         $StringArgs = @(switch ($PSBoundParameters.Keys) {
@@ -145,8 +145,7 @@ function Test-CCMIsWindowAvailableNow {
                                 $true {
                                     switch ($MWType) {
                                         'Software Update Service Window' {
-                                            # ENHANCE - This should be a Get-CCMSoftwareUpdateSettings command
-                                            $Setting = (Get-CimInstance @getMWFallbackSplat @connectionSplat).ServiceWindowManagement
+                                            $Setting = (Get-CCMSoftwareUpdateSettings @connectionSplat).ServiceWindowManagement
                                             switch ($Setting -ne $FallbackToAllProgramsWindow) {
                                                 $true {
                                                     Write-Warning 'Requested fallback setting does not match the computers fallback setting for software updates'

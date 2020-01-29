@@ -95,6 +95,7 @@
         'Get-CCMServiceWindow',
         'Get-CCMSite',
         'Get-CCMSoftwareUpdateGroup',
+        'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
         'Get-CIMRegistryProperty',
@@ -176,6 +177,7 @@ v0.2.1
 * Add Get-CCMExecStartupTime to module
 * Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
 * Add Test-CCMIsWindowAvailableNow to module
+* Add Get-CCMSoftwareUpdateSettings to module
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration

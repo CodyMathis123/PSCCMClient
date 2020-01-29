@@ -45,6 +45,7 @@ Current list of functions:
 * Get-CCMServiceWindow
 * Get-CCMSite
 * Get-CCMSoftwareUpdateGroup
+* Get-CCMSoftwareUpdateSettings
 * Get-CCMTaskSequence
 * Get-CCMUpdate
 * Get-CIMRegistryProperty
