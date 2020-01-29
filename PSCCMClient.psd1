@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFromCCMSchedule',
+    FunctionsToExport = @('Convert-FromCCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
@@ -178,6 +178,7 @@ v0.2.1
 * Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
 * Add Test-CCMIsWindowAvailableNow to module
 * Add Get-CCMSoftwareUpdateSettings to module
+* Fix ConvertFrom-CCMSchedule function export name
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
