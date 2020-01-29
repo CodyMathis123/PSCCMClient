@@ -21,11 +21,11 @@ function Set-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-18
+            Updated:     2020-01-29
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory = $true)]
         [string]$SiteCode,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
@@ -73,26 +73,27 @@ function Set-CCMSite {
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Site = '$Site']", "Set-CCMSite")) {
+
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Site = '$SiteCode']", "Set-CCMSite")) {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
                             $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($Site, 0)
+                            $Client.SetAssignedSite($SiteCode, 0)
+                            $Result['SiteSet'] = $true
+                            [pscustomobject]$Result
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode {0}', $Site)
+                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
                             $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                         }
                     }
-                    $Result['SiteSet'] = $true
                 }
                 catch {
                     $Result['SiteSet'] = $false
-                    Write-Error "Failure to set MEMCM Site to $Site for $Computer - $($_.Exception.Message)"
+                    Write-Error "Failure to set MEMCM Site to $SiteCode for $Computer - $($_.Exception.Message)"
                 }
-                [pscustomobject]$Result
             }
         }
     }
