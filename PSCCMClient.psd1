@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.2.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -173,6 +173,7 @@
             ReleaseNotes = @'
 v0.2.1
 * Add Get-CCMExecStartupTime to module
+* Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
