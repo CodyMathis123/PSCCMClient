@@ -105,6 +105,7 @@ $ExportModule = @{
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
         'Set-CIMRegistryProperty',
+        'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )

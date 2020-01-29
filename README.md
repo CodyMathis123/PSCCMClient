@@ -69,5 +69,6 @@ Current list of functions:
 * Set-CCMProvisioningMode
 * Set-CCMSite
 * Set-CIMRegistryProperty
+* Test-CCMIsWindowAvailableNow
 * Test-CCMStaleLog
 * Write-CCMLogEntry
