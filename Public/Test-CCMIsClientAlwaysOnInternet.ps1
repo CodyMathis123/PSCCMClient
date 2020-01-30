@@ -1,32 +1,29 @@
-function Set-CCMSite {
+function Test-CCMIsClientAlwaysOnInternet {
     <#
         .SYNOPSIS
-            Sets the current MEMCM Site for the MEMCM Client
+            Return the status of the MEMCM client having AlwaysOnInternet set
         .DESCRIPTION
-            This function will set the current MEMCM Site for the MEMCM Client. This is done using the Microsoft.SMS.Client COM Object.
-        .PARAMETER SiteCode
-            The desired MEMCM Site that will be set for the specified computers/cimsessions
+            This function will invoke the IsClientAlwaysOnInternet of the MEMCM Client.
+             This is done using the Microsoft.SMS.Client COM Object.
         .PARAMETER CimSession
-            Provides CimSessions to set the current MEMCM Site for
+            Provides CimSessions to return AlwaysOnInternet setting info from
         .PARAMETER ComputerName
-            Provides computer names to set the current MEMCM Site for
+            Provides computer names to return AlwaysOnInternet setting info from
         .EXAMPLE
-            C:\PS> Set-CCMSite -SiteCode 'TST'
-                Sets the local computer's MEMCM Site to TST
+            C:\PS> Test-CCMIsClientAlwaysOnInternet
+                Returns the status of the local computer having IsAlwaysOnInternet set
         .EXAMPLE
-            C:\PS> Set-CCMSite -ComputerName 'Workstation1234','Workstation4321' -SiteCode 'TST'
-                Sets the MEMCM Site for Workstation1234, and Workstation4321 to TST
+            C:\PS> Test-CCMIsClientAlwaysOnInternet -ComputerName 'Workstation1234','Workstation4321'
+                Returns the status of 'Workstation1234','Workstation4321' having IsAlwaysOnInternet set
         .NOTES
-            FileName:    Set-CCMSite.ps1
+            FileName:    Test-CCMIsClientAlwaysOnInternet.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
-            Created:     2020-01-18
+            Created:     2020-01-29
             Updated:     2020-01-29
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
-        [parameter(Mandatory = $true)]
-        [string]$SiteCode,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -36,7 +33,7 @@ function Set-CCMSite {
     begin {
         $connectionSplat = @{ }
         $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMSite'
+            FunctionsToLoad = 'Test-CCMIsClientAlwaysOnInternet'
         }
     }
     process {
@@ -74,26 +71,22 @@ function Set-CCMSite {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Site = '$SiteCode']", "Set-CCMSite")) {
-                try {
-                    switch ($Computer -eq $env:ComputerName) {
-                        $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($SiteCode, 0)
-                            $Result['SiteSet'] = $true
-                            [pscustomobject]$Result
-                        }
-                        $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
-                        }
+            try {
+                switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        $Client = New-Object -ComObject Microsoft.SMS.Client
+                        $Result['IsClientAlwaysOnInternet'] = [bool]$Client.IsClientAlwaysOnInternet()
+                        [pscustomobject]$Result
+                    }
+                    $false {
+                        $ScriptBlock = 'Test-CCMIsClientAlwaysOnInternet'
+                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                     }
                 }
-                catch {
-                    $Result['SiteSet'] = $false
-                    Write-Error "Failure to set MEMCM Site to $SiteCode for $Computer - $($_.Exception.Message)"
-                }
+            }
+            catch {
+                Write-Error "Failure to determine if the MEMCM client is set to always be on the internet for $Computer - $($_.Exception.Message)"
             }
         }
     }

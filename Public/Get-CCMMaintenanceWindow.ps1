@@ -29,7 +29,7 @@ function Get-CCMMaintenanceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-08-14
-        Updated:     2020-01-18
+        Updated:     2020-01-29
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMMW')]
@@ -49,6 +49,7 @@ function Get-CCMMaintenanceWindow {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
+        $connectionSplat = @{ }
         #region Create hashtable for mapping MW types, and create CIM filter based on input params
         $MW_Type = @{
             1	=	'All Deployment Service Window'
@@ -81,24 +82,18 @@ function Get-CCMMaintenanceWindow {
                         $false {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getMaintenanceWindowSplat.Remove('ComputerName')
-                                $getMaintenanceWindowSplat['CimSession'] = $ExistingCimSession
-                                $getTimeZoneSplat.Remove('ComputerName')
-                                $getTimeZoneSplat['CimSession'] = $ExistingCimSession
+                                $connectionSplat.Remove('ComputerName')
+                                $connectionSplat['CimSession'] = $ExistingCimSession
                             }
                             else {
                                 Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getMaintenanceWindowSplat.Remove('CimSession')
-                                $getMaintenanceWindowSplat['ComputerName'] = $Connection
-                                $getTimeZoneSplat.Remove('CimSession')
-                                $getTimeZoneSplat['ComputerName'] = $Connection
+                                $connectionSplat.Remove('CimSession')
+                                $connectionSplat['ComputerName'] = $Connection
                             }
                         }
                         $true {
-                            $getMaintenanceWindowSplat.Remove('CimSession')
-                            $getMaintenanceWindowSplat.Remove('ComputerName')
-                            $getTimeZoneSplat.Remove('CimSession')
-                            $getTimeZoneSplat.Remove('ComputerName')
+                            $connectionSplat.Remove('CimSession')
+                            $connectionSplat.Remove('ComputerName')
                             Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
                         }
                     }
@@ -106,19 +101,17 @@ function Get-CCMMaintenanceWindow {
                 'CimSession' {
                     Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
                     Write-Output -InputObject $Connection.ComputerName
-                    $getMaintenanceWindowSplat.Remove('ComputerName')
-                    $getTimeZoneSplat.Remove('ComputerName')
-                    $getMaintenanceWindowSplat['CimSession'] = $Connection
-                    $getTimeZoneSplat['CimSession'] = $Connection
+                    $connectionSplat.Remove('ComputerName')
+                    $connectionSplat['CimSession'] = $Connection
                 }
             }
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
             try {
-                $Result['TimeZone'] = (Get-CimInstance @getTimeZoneSplat ).Caption
+                $Result['TimeZone'] = (Get-CimInstance @getTimeZoneSplat @connectionSplat).Caption
 
-                [ciminstance[]]$ServiceWindows = Get-CimInstance @getMaintenanceWindowSplat
+                [ciminstance[]]$ServiceWindows = Get-CimInstance @getMaintenanceWindowSplat @connectionSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['StartTime'] = ($ServiceWindow.StartTime).ToUniversalTime()

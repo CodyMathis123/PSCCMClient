@@ -29,6 +29,7 @@ Current list of functions:
 * Get-CCMClientVersion
 * Get-CCMCurrentManagementPoint
 * Get-CCMCurrentSoftwareUpdatePoint
+* Get-CCMExecStartupTime
 * Get-CCMDNSSuffix
 * Get-CCMGUID
 * Get-CCMLastHardwareInventory
@@ -44,6 +45,7 @@ Current list of functions:
 * Get-CCMServiceWindow
 * Get-CCMSite
 * Get-CCMSoftwareUpdateGroup
+* Get-CCMSoftwareUpdateSettings
 * Get-CCMTaskSequence
 * Get-CCMUpdate
 * Get-CIMRegistryProperty
@@ -68,5 +70,8 @@ Current list of functions:
 * Set-CCMProvisioningMode
 * Set-CCMSite
 * Set-CIMRegistryProperty
+* Test-CCMIsClientOnInternet
+* Test-CCMIsClientAlwaysOnInternet
+* Test-CCMIsWindowAvailableNow
 * Test-CCMStaleLog
 * Write-CCMLogEntry

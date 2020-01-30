@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.2.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFromCCMSchedule',
+    FunctionsToExport = @('Convert-FromCCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
@@ -80,6 +80,7 @@
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
+        'Get-CCMExecStartupTime',
         'Get-CCMGUID',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
@@ -94,6 +95,7 @@
         'Get-CCMServiceWindow',
         'Get-CCMSite',
         'Get-CCMSoftwareUpdateGroup',
+        'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
         'Get-CIMRegistryProperty',
@@ -118,6 +120,9 @@
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
         'Set-CIMRegistryProperty',
+        'Test-CCMIsClientOnInternet',
+        'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )
@@ -170,6 +175,14 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.1
+* Add Get-CCMExecStartupTime to module
+* Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
+* Add Test-CCMIsWindowAvailableNow to module
+* Add Get-CCMSoftwareUpdateSettings to module
+* Fix ConvertFrom-CCMSchedule function export name
+* Add Test-CCMIsClientOnInternet to module
+* Add Test-CCMIsClientAlwaysOnInternet to module
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
