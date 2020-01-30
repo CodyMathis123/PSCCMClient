@@ -120,6 +120,8 @@
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
         'Set-CIMRegistryProperty',
+        'Test-CCMIsClientOnInternet',
+        'Test-CCMIsClientAlwaysOnInternet',
         'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
@@ -179,6 +181,8 @@ v0.2.1
 * Add Test-CCMIsWindowAvailableNow to module
 * Add Get-CCMSoftwareUpdateSettings to module
 * Fix ConvertFrom-CCMSchedule function export name
+* Add Test-CCMIsClientOnInternet to module
+* Add Test-CCMIsClientAlwaysOnInternet to module
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
