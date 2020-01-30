@@ -77,6 +77,10 @@ function Get-CCMClientInfo {
             $Result['CacheSize'] = $CacheInfo.Size
             #endregion cache info
 
+            #region MEMCM Client Directory
+            $Result['ClientDirectory'] = (Get-CCMClientDirectory @connectionSplat).ClientDirectory
+            #endregion MEMCM Client Directory
+                                    
             #region DNS Suffix
             $Result['DNSSuffix'] = (Get-CCMDNSSuffix @connectionSplat).DNSSuffix
             #endregion DNS Suffix
@@ -130,9 +134,10 @@ function Get-CCMClientInfo {
             $Result['LogEnabled'] = $LogConfiguration.LogEnabled
             #endregion MEMCM Client Log Configuration
 
-            #region MEMCM Client Directory
-            $Result['ClientDirectory'] = (Get-CCMClientDirectory @connectionSplat).ClientDirectory
-            #endregion MEMCM Client DirectoryF
+            #region MEMCM Client internet configuration
+            $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet
+            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsAlwaysClientOnInternet
+            #endregion MEMCM Client internet configuration
 
             [pscustomobject]$Result
         }
