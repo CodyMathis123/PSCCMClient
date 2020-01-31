@@ -183,6 +183,7 @@ v0.2.1
 * Fix ConvertFrom-CCMSchedule function export name
 * Add Test-CCMIsClientOnInternet to module
 * Add Test-CCMIsClientAlwaysOnInternet to module
+* Improve ConvertFrom-CCMSchedule parsing of SMS_ST_NonRecurring
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration

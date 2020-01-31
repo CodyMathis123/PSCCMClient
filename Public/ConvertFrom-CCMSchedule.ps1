@@ -144,7 +144,20 @@ Function ConvertFrom-CCMSchedule {
                     $MinuteSpan = [Convert]::ToInt32($binaryRecurrence.Substring(13, 6), 2)
                     $Hourspan = [Convert]::ToInt32($binaryRecurrence.Substring(19, 5), 2)
                     $DaySpan = [Convert]::ToInt32($binaryRecurrence.Substring(24, 5), 2)
-                    $MW['Description'] = [string]::Format('Occurs every {0} days effective {1}', $DaySpan, $StartDateTimeObject)
+                    if ($MinuteSpan -ne 0) {
+                        $Span = 'minutes'
+                        $Interval = $MinuteSpan
+                    }
+                    elseif ($HourSpan -ne 0) {
+                        $Span = 'hours'
+                        $Interval = $HourSpan
+                    }
+                    elseif ($DaySpan -ne 0) {
+                        $Span = 'days'
+                        $Interval = $DaySpan
+                    }
+                            
+                    $MW['Description'] = [string]::Format('Occurs every {0} {1} effective {2}', $Interval, $Span, $StartDateTimeObject)
                     $MW['MinuteSpan'] = $MinuteSpan
                     $MW['HourSpan'] = $Hourspan
                     $MW['DaySpan'] = $DaySpan
