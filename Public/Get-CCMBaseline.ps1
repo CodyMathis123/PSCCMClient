@@ -26,7 +26,7 @@ function Get-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2020-01-22
+            Updated:     2020-01-31
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
             with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
@@ -62,9 +62,9 @@ function Get-CCMBaseline {
 
         #region hash table for translating compliance status
         $LastComplianceStatus = @{
-            0 = 'Compliance State Unknown'
+            0 = 'Non-Compliant'
             1 = 'Compliant'
-            2 = 'Non-Compliant'
+            2 = 'Compliance State Unknown'
             4 = 'Error'
         }
         #endregion hash table for translating compliance status

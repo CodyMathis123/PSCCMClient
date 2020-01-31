@@ -9,6 +9,8 @@ Function Get-CCMLogFile {
         Path to the log file(s) you would like to parse.
     .PARAMETER ParseSMSTS
         Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
+    .PARAMETER Filter
+        A custom regex filter to use when reading in log lines
     .EXAMPLE
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\ccmexec.log'
         Returns the CCMExec.log as a PSCustomObject
@@ -31,14 +33,16 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-9-19
-            Updated:  2020-01-01
+            Updated:  2020-01-31
     #>
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname')]
         [string[]]$LogFilePath,
-        [Parameter(Mandatory = $false)]
-        [switch]$ParseSMSTS
+        [Parameter(Mandatory = $false, ParameterSetName = 'ParseSMSTS')]
+        [switch]$ParseSMSTS,
+        [Parameter(Mandatory = $false, ParameterSetName = 'CustomFilter')]
+        [string]$Filter
     )
     begin {
         try {
@@ -156,8 +160,23 @@ Function Get-CCMLogFile {
                                     }
                                 }
                                 $false {
-                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
-                                    [pscustomobject]$LogLine
+                                    switch ($PSCmdlet.ParameterSetName) {
+                                        'CustomFilter' {
+                                            switch -regex ($Message) {
+                                                $Filter {
+                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                                                    [pscustomobject]$LogLine
+                                                }
+                                                default {
+                                                    continue
+                                                }
+                                            }
+                                        }
+                                        default {
+                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
+                                            [pscustomobject]$LogLine
+                                        }
+                                    }
                                 }
                             }
                         }
