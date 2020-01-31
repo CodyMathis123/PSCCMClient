@@ -184,6 +184,7 @@ v0.2.1
 * Add Test-CCMIsClientOnInternet to module
 * Add Test-CCMIsClientAlwaysOnInternet to module
 * Improve ConvertFrom-CCMSchedule parsing of SMS_ST_NonRecurring
+* Fix LastComplianceStatus mapping for *-CCMBaseline
 v0.2.0
 * Fix WhatIf support for Set-CIMRegistryProperty
 * Add WhatIf support to Set-CCMLoggingConfiguration
