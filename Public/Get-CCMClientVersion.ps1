@@ -1,32 +1,28 @@
-function Set-CCMSite {
+function Get-CCMClientVersion {
     <#
-        .SYNOPSIS
-            Sets the current MEMCM Site for the MEMCM Client
-        .DESCRIPTION
-            This function will set the current MEMCM Site for the MEMCM Client. This is done using the Microsoft.SMS.Client COM Object.
-        .PARAMETER SiteCode
-            The desired MEMCM Site that will be set for the specified computers/cimsessions
-        .PARAMETER CimSession
-            Provides CimSessions to set the current MEMCM Site for
-        .PARAMETER ComputerName
-            Provides computer names to set the current MEMCM Site for
-        .EXAMPLE
-            C:\PS> Set-CCMSite -SiteCode 'TST'
-                Sets the local computer's MEMCM Site to TST
-        .EXAMPLE
-            C:\PS> Set-CCMSite -ComputerName 'Workstation1234','Workstation4321' -SiteCode 'TST'
-                Sets the MEMCM Site for Workstation1234, and Workstation4321 to TST
-        .NOTES
-            FileName:    Set-CCMSite.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-18
-            Updated:     2020-01-29
+    .SYNOPSIS
+        Returns the current MEMCM client version
+    .DESCRIPTION
+        This function will return the current version for the MEMCM client using CIM.
+    .PARAMETER CimSession
+        Provides CimSessions to gather the version from
+    .PARAMETER ComputerName
+        Provides computer names to gather the version from
+    .EXAMPLE
+        C:\PS> Get-CCMClientVersion
+            Returns the MEMCM client version from local computer
+    .EXAMPLE
+        C:\PS> Get-CCMClientVersion -ComputerName 'Workstation1234','Workstation4321'
+            Returns the MEMCM client version from Workstation1234, and Workstation4321
+    .NOTES
+        FileName:    Get-CCMClientVersion.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     2020-01-24
+        Updated:     2020-01-24
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
-    param(
-        [parameter(Mandatory = $true)]
-        [string]$SiteCode,
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -35,8 +31,9 @@ function Set-CCMSite {
     )
     begin {
         $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMSite'
+        $getClientVersionSplat = @{
+            Namespace = 'root\CCM'
+            Query     = 'SELECT ClientVersion FROM SMS_Client'
         }
     }
     process {
@@ -74,26 +71,21 @@ function Set-CCMSite {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Site = '$SiteCode']", "Set-CCMSite")) {
-                try {
-                    switch ($Computer -eq $env:ComputerName) {
-                        $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($SiteCode, 0)
-                            $Result['SiteSet'] = $true
-                            [pscustomobject]$Result
-                        }
-                        $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
-                        }
+            try {
+                [ciminstance[]]$Currentversion = Get-CimInstance @getClientVersionSplat @connectionSplat
+                if ($Currentversion -is [Object] -and $Currentversion.Count -gt 0) {
+                    foreach ($SMSClient in $Currentversion) {
+                        $Result['ClientVersion'] = $SMSClient.ClientVersion
+                        [PSCustomObject]$Result
                     }
                 }
-                catch {
-                    $Result['SiteSet'] = $false
-                    Write-Error "Failure to set MEMCM Site to $SiteCode for $Computer - $($_.Exception.Message)"
+                else {
+                    Write-Warning "No client version found for $Computer"
                 }
+            }
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                Write-Error $ErrorMessage
             }
         }
     }

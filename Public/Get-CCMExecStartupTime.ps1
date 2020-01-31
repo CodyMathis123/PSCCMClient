@@ -1,32 +1,30 @@
-function Set-CCMSite {
+function Get-CCMExecStartupTime {
     <#
-        .SYNOPSIS
-            Sets the current MEMCM Site for the MEMCM Client
-        .DESCRIPTION
-            This function will set the current MEMCM Site for the MEMCM Client. This is done using the Microsoft.SMS.Client COM Object.
-        .PARAMETER SiteCode
-            The desired MEMCM Site that will be set for the specified computers/cimsessions
-        .PARAMETER CimSession
-            Provides CimSessions to set the current MEMCM Site for
-        .PARAMETER ComputerName
-            Provides computer names to set the current MEMCM Site for
-        .EXAMPLE
-            C:\PS> Set-CCMSite -SiteCode 'TST'
-                Sets the local computer's MEMCM Site to TST
-        .EXAMPLE
-            C:\PS> Set-CCMSite -ComputerName 'Workstation1234','Workstation4321' -SiteCode 'TST'
-                Sets the MEMCM Site for Workstation1234, and Workstation4321 to TST
-        .NOTES
-            FileName:    Set-CCMSite.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-18
-            Updated:     2020-01-29
+    .SYNOPSIS
+        Return the CCMExec service startup time based on process creation date
+    .DESCRIPTION
+        This function will return the startup time of the CCMExec service if it is currently running. The method used is querying
+        for the Win32_Service CIM object, and passing the ProcessID to Win32_Process CIM class. This lets us determine the 
+        creation date of the CCMExec process, which would coorelate to service startup time. 
+    .PARAMETER CimSession
+        Provides CimSessions to gather CCMExec service startup time from
+    .PARAMETER ComputerName
+        Provides computer names to gather CCMExec service startup time from
+    .EXAMPLE
+        C:\PS> Get-CCMExecStartupTime
+            Returns CCMExec service startup time for the local computer
+    .EXAMPLE
+        C:\PS> Get-CCMExecStartupTime -ComputerName 'Workstation1234','Workstation4321'
+            Returns CCMExec service startup time for Workstation1234, and Workstation4321
+    .NOTES
+        FileName:    Get-CCMExecStartupTime.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     2020-01-29
+        Updated:     2020-01-29
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
-    param(
-        [parameter(Mandatory = $true)]
-        [string]$SiteCode,
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -35,9 +33,10 @@ function Set-CCMSite {
     )
     begin {
         $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMSite'
+        $getCCMExecServiceSplat = @{
+            Query = "SELECT State, ProcessID from Win32_Service WHERE Name = 'CCMExec'" 
         }
+        $getCCMExecProcessSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -74,26 +73,25 @@ function Set-CCMSite {
             $Result = [System.Collections.Specialized.OrderedDictionary]::new()
             $Result['ComputerName'] = $Computer
 
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Site = '$SiteCode']", "Set-CCMSite")) {
-                try {
-                    switch ($Computer -eq $env:ComputerName) {
-                        $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($SiteCode, 0)
-                            $Result['SiteSet'] = $true
-                            [pscustomobject]$Result
-                        }
-                        $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+            try {
+                [ciminstance[]]$CCMExecService = Get-CimInstance @getCCMExecServiceSplat @connectionSplat
+                if ($CCMExecService -is [Object] -and $CCMExecService.Count -gt 0) {
+                    foreach ($Service in $CCMExecService) {
+                        $getCCMExecProcessSplat['Query'] = [string]::Format("Select CreationDate from Win32_Process WHERE ProcessID = '{0}'", $Service.ProcessID)
+                        [ciminstance[]]$CCMExecProcess = Get-CimInstance @getCCMExecProcessSplat @connectionSplat
+                        if ($CCMExecProcess -is [Object] -and $CCMExecProcess.Count -gt 0) {
+                            foreach ($Process in $CCMExecProcess) {        
+                                $Result['ServiceState'] = $Service.State
+                                $Result['StartupTime'] = $Process.CreationDate
+                                [pscustomobject]$Result
+                            }
                         }
                     }
                 }
-                catch {
-                    $Result['SiteSet'] = $false
-                    Write-Error "Failure to set MEMCM Site to $SiteCode for $Computer - $($_.Exception.Message)"
-                }
+            }
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                Write-Error $ErrorMessage
             }
         }
     }

@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.4'
+    ModuleVersion     = '0.2.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -69,15 +69,18 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFromCCMSchedule',
+    FunctionsToExport = @('Convert-FromCCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
         'Get-CCMClientDirectory',
+        'Get-CCMClientInfo',
+        'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
         'Get-CCMDNSSuffix',
+        'Get-CCMExecStartupTime',
         'Get-CCMGUID',
         'Get-CCMLastHardwareInventory',
         'Get-CCMLastHeartbeat',
@@ -92,8 +95,11 @@
         'Get-CCMServiceWindow',
         'Get-CCMSite',
         'Get-CCMSoftwareUpdateGroup',
+        'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
+        'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
         'Invoke-CCMPackage',
@@ -102,6 +108,7 @@
         'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Invoke-CCMTaskSequence',
+        'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
         'Reset-CCMLoggingConfiguration',
@@ -112,6 +119,11 @@
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
         'Set-CCMSite',
+        'Set-CIMRegistryProperty',
+        'Test-CCMIsClientOnInternet',
+        'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsWindowAvailableNow',
+        'Test-CCMStaleLog',
         'Write-CCMLogEntry'
     )
 
@@ -163,10 +175,40 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.1
+* Add Get-CCMExecStartupTime to module
+* Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
+* Add Test-CCMIsWindowAvailableNow to module
+* Add Get-CCMSoftwareUpdateSettings to module
+* Fix ConvertFrom-CCMSchedule function export name
+* Add Test-CCMIsClientOnInternet to module
+* Add Test-CCMIsClientAlwaysOnInternet to module
+v0.2.0
+* Fix WhatIf support for Set-CIMRegistryProperty
+* Add WhatIf support to Set-CCMLoggingConfiguration
+* Move New-LoopAction from Private to Public
+* Move Get-CIMRegistryProperty from Private to Public
+* Move Set-CIMRegistryProperty from Private to Public
+* Add Test-CCMStaleLog to module
+v0.1.9
+* Fix bad function reference in Get-CCMClientInfo
+v0.1.8
+* Correct Get-CCMCacheInfo function name in file            
+* Get-CCMClientDirectory now returns [pscustomobject] instead of hash table
+* Add Get-CCMClientVersion to module
+* Add Get-CCMClientInfo to module
+            This is a WIP function that will have info added when other functions are developed
+v0.1.7
+* Correct missing references to Get-CCMGUID
+v0.1.6
+* Improve output of Get-CCMApplication
 v0.1.5
 * Add Get-CCMSoftwareUpdateGroup to module
 * Add Get-CCMApplication to module
+* Add Invoke-CCMApplication to module
 * Add Get-CCMCB alias to Get-CCMBaseline
+* Update Write-CCMLogEntry function to support pipeline by property name for the message
+            Usecase would be custom objects with a 'ToLog' property
 v0.1.4
 * Correct alias implementation
 v0.1.3

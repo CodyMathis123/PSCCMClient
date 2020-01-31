@@ -3,7 +3,7 @@ function Get-CCMClientDirectory {
     .SYNOPSIS
         Return the MEMCM Client Directory
     .DESCRIPTION
-        Checks the registry of the local machine and will return the 'Local SMS Path' property of the 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties' 
+        Checks the registry of the local machine and will return the 'Local SMS Path' property of the 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties'
         registry key. This function uses the Get-CIMRegistryProperty function which uses CIM to query the registry
     .PARAMETER CimSession
         Provides CimSessions to gather the MEMCM Client Directory from
@@ -20,7 +20,7 @@ function Get-CCMClientDirectory {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-12
-        Updated:     2020-01-12
+        Updated:     2020-01-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -75,8 +75,9 @@ function Get-CCMClientDirectory {
 
             $ReturnHashTable = Get-CIMRegistryProperty @getRegistryPropertySplat @connectionSplat
             foreach ($PC in $ReturnHashTable.GetEnumerator()) {
-                @{$PC.Key = $ReturnHashTable[$PC.Key].'Local SMS Path'.TrimEnd('\') }
+                $Result['ClientDirectory'] = $ReturnHashTable[$PC.Key].'Local SMS Path'.TrimEnd('\')
             }
+            [pscustomobject]$Result
         }
     }
 }
