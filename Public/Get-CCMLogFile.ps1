@@ -13,13 +13,16 @@ Function Get-CCMLogFile {
         A custom regex filter to use when reading in log lines
     .EXAMPLE
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\ccmexec.log'
-        Returns the CCMExec.log as a PSCustomObject
+            Returns the CCMExec.log as a PSCustomObject
     .EXAMPLE
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
-        Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
+            Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
     .EXAMPLE 
         PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
-        Returns all the actions that ran according to the SMSTSLog provided
+            Returns all the actions that ran according to the SMSTSLog provided
+    .EXAMPLE
+        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
+            Return all log entires from the CAS.Log which pertain creating download requests for updates
     .OUTPUTS
         [pscustomobject]
     .NOTES
@@ -27,12 +30,13 @@ Function Get-CCMLogFile {
         variance. I had to also balance speed and parsing.
 
         With that said, it can still parse a typical SCCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
-        Rolled over logs that are 5mb can be parsed in a couple seconds or less.
+        Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of 
+        flexibility and speed as well.
 
             FileName: Get-CCMLogFile.ps1
             Author:   Cody Mathis
             Contact:  @CodyMathis123
-            Created:  2019-9-19
+            Created:  2019-09-19
             Updated:  2020-01-31
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
@@ -64,28 +68,13 @@ Function Get-CCMLogFile {
         function Get-TimeStampFromLogLine {
             <#
             .SYNOPSIS
-                Parses a datetime object from an SCCM log line 
+                Parses a datetime object from an MEMCM log line 
             .DESCRIPTION
-                This will return a datetime object if it is passed the part of an SCCM log line that contains the date and time
-            .PARAMETER LogLinSubArray
-                A log line sub array which is everything past "]LOG]!><" split by '"'
-                For Example:
-                    time=
-                    09:58:50.301+300
-                    date=
-                    11-18-2019
-                    component=
-                    TSManager
-                    context=
-
-                    type=
-                    1
-                    thread=
-                    2164
-                    file=
-                    tsxml.cpp:898
-
-                    such that the [3] and [1] are the date and time respectively
+                This will return a datetime object if it is passed the part of an MEMCM log line that contains the date and time
+            .PARAMETER DateString
+                The Date String component from a MEMCM log line. For example, '01-31-2020'
+            .PARAMETER TimeString
+                 The Time String component from a MEMCM log line. For example, '14:20:41.461'
             .EXAMPLE
                 PS C:\> Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
                 return datetime object from the log line that was split into a subarray
