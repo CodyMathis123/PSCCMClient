@@ -177,7 +177,7 @@
             ReleaseNotes = @'
 v0.2.1
 * Add Get-CCMExecStartupTime to module
-* Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remove machines
+* Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remote machines
 * Add Test-CCMIsWindowAvailableNow to module
 * Add Get-CCMSoftwareUpdateSettings to module
 * Fix ConvertFrom-CCMSchedule function export name
