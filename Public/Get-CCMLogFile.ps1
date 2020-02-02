@@ -37,7 +37,7 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-09-19
-            Updated:  2020-01-31
+            Updated:  2020-02-01
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     param (
@@ -85,7 +85,7 @@ Function Get-CCMLogFile {
                 [Parameter(Mandatory = $true)]
                 [string]$TimeString
             )
-            $DateStringArray = $DateString -split "-"
+            $DateStringArray = $DateString.Split("-")
 
             $MonthParser = $DateStringArray[0] -replace '\d', 'M'
             $DayParser = $DateStringArray[1] -replace '\d', 'd'
@@ -127,7 +127,7 @@ Function Get-CCMLogFile {
                             $Message = $LogLineArray[0]
 
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = $LogLineArray[1] -split '"'
+                            $LogLineSubArray = $LogLineArray[1].Split('"')
 
                             $LogLine = [System.Collections.Specialized.OrderedDictionary]::new()
                             # Rebuild the LogLine into a hash table
@@ -195,7 +195,7 @@ Function Get-CCMLogFile {
                             $Message = $LogLineArray[0]
 
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = $LogLineArray[1] -split '><'
+                            $LogLineSubArray = $LogLineArray[1].Split("><", [System.StringSplitOptions]::RemoveEmptyEntries)
 
                             switch -regex ($Message) {
                                 '^\s*$' {
@@ -208,11 +208,11 @@ Function Get-CCMLogFile {
                                     $LogLine['Message'] = $Message
                                     $LogLine['Type'] = [Severity]0
                                     $LogLine['Component'] = $LogLineSubArray[0].Trim()
-                                    $LogLine['Thread'] = ($LogLineSubArray[2] -split " ")[0].Substring(7)
+                                    $LogLine['Thread'] = ($LogLineSubArray[2].Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
                                     $DateTimeString = $LogLineSubArray[1]
-                                    $DateTimeStringArray = $DateTimeString -split " "
+                                    $DateTimeStringArray = $DateTimeString.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
                                     $DateString = $DateTimeStringArray[0].ToString()
-                                    $TimeString = $DateTimeStringArray[1].ToString().Split("+|-")[0].ToString().Substring(0, 12)  
+                                    $TimeString = $DateTimeStringArray[1].ToString().Split("+|-", [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)  
 
                                     switch ($PSCmdlet.ParameterSetName) {
                                         'CustomFilter' {

@@ -122,7 +122,7 @@ function Get-CCMServiceWindow {
                 else {
                     $Result['Schedules'] = $null
                     $Result['ServiceWindowID'] = $null
-                    $Result['ServiceWindowType'] = "No ServiceWindow of type(s) $($RequestedTypesRaw -join ', ')"
+                    $Result['ServiceWindowType'] = "No ServiceWindow of type(s) $([string]::Join(', ', $RequestedTypesRaw))"
                     [PSCustomObject]$Result
                 }
             }

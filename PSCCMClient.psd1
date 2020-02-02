@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.1'
+    ModuleVersion     = '0.2.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -79,6 +79,7 @@
         'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
+        'Get-CCMCurrentWindowAvailableTime',
         'Get-CCMDNSSuffix',
         'Get-CCMExecStartupTime',
         'Get-CCMGUID',
@@ -175,6 +176,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.2
+* Add Get-CCMCurrentWindowAvailableTime to module
 v0.2.1
 * Add Get-CCMExecStartupTime to module
 * Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remote machines

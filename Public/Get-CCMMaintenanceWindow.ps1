@@ -127,7 +127,7 @@ function Get-CCMMaintenanceWindow {
                     $Result['EndTime'] = $null
                     $Result['Duration'] = $null
                     $Result['MWID'] = $null
-                    $Result['Type'] = "No ServiceWindow of type(s) $($RequestedTypesRaw -join ', ')"
+                    $Result['Type'] = "No ServiceWindow of type(s) $([string]::Join(', ',$RequestedTypesRaw))"
                     [PSCustomObject]$Result
                 }
             }
