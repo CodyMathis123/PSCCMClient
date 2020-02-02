@@ -83,12 +83,7 @@ function Test-CCMIsWindowAvailableNow {
                 MaxRuntime = [uint32]$MaxRuntime
             }
         }
-        $getCurrentWindowTimeLeft = @{
-            Namespace  = 'root\CCM\ClientSDK'
-            ClassName  = 'CCM_ServiceWindowManager'
-            MethodName = 'GetCurrentWindowAvailableTime'
-            Arguments  = @{ }
-        }
+        $getCurrentWindowTimeLeft = @{ }
         $invokeCIMPowerShellSplat = @{
             FunctionsToLoad = 'Test-CCMIsWindowAvailableNow', 'Get-CCMMaintenanceWindow', 'Get-CCMSoftwareUpdateSettings'
         }
@@ -190,16 +185,14 @@ function Test-CCMIsWindowAvailableNow {
                             $testInMWSplat['Arguments']['ServiceWindowType'] = [uint32]$MW_Type[$MW]
                             $CanProgramRunNow = Invoke-CimMethod @testInMWSplat @connectionSplat
                             if ($CanProgramRunNow -is [Object]) {
-                                $getCurrentWindowTimeLeft['Arguments']['FallbackToAllProgramsWindow'] = [bool]$MWFallback
-                                $getCurrentWindowTimeLeft['Arguments']['ServiceWindowType'] = [uint32]$MW_Type[$MW]
-                                # ENHANCE - This should be a Get-CCMCurrentWindowAvailableTime function
-                                $TimeLeft = Invoke-CimMethod @getCurrentWindowTimeLeft @connectionSplat
-                                $TimeLeftTimeSpan = New-TimeSpan -Seconds $TimeLeft.WindowAvailableTime
+                                $getCurrentWindowTimeLeft['FallbackToAllProgramsWindow'] = [bool]$MWFallback
+                                $getCurrentWindowTimeLeft['MWType'] = $MW
+                                $CurrentWindowAvailableTime = Get-CCMCurrentWindowAvailableTime @getCurrentWindowTimeLeft @connectionSplat
                                 $Result['MaintenanceWindowType'] = $MW
                                 $Result['CanProgramRunNow'] = $CanProgramRunNow.CanProgramRunNow
                                 $Result['FallbackToAllProgramsWindow'] = $MWFallback
                                 $Result['MaxRunTime'] = $MaxRuntime
-                                $Result['WindowAvailableTime'] = [string]::Format('{0} day(s) {1} hour(s) {2} minute(s) {3} second(s)', $TimeLeftTimeSpan.Days, $TimeLeftTimeSpan.Hours, $TimeLeftTimeSpan.Minutes, $TimeLeftTimeSpan.Seconds)
+                                $Result['WindowAvailableTime'] = $CurrentWindowAvailableTime.WindowAvailableTime
                                 [pscustomobject]$Result
                             }
                         }
