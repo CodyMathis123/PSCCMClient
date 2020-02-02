@@ -36,5 +36,5 @@ function Convert-FunctionToString {
             Write-Error "Function $FunctionName does not have a Script Block and cannot be converted."
         }
     }
-    $AllFunctions -join "`r`n"
+    [string]::Join("`r`n", $AllFunctions)
 }
