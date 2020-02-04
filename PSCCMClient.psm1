@@ -55,7 +55,7 @@ $ExportModule = @{
         'Get-CCMSUG',
         'Set-CCMMP'
     )
-    Function = @('Convert-FromCCMSchedule',
+    Function = @('ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',

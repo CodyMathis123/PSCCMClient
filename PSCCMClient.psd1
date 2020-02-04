@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Convert-FromCCMSchedule',
+    FunctionsToExport = @('ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
@@ -176,6 +176,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.3
+* Fix ConvertFrom-CCMSchedule function export name... again 
 v0.2.2
 * Add Get-CCMCurrentWindowAvailableTime to module
 v0.2.1
