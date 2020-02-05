@@ -83,6 +83,11 @@ Function ConvertFrom-CCMSchedule {
             $Start = $Schedule.Substring(0, 8)
             $Recurrence = $Schedule.Substring(8, 8)
 
+            # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
+            $binaryRecurrence = [Convert]::ToString([int64]"0x$Recurrence".ToString(), 2).PadLeft(32, 48)
+
+            [bool]$IsGMT = [Convert]::ToInt32($binaryRecurrence.Substring(31, 1), 2)
+
             switch ($Start) {
                 '00012000' {
                     # this is as 'simple' schedule, such as a CI that 'runs once a day' or 'every 8 hours'
@@ -100,14 +105,17 @@ Function ConvertFrom-CCMSchedule {
                     [String]$StartYear = [Convert]::ToInt32($binaryStart.Substring(20, 6), 2) + 1970
 
                     # set our StartDateTimeObject variable by formatting all our calculated datetime components and piping to Get-Date
-                    $StartDateTimeString = [string]::Format('{0}-{1}-{2} {3}:{4}:00', $StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute)
-                    $StartDateTimeObject = Get-Date -Date $StartDateTimeString
+                    $Kind = switch ($IsGMT) {
+                        $true {
+                            [DateTimeKind]::Utc
+                        }
+                        $false {
+                            [DateTimeKind]::Local
+                        }
+                    }
+                    $StartDateTimeObject = [datetime]::new($StartYear, $StartMonth, $StartDay, $StartHour, $StartMinute, '00', $Kind)
                 }
             }
-            # Convert to binary string and pad left with 0 to ensure 32 character length for consistent parsing
-            $binaryRecurrence = [Convert]::ToString([int64]"0x$Recurrence".ToString(), 2).PadLeft(32, 48)
-
-            [bool]$IsGMT = [Convert]::ToInt32($binaryRecurrence.Substring(31, 1), 2)
 
             <#
                 Day duration is found by calculating how many times 24 goes into our TotalHourDuration (number of times being DayDuration)
@@ -156,7 +164,7 @@ Function ConvertFrom-CCMSchedule {
                         $Span = 'days'
                         $Interval = $DaySpan
                     }
-                            
+
                     $MW['Description'] = [string]::Format('Occurs every {0} {1} effective {2}', $Interval, $Span, $StartDateTimeObject)
                     $MW['MinuteSpan'] = $MinuteSpan
                     $MW['HourSpan'] = $Hourspan

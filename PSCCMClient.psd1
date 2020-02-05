@@ -178,6 +178,7 @@
             ReleaseNotes = @'
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
+* ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
 v0.2.2
 * Add Get-CCMCurrentWindowAvailableTime to module
 v0.2.1
