@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.1'
+    ModuleVersion     = '0.2.3'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Convert-FromCCMSchedule',
+    FunctionsToExport = @('ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
@@ -79,6 +79,7 @@
         'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
+        'Get-CCMCurrentWindowAvailableTime',
         'Get-CCMDNSSuffix',
         'Get-CCMExecStartupTime',
         'Get-CCMGUID',
@@ -175,6 +176,10 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.3
+* Fix ConvertFrom-CCMSchedule function export name... again 
+v0.2.2
+* Add Get-CCMCurrentWindowAvailableTime to module
 v0.2.1
 * Add Get-CCMExecStartupTime to module
 * Fix Set-CCMSite - working as expected now. It was passing an empty sitecode to remote machines

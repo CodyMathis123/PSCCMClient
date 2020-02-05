@@ -28,6 +28,7 @@ Current list of functions:
 * Get-CCMClientVersion
 * Get-CCMCurrentManagementPoint
 * Get-CCMCurrentSoftwareUpdatePoint
+* Get-CCMCurrentWindowAvailableTime
 * Get-CCMExecStartupTime
 * Get-CCMDNSSuffix
 * Get-CCMGUID

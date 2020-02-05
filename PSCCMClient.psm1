@@ -55,7 +55,7 @@ $ExportModule = @{
         'Get-CCMSUG',
         'Set-CCMMP'
     )
-    Function = @('Convert-FromCCMSchedule',
+    Function = @('ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
@@ -65,6 +65,7 @@ $ExportModule = @{
         'Get-CCMClientVersion',
         'Get-CCMCurrentManagementPoint',
         'Get-CCMCurrentSoftwareUpdatePoint',
+        'Get-CCMCurrentWindowAvailableTime',
         'Get-CCMDNSSuffix',
         'Get-CCMExecStartupTime',
         'Get-CCMGUID',
