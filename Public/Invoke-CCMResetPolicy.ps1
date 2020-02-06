@@ -92,7 +92,7 @@ function Invoke-CCMResetPolicy {
                     $ConnectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['PolicyReset'] = $false
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ResetType = '$ResetType']", "Reset CCM Policy")) {

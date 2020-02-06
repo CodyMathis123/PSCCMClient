@@ -111,7 +111,7 @@ function Invoke-CCMTaskSequence {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Invoke-CCMTaskSequence")) {

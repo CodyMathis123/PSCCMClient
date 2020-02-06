@@ -129,7 +129,7 @@ Function Get-CCMLogFile {
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
                             $LogLineSubArray = $LogLineArray[1].Split('"')
 
-                            $LogLine = [System.Collections.Specialized.OrderedDictionary]::new()
+                            $LogLine = [ordered]@{ }
                             # Rebuild the LogLine into a hash table
                             $LogLine['Message'] = $Message
                             $LogLine['Type'] = [Severity]$LogLineSubArray[9]
@@ -203,7 +203,7 @@ Function Get-CCMLogFile {
                                     continue
                                 }
                                 default {
-                                    $LogLine = [System.Collections.Specialized.OrderedDictionary]::new()
+                                    $LogLine = [ordered]@{ }
                                     # Rebuild the LogLine into a hash table
                                     $LogLine['Message'] = $Message
                                     $LogLine['Type'] = [Severity]0

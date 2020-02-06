@@ -109,7 +109,7 @@ function Set-CCMProvisioningMode {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
             $Return['ProvisioningModeChanged'] = $false
             $Return['ProvisioningMaxMinutesChanged'] = $false

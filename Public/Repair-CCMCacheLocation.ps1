@@ -66,7 +66,7 @@ function Repair-CCMCacheLocation {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Repair CCM Cache Location")) {

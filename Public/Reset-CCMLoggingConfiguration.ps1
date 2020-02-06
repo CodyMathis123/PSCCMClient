@@ -73,7 +73,7 @@ function Reset-CCMLoggingConfiguration {
                     $ConnectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['LogConfigChanged'] = $false
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Reset-CCMLoggingConfiguration")) {

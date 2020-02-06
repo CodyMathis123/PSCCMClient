@@ -68,7 +68,7 @@ function Get-CCMClientInfo {
 
             # ENHANCE - Decide on an order for the properties
 
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             #region cache info

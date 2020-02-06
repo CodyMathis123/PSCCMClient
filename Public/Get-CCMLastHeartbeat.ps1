@@ -71,7 +71,7 @@ function Get-CCMLastHeartbeat {
                     $getLastDDRSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {

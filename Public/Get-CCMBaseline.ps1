@@ -101,7 +101,7 @@ function Get-CCMBaseline {
                     $getBaselineSplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
 
             foreach ($BLName in $BaselineName) {

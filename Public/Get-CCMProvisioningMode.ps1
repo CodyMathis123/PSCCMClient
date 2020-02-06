@@ -70,7 +70,7 @@ function Get-CCMProvisioningMode {
                     $getCIMRegistryPropertySplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
             try {
                 $ProvisioningModeInfo = Get-CIMRegistryProperty @getCIMRegistryPropertySplat

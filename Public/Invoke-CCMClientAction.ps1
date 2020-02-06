@@ -92,7 +92,7 @@ function Invoke-CCMClientAction {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             foreach ($Option in $Schedule) {

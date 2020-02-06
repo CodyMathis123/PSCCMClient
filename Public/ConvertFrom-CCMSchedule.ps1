@@ -77,7 +77,7 @@ Function ConvertFrom-CCMSchedule {
     process {
         # we will split the schedulestring input into 16 characters, as some are stored as multiple in one
         foreach ($Schedule in ($ScheduleString -split '(\w{16})' | Where-Object { $_ })) {
-            $MW = [System.Collections.Specialized.OrderedDictionary]::new()
+            $MW = [ordered]@{ }
 
             # the first 8 characters are the Start of the MW, while the last 8 characters are the recurrence schedule
             $Start = $Schedule.Substring(0, 8)
