@@ -144,7 +144,7 @@ function Invoke-CCMBaseline {
                     $false {
                         foreach ($BL in $Baselines) {
                             if ($PSCmdlet.ShouldProcess($BL.DisplayName, "Invoke Evaluation")) {
-                                $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+                                $Return = [ordered]@{ }
                                 $Return['ComputerName'] = $Computer
                                 $Return['BaselineName'] = $BL.DisplayName
                                 $Return['Version'] = $BL.Version

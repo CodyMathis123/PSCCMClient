@@ -72,7 +72,7 @@ function Set-CCMManagementPoint {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['ManagementPointFQDNSet'] = $false
 

@@ -123,7 +123,7 @@ function Set-CCMLoggingConfiguration {
                 }
             }
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [LogLevel = '$LogLevel'] [LogMaxSize = '$LogMaxSize'] [LoxMaxHistory = '$LoxMaxHistory'] [DebugLogging = '$DebugLogging']", "Set-CCMLoggingConfiguration")) {
-                $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+                $Result = [ordered]@{ }
                 $Result['ComputerName'] = $Computer
                 $Result['LogConfigChanged'] = $false
 

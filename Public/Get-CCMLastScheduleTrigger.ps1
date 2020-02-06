@@ -190,7 +190,7 @@ function Get-CCMLastScheduleTrigger {
                     $getSchedHistSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {

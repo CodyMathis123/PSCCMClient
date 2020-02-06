@@ -115,7 +115,7 @@ Function Test-CCMStaleLog {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['LogFileName'] = $LogFileName
             $Result['LogLastWriteTime'] = $null

@@ -141,7 +141,7 @@ function Set-CIMRegistryProperty {
                     $setCIMRegPropSplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
             $Return[$Computer] = $false
 
             $setCIMRegPropSplat['MethodName'] = 'EnumValues'

@@ -121,7 +121,7 @@ function Get-CIMRegistryProperty {
                     $EnumValuesSplat['CimSession'] = $Connection
                 }
             }
-            $Return = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Return = [ordered]@{ }
             $EnumValuesSplat['MethodName'] = 'EnumValues'
             $EnumValuesSplat['Arguments'] = @{
                 hDefKey     = [uint32]$Root
@@ -138,7 +138,7 @@ function Get-CIMRegistryProperty {
                     $PropertiesToReturn = $EnumValues.sNames
                 }
             }
-            $PerPC_Reg = [System.Collections.Specialized.OrderedDictionary]::new()
+            $PerPC_Reg = [ordered]@{ }
             
             foreach ($PropertyName In $PropertiesToReturn) {
                 $PropIndex = $EnumValues.sNames.IndexOf($PropertyName)

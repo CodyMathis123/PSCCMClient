@@ -65,7 +65,7 @@ function Get-CCMSite {
                     $connectionSplat['CimSession'] = $Connection
                 }
             }
-            $Result = [System.Collections.Specialized.OrderedDictionary]::new()
+            $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             $Result['SiteCode'] = switch ($Computer -eq $env:ComputerName) {
