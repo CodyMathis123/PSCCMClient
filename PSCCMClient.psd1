@@ -178,6 +178,7 @@
             ReleaseNotes = @'
 v0.2.4
 * Add Get-CCMConnection to module in private folder
+* Convert all functions to using Get-CCMConnection to determine best / preferred connection
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
