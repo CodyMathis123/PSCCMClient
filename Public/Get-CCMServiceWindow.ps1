@@ -73,44 +73,22 @@ function Get-CCMServiceWindow {
             ClassName = 'CCM_ServiceWindow'
             Filter    = $RequestedTypesFilter
         }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getServiceWindowSplat.Remove('ComputerName')
-                                $getServiceWindowSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getServiceWindowSplat.Remove('CimSession')
-                                $getServiceWindowSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getServiceWindowSplat.Remove('CimSession')
-                            $getServiceWindowSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getServiceWindowSplat.Remove('ComputerName')
-                    $getServiceWindowSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ServiceWindows = Get-CimInstance @getServiceWindowSplat
+                [ciminstance[]]$ServiceWindows = Get-CimInstance @getServiceWindowSplat @connectionSplat
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['Schedules'] = $ServiceWindow.Schedules

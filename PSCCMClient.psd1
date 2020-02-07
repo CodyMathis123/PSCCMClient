@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.3'
+    ModuleVersion     = '0.2.4'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -176,6 +176,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.4
+* Add Get-CCMConnection to module in private folder
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
