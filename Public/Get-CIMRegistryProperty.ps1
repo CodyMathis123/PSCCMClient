@@ -83,52 +83,31 @@ function Get-CIMRegistryProperty {
         $Root = $RootKey[$RegRoot]
 
         #region define our hash tables for parameters to pass to Invoke-CimMethod and our return hash table
-        $EnumValuesSplat = @{ 
+        $EnumValuesSplat = @{
             Namespace = 'root\default'
             ClassName = 'StdRegProv'
         }
         #endregion define our hash tables for parameters to pass to Invoke-CimMethod and our return hash table
+
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $EnumValuesSplat.Remove('ComputerName')
-                                $EnumValuesSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $EnumValuesSplat.Remove('CimSession')
-                                $EnumValuesSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $EnumValuesSplat.Remove('CimSession')
-                            $EnumValuesSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $EnumValuesSplat.Remove('ComputerName')
-                    $EnumValuesSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $EnumValuesSplat['MethodName'] = 'EnumValues'
             $EnumValuesSplat['Arguments'] = @{
                 hDefKey     = [uint32]$Root
                 sSubKeyName = $Key
-            }  
+            }
 
-            $EnumValues = Invoke-CimMethod @EnumValuesSplat
+            $EnumValues = Invoke-CimMethod @EnumValuesSplat @connectionSplat
 
             switch ($PSBoundParameters.ContainsKey('Property')) {
                 $true {
@@ -139,7 +118,7 @@ function Get-CIMRegistryProperty {
                 }
             }
             $PerPC_Reg = [ordered]@{ }
-            
+
             foreach ($PropertyName In $PropertiesToReturn) {
                 $PropIndex = $EnumValues.sNames.IndexOf($PropertyName)
                 switch ($PropIndex) {
@@ -152,7 +131,7 @@ function Get-CIMRegistryProperty {
                         $Method = $RegPropertyMethod[$PropType]
                         $EnumValuesSplat['MethodName'] = $Method
                         $EnumValuesSplat['Arguments']['sValueName'] = $PropertyName
-                        $PropertyValueQuery = Invoke-CimMethod @EnumValuesSplat
+                        $PropertyValueQuery = Invoke-CimMethod @EnumValuesSplat @connectionSplat
 
                         switch ($PropertyValueQuery.ReturnValue) {
                             0 {

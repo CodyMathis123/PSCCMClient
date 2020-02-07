@@ -37,44 +37,22 @@ function Get-CCMLoggingConfiguration {
             ClassName   = 'CCM_Logging_GlobalConfiguration'
             ErrorAction = 'Stop'
         }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getLogInfoSplat.Remove('ComputerName')
-                                $getLogInfoSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getLogInfoSplat.Remove('CimSession')
-                                $getLogInfoSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getLogInfoSplat.Remove('CimSession')
-                            $getLogInfoSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getLogInfoSplat.Remove('ComputerName')
-                    $getLogInfoSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CimResult = Get-CimInstance @getLogInfoSplat
+                [ciminstance[]]$CimResult = Get-CimInstance @getLogInfoSplat @connectionSplat
                 if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
                     foreach ($Object in $CimResult) {
                         $Result['LogDirectory'] = $Object.LogDirectory

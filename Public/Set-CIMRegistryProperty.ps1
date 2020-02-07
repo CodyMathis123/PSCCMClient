@@ -108,39 +108,18 @@ function Set-CIMRegistryProperty {
             SetExpandedStringValue = 'sValue'
             SetBinaryValue         = 'uValue'
         }
+
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $setCIMRegPropSplat.Remove('ComputerName')
-                                $setCIMRegPropSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $setCIMRegPropSplat.Remove('CimSession')
-                                $setCIMRegPropSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $setCIMRegPropSplat.Remove('CimSession')
-                            $setCIMRegPropSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $setCIMRegPropSplat.Remove('ComputerName')
-                    $setCIMRegPropSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $Return[$Computer] = $false
 
@@ -150,7 +129,7 @@ function Set-CIMRegistryProperty {
                 sSubKeyName = $Key
             }  
 
-            $EnumValues = Invoke-CimMethod @setCIMRegPropSplat
+            $EnumValues = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
 
             $setCIMRegPropSplat['MethodName'] = $Method
             $setCIMRegPropSplat['Arguments']['sValueName'] = $Property
@@ -159,12 +138,12 @@ function Set-CIMRegistryProperty {
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [sValueName = '$Property'] [Value = '$Value']", "Set-CIMRegistryProperty")) {
                 switch ($EnumValues.sNames -contains $Property) {
                     $true {
-                        $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
+                        $SetProperty = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
                     }
                     $false {
                         switch ($Force.IsPresent) {
                             $true {
-                                $SetProperty = Invoke-CimMethod @setCIMRegPropSplat
+                                $SetProperty = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
                             }
                             $false {
                                 Write-Warning ([string]::Format('[Property = {0}] does not exist under [Key = {1}\{2}] and the force parameter was not specified. No changes will be made', $Property, $RootKey, $Key))

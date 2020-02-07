@@ -37,43 +37,21 @@ function Get-CCMProvisioningMode {
             Key      = 'Software\Microsoft\CCM\CcmExec'
             Property = 'ProvisioningMode', 'ProvisioningEnabledTime', 'ProvisioningMaxMinutes'
         }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getCIMRegistryPropertySplat.Remove('ComputerName')
-                                $getCIMRegistryPropertySplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getCIMRegistryPropertySplat.Remove('CimSession')
-                                $getCIMRegistryPropertySplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getCIMRegistryPropertySplat.Remove('CimSession')
-                            $getCIMRegistryPropertySplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getCIMRegistryPropertySplat.Remove('ComputerName')
-                    $getCIMRegistryPropertySplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
             try {
-                $ProvisioningModeInfo = Get-CIMRegistryProperty @getCIMRegistryPropertySplat
+                $ProvisioningModeInfo = Get-CIMRegistryProperty @getCIMRegistryPropertySplat @connectionSplat
                 if ($ProvisioningModeInfo -is [object]) {
                     $Return['ProvisioningMode'] = $ProvisioningModeInfo.$Computer.ProvisioningMode
                     $EnabledTime = switch ([string]::IsNullOrWhiteSpace($ProvisioningModeInfo.$Computer.ProvisioningEnabledTime)) {

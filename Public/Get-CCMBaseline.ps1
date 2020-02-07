@@ -68,39 +68,18 @@ function Get-CCMBaseline {
             4 = 'Error'
         }
         #endregion hash table for translating compliance status
+        
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getBaselineSplat.Remove('ComputerName')
-                                $getBaselineSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getBaselineSplat.Remove('CimSession')
-                                $getBaselineSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getBaselineSplat.Remove('CimSession')
-                            $getBaselineSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getBaselineSplat.Remove('ComputerName')
-                    $getBaselineSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
 
@@ -117,7 +96,7 @@ function Get-CCMBaseline {
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
                 $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-CimInstance @getBaselineSplat
+                    $Baselines = Get-CimInstance @getBaselineSplat @connectionSplat
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.

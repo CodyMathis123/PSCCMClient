@@ -33,44 +33,23 @@ function Get-CCMPrimaryUser {
             Query     = 'SELECT User from CCM_PrimaryUser'
         }
         #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
+
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getPrimaryUserSplat.Remove('ComputerName')
-                                $getPrimaryUserSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getPrimaryUserSplat.Remove('CimSession')
-                                $getPrimaryUserSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getPrimaryUserSplat.Remove('CimSession')
-                            $getPrimaryUserSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getPrimaryUserSplat.Remove('ComputerName')
-                    $getPrimaryUserSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$PrimaryUsers = Get-CimInstance @getPrimaryUserSplat
+                [ciminstance[]]$PrimaryUsers = Get-CimInstance @getPrimaryUserSplat @connectionSplat
                 if ($PrimaryUsers -is [Object] -and $PrimaryUsers.Count -gt 0) {
                     $Result['PrimaryUser'] = $PrimaryUsers.User
                     [PSCustomObject]$Result

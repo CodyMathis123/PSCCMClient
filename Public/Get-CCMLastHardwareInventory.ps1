@@ -36,44 +36,22 @@ function Get-CCMLastHardwareInventory {
             Namespace = 'root\CCM\InvAgt'
             Query     = "SELECT LastCycleStartedDate, LastReportDate, LastMajorReportVersion, LastMinorReportVersion, InventoryActionID FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'"
         }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getLastHinvSplat.Remove('ComputerName')
-                                $getLastHinvSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getLastHinvSplat.Remove('CimSession')
-                                $getLastHinvSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getLastHinvSplat.Remove('CimSession')
-                            $getLastHinvSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getLastHinvSplat.Remove('ComputerName')
-                    $getLastHinvSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastHinv = Get-CimInstance @getLastHinvSplat
+                [ciminstance[]]$LastHinv = Get-CimInstance @getLastHinvSplat @connectionSplat
                 if ($LastHinv -is [Object] -and $LastHinv.Count -gt 0) {
                     foreach ($Occurrence in $LastHinv) {
                         $Result['LastCycleStartedDate'] = $Occurrence.LastCycleStartedDate

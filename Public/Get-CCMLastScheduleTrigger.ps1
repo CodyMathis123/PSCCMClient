@@ -9,7 +9,7 @@ function Get-CCMLastScheduleTrigger {
         Specifies the schedule to get trigger history info for. This has a validate set of all possible 'standard' options that the client can perform
         on a schedule.
     .PARAMETER ScheduleID
-        Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing. 
+        Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing.
     .PARAMETER CimSession
         Provides CimSessions to gather schedule trigger info from
     .PARAMETER ComputerName
@@ -157,44 +157,22 @@ function Get-CCMLastScheduleTrigger {
             Namespace = 'root\CCM\Scheduler'
             Query     = $RequestedScheduleQuery
         }
+        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getSchedHistSplat.Remove('ComputerName')
-                                $getSchedHistSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getSchedHistSplat.Remove('CimSession')
-                                $getSchedHistSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getSchedHistSplat.Remove('CimSession')
-                            $getSchedHistSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getSchedHistSplat.Remove('ComputerName')
-                    $getSchedHistSplat['CimSession'] = $Connection
-                }
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ScheduleHistory = Get-CimInstance @getSchedHistSplat
+                [ciminstance[]]$ScheduleHistory = Get-CimInstance @getSchedHistSplat @connectionSplat
                 if ($ScheduleHistory -is [Object] -and $ScheduleHistory.Count -gt 0) {
                     foreach ($Trigger in $ScheduleHistory) {
                         $Result['ScheduleID'] = $Trigger.ScheduleID
