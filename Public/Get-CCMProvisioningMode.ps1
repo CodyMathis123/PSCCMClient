@@ -37,7 +37,6 @@ function Get-CCMProvisioningMode {
             Key      = 'Software\Microsoft\CCM\CcmExec'
             Property = 'ProvisioningMode', 'ProvisioningEnabledTime', 'ProvisioningMaxMinutes'
         }
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

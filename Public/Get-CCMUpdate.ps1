@@ -79,7 +79,6 @@ function Get-CCMUpdate {
             }
         }
 
-        $ConnectionSplat = @{ }
         $getUpdateSplat = @{
             Filter    = $Filter
             Namespace = 'root\CCM\ClientSDK'

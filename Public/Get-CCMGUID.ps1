@@ -30,7 +30,6 @@ function Get-CCMGUID {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getGUIDSplat = @{
             Namespace = 'root\CCM'
             Query     = 'SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client'

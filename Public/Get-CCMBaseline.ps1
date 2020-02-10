@@ -68,8 +68,6 @@ function Get-CCMBaseline {
             4 = 'Error'
         }
         #endregion hash table for translating compliance status
-        
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

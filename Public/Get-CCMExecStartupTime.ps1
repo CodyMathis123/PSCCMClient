@@ -32,7 +32,6 @@ function Get-CCMExecStartupTime {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getCCMExecServiceSplat = @{
             Query = "SELECT State, ProcessID from Win32_Service WHERE Name = 'CCMExec'" 
         }

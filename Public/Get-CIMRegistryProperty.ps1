@@ -88,8 +88,6 @@ function Get-CIMRegistryProperty {
             ClassName = 'StdRegProv'
         }
         #endregion define our hash tables for parameters to pass to Invoke-CimMethod and our return hash table
-
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

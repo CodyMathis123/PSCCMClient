@@ -37,7 +37,6 @@ function Get-CCMLoggingConfiguration {
             ClassName   = 'CCM_Logging_GlobalConfiguration'
             ErrorAction = 'Stop'
         }
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

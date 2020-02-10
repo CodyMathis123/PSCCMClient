@@ -28,8 +28,6 @@ function Get-CCMSoftwareUpdateSettings {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-
-        $connectionSplat = @{ }
         $getSoftwareUpdateSettingsSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
             Query     = 'SELECT * FROM CCM_SoftwareUpdatesClientConfig'

@@ -108,8 +108,6 @@ function Set-CIMRegistryProperty {
             SetExpandedStringValue = 'sValue'
             SetBinaryValue         = 'uValue'
         }
-
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

@@ -31,7 +31,6 @@ function Get-CCMCacheInfo {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getCacheInfoSplat = @{
             Namespace   = 'root\CCM\SoftMgmtAgent'
             ClassName   = 'CacheConfig'

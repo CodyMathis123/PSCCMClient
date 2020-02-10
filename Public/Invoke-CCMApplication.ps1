@@ -69,7 +69,6 @@ Function Invoke-CCMApplication {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $EnforcePreferenceMap = @{
             'Immediate'        = [uint32]0
             'NonBusinessHours' = [uint32]1

@@ -49,7 +49,6 @@ function Get-CCMMaintenanceWindow {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         #region Create hashtable for mapping MW types, and create CIM filter based on input params
         $MW_Type = @{
             1	=	'All Deployment Service Window'

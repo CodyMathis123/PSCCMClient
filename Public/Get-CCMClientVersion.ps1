@@ -30,7 +30,6 @@ function Get-CCMClientVersion {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getClientVersionSplat = @{
             Namespace = 'root\CCM'
             Query     = 'SELECT ClientVersion FROM SMS_Client'

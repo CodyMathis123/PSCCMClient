@@ -31,7 +31,6 @@ function Get-CCMCurrentSoftwareUpdatePoint {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $CurrentSUPSplat = @{
             Namespace = 'root\ccm\SoftwareUpdates\WUAHandler'
             Query     = 'SELECT ContentLocation FROM CCM_UpdateSource'

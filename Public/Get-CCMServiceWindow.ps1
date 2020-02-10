@@ -73,7 +73,6 @@ function Get-CCMServiceWindow {
             ClassName = 'CCM_ServiceWindow'
             Filter    = $RequestedTypesFilter
         }
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

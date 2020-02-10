@@ -30,7 +30,6 @@ function Get-CCMCacheContent {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getCacheContentSplat = @{
             Namespace   = 'root\CCM\SoftMgmtAgent'
             ClassName   = 'CacheInfoEx'

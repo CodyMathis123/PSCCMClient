@@ -157,7 +157,6 @@ function Get-CCMLastScheduleTrigger {
             Namespace = 'root\CCM\Scheduler'
             Query     = $RequestedScheduleQuery
         }
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {

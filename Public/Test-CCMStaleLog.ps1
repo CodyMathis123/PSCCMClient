@@ -57,8 +57,6 @@ Function Test-CCMStaleLog {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
-
         $getRequestedLogInfoSplat = @{ }
 
         $TimeSpanSplat = @{ }

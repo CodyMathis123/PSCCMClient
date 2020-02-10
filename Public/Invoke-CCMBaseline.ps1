@@ -56,7 +56,6 @@ function Invoke-CCMBaseline {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
         $getBaselineSplat = @{
             Namespace   = 'root\ccm\dcm'

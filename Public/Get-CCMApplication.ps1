@@ -47,7 +47,6 @@ function Get-CCMApplication {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $getapplicationsplat = @{
             NameSpace = 'root\CCM\ClientSDK'

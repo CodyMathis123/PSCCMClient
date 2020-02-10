@@ -43,7 +43,6 @@ function Set-CCMCacheLocation {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {       
-        $connectionSplat = @{ }
         $FullCachePath = switch ($Location.EndsWith('ccmcache', 'CurrentCultureIgnoreCase')) {
             $true {
                 Write-Output $Location

@@ -31,7 +31,6 @@ function Get-CCMClientDirectory {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getRegistryPropertySplat = @{
             Key      = "SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties"
             Property = "Local SMS Path"

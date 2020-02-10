@@ -37,7 +37,6 @@ function Get-CCMSoftwareUpdateGroup {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $ConnectionSplat = @{ }
         $getSUGSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
         }

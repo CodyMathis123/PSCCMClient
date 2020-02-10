@@ -31,7 +31,6 @@ function Get-CCMCurrentManagementPoint {
         [string[]]$ComputerName = $env:ComputerName
     )
     begin {
-        $connectionSplat = @{ }
         $getCurrentMPSplat = @{
             Namespace = 'root\CCM'
             Query     = 'SELECT CurrentManagementPoint FROM SMS_Authority'

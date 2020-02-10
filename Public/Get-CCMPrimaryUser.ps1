@@ -33,8 +33,6 @@ function Get-CCMPrimaryUser {
             Query     = 'SELECT User from CCM_PrimaryUser'
         }
         #endregion define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
-
-        $connectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
