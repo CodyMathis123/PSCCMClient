@@ -16,6 +16,8 @@ function Invoke-CCMTriggerSchedule {
             Provides CimSessions to invoke IDs on
         .PARAMETER ComputerName
             Provides computer names to invoke IDs on
+        .PARAMETER PSSession
+            Provides PSSession to invoke IDs on
         .EXAMPLE
             C:\PS> Invoke-CCMTriggerSchedule -ScheduleID TST20000
                 Performs a TriggerSchedule operation on the TST20000 ScheduleID for the local computer using the default values for Delay and Timeout
@@ -28,7 +30,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-01-11
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -51,16 +53,15 @@ function Invoke-CCMTriggerSchedule {
     )
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
-
-        $connectionSplat = @{ }
+        
         $invokeClientActionSplat = @{
             MethodName  = 'TriggerSchedule'
             Namespace   = 'root\ccm'
             ClassName   = 'sms_client'
             ErrorAction = 'Stop'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMTriggerSchedule'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Invoke-CCMTriggerSchedule', 'Get-CCMConnection'
         }
     }
     process {
@@ -93,8 +94,8 @@ function Invoke-CCMTriggerSchedule {
                                 }
                                 $false {
                                     $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID {0} -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
-                                    $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
                                 }
                             }
                         }

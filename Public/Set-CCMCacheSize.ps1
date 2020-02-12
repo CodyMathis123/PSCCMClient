@@ -12,6 +12,8 @@ function Set-CCMCacheSize {
         Provides CimSessions to set CCMCache size on
     .PARAMETER ComputerName
         Provides computer names to set CCMCache size on
+    .PARAMETER PSSession
+        Provides PSSession to set CCMCache size on
     .EXAMPLE
         C:\PS> Set-CCMCacheSize -Size 20480
             Set the cache size to 20480 MB for the local computer
@@ -23,7 +25,7 @@ function Set-CCMCacheSize {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-01-15
+        Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -34,10 +36,11 @@ function Set-CCMCacheSize {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
         $GetCacheSplat = @{
             Namespace   = 'root\CCM\SoftMgmtAgent'
             ClassName   = 'CacheConfig'
@@ -45,7 +48,7 @@ function Set-CCMCacheSize {
         }
 
         $SetCacheSizeScriptBlock = [scriptblock]::Create([string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size))
-        $SetCacheSplat = @{
+        $invokeCommandSplat = @{
             ScriptBlock = $SetCacheSizeScriptBlock
         }
     }
@@ -61,6 +64,7 @@ function Set-CCMCacheSize {
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Size = '$Size']", "Set CCM Cache Size")) {
+                    # ENHANCE - Need to factor in when both actual CIM and remote work need done. Should 'everything' use CIM, or remoting? So perform this in the invoke command? Would allow for 1 session type input
                     $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
                     if ($Cache -is [object]) {
                         switch ($Cache.Size) {
@@ -73,7 +77,14 @@ function Set-CCMCacheSize {
                                         . $SetCacheSizeScriptBlock
                                     }
                                     $false {
-                                        Invoke-CIMPowerShell @SetCacheSplat @connectionSplat
+                                        switch ($ConnectionInfo.ConnectionType) {
+                                            'CimSession' {
+                                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                            }
+                                            'PSSession' {
+                                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                            }
+                                        }            
                                     }
                                 }
                                 $Cache = Get-CimInstance @GetCacheSplat @connectionSplat

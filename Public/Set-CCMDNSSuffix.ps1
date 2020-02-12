@@ -10,6 +10,8 @@ function Set-CCMDNSSuffix {
             Provides CimSessions to set the current DNS suffix for
         .PARAMETER ComputerName
             Provides computer names to set the current DNS suffix for
+        .PARAMETER PSSession
+            Provides PSSession to set the current DNS suffix for
         .EXAMPLE
             C:\PS> Set-CCMDNSSuffix -DNSSuffix 'contoso.com'
                 Sets the local computer's DNS Suffix to contoso.com
@@ -21,7 +23,7 @@ function Set-CCMDNSSuffix {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-18
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -31,12 +33,13 @@ function Set-CCMDNSSuffix {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMDNSSuffix'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Set-CCMDNSSuffix', 'Get-CCMConnection'
         }
     }
     process {
@@ -58,8 +61,15 @@ function Set-CCMDNSSuffix {
                         }
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix {0}', $DNSSuffix)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
                         }
                     }
                     $Result['DNSSuffixSet'] = $true

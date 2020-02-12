@@ -178,7 +178,11 @@
             ReleaseNotes = @'
 v0.2.4
 * Add Get-CCMConnection to module in private folder
+            This function is used internally to return connection info, whether it is a CimSession, PSSession, or just computername
 * Convert all functions to using Get-CCMConnection to determine best / preferred connection
+* Add PSSession parameter to functions that have to invoke commands remotely. Provides alternative to Invoke-CIMPowerShell
+* Add Invoke-CCMCommand to module
+            This function is used similar to Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'

@@ -15,6 +15,8 @@ function Invoke-CCMUpdate {
             Computer CimSession(s) which you want to get invoke SCCM patches for
         .PARAMETER ComputerName
             Computer name(s) which you want to get invoke SCCM patches for
+        .PARAMETER PSSession
+            PSSession(s) which you want to get invoke SCCM patches for
         .EXAMPLE
             C:\PS> Invoke-CCMUpdate
                 Invokes all updates on the local machine
@@ -26,7 +28,7 @@ function Invoke-CCMUpdate {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-12-22
-            Updated:     2020-01-16
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -36,7 +38,9 @@ function Invoke-CCMUpdate {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         $UpdateStatus = @{
@@ -68,7 +72,6 @@ function Invoke-CCMUpdate {
         #$UpdateStatus.Get_Item("$EvaluationState")
         #endregion status type hashtable
 
-        $connectionSplat = @{ }
         $invokeCIMMethodSplat = @{
             Namespace  = 'root\ccm\clientsdk'
             MethodName = 'InstallUpdates'
@@ -77,8 +80,8 @@ function Invoke-CCMUpdate {
         $getUpdateSplat = @{
             Namespace = 'root\CCM\ClientSDK'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMUpdate'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Invoke-CCMUpdate', 'Get-CCMConnection'
         }
     }
     process {
@@ -133,8 +136,15 @@ function Invoke-CCMUpdate {
                         }
                         $false {
                             $ScriptBlock = [string]::Format('Invoke-CCMUpdate -ArticleID {0}', [string]::Join(', ', $ArticleID))
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
                         }
                     }
                     if ($Invocation) {

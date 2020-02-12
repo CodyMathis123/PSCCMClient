@@ -8,6 +8,8 @@ function Get-CCMSite {
             Provides CimSessions to return the current MEMCM Site for
         .PARAMETER ComputerName
             Provides computer names to return the current MEMCM Site for
+        .PARAMETER PSSession
+            Provides a PSSession to return the current MEMCM Site for
         .EXAMPLE
             C:\PS> Get-CCMSite
                 Return the local computers MEMCM Site setting
@@ -19,7 +21,7 @@ function Get-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-18
+            Updated:     2020-02-12
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -27,11 +29,18 @@ function Get-CCMSite {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{ }
+        $GetSiteScriptblock = {
+            $Client = New-Object -ComObject Microsoft.SMS.Client
+            $Client.GetAssignedSite()
+        }
+        $invokeCommandSplat = @{
+            ScriptBlock = $GetSiteScriptblock
+        }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -46,15 +55,17 @@ function Get-CCMSite {
 
             $Result['SiteCode'] = switch ($Computer -eq $env:ComputerName) {
                 $true {
-                    $Client = New-Object -ComObject Microsoft.SMS.Client
-                    $Client.GetAssignedSite()
+                    . $GetSiteScriptblock
                 }
                 $false {
-                    $invokeCIMPowerShellSplat['ScriptBlock'] = {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Client.GetAssignedSite()
+                    switch ($ConnectionInfo.ConnectionType) {
+                        'CimSession' {
+                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                        }
+                        'PSSession' {
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        }
                     }
-                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                 }
             }
             [pscustomobject]$Result

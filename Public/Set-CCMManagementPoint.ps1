@@ -10,6 +10,8 @@ function Set-CCMManagementPoint {
             Provides CimSessions to set the current management point for
         .PARAMETER ComputerName
             Provides computer names to set the current management point for
+        .PARAMETER PSSession
+            Provides PSSession to set the current management point for
         .EXAMPLE
             C:\PS> Set-CCMManagementPoint -ManagementPointFQDN 'cmmp1.contoso.com'
                 Sets the local computer's management point to cmmp1.contoso.com
@@ -21,7 +23,7 @@ function Set-CCMManagementPoint {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-18
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     [Alias('Set-CCMMP')]
@@ -32,12 +34,13 @@ function Set-CCMManagementPoint {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMManagementPoint'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Set-CCMManagementPoint', 'Get-CCMConnection'
         }
     }
     process {
@@ -61,8 +64,15 @@ function Set-CCMManagementPoint {
                         }
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMManagementPoint -ManagementPointFQDN ', $ManagementPointFQDN)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
                         }
                     }
                     $Result['ManagementPointFQDNSet'] = $true

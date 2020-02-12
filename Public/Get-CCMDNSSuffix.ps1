@@ -8,6 +8,8 @@ function Get-CCMDNSSuffix {
             Provides CimSessions to return the current DNS suffix in use for
         .PARAMETER ComputerName
             Provides computer names to return the current DNS suffix in use for
+        .PARAMETER PSSession
+            Provides a PSSession to return the current DNS suffix in use for
         .EXAMPLE
             C:\PS> Get-CCMDNSSuffix
                 Return the local computers DNS Suffix setting
@@ -19,7 +21,7 @@ function Get-CCMDNSSuffix {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-18
+            Updated:     2020-02-12
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -27,11 +29,18 @@ function Get-CCMDNSSuffix {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{ }
+        $GetDNSSuffixScriptBlock = {
+            $Client = New-Object -ComObject Microsoft.SMS.Client
+            $Client.GetDNSSuffix()
+        }
+        $invokeCommandSplat = @{
+            ScriptBlock = $GetDNSSuffixScriptBlock
+        }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -46,15 +55,17 @@ function Get-CCMDNSSuffix {
 
             $Result['DNSSuffix'] = switch ($Computer -eq $env:ComputerName) {
                 $true {
-                    $Client = New-Object -ComObject Microsoft.SMS.Client
-                    $Client.GetDNSSuffix()
+                    . $GetDNSSuffixScriptBlock
                 }
                 $false {
-                    $invokeCIMPowerShellSplat['ScriptBlock'] = {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Client.GetDNSSuffix()
+                    switch ($ConnectionInfo.ConnectionType) {
+                        'CimSession' {
+                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                        }
+                        'PSSession' {
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        }
                     }
-                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
                 }
             }
             [pscustomobject]$Result

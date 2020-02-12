@@ -1,38 +1,40 @@
 function Get-CCMCurrentWindowAvailableTime {
     <#
-    .SYNOPSIS
-        Return the time left in the current window based on input.
-    .DESCRIPTION
-        This function uses the GetCurrentWindowAvailableTime method of the CCM_ServiceWindowManager CIM class. It will allow you to
-        return the time left in the current window based on your input parameters.
+        .SYNOPSIS
+            Return the time left in the current window based on input.
+        .DESCRIPTION
+            This function uses the GetCurrentWindowAvailableTime method of the CCM_ServiceWindowManager CIM class. It will allow you to
+            return the time left in the current window based on your input parameters.
 
-        It also will determine your client settings for software updates to appropriately fall back to an 'All Deployment Service Window'
-        according to both your settings, and whether a 'Software Update Service Window' is available
-    .PARAMETER MWType
-        Specifies the types of MW you want information for. Defaults to 'Software Update Service Window'. Valid options are below
-            'All Deployment Service Window',
-            'Program Service Window',
-            'Reboot Required Service Window',
-            'Software Update Service Window',
-            'Task Sequences Service Window',
-            'Corresponds to non-working hours'
-    .PARAMETER CimSession
-        Provides CimSession to gather Maintenance Window information info from
-    .PARAMETER ComputerName
-        Provides computer names to gather Maintenance Window information info from
-    .EXAMPLE
-        C:\PS> Get-CCMCurrentWindowAvailableTime
-            Return the available time fro the default MWType of 'Software Update Service Window' with fallback
-            based on client settings and 'Software Update Service Window' availability.
-    .EXAMPLE
-        C:\PS> Get-CCMCurrentWindowAvailableTime -ComputerName 'Workstation1234','Workstation4321' -MWType 'Task Sequences Service Window'
-            Return the available time left in a current 'Task Sequences Service Window' for 'Workstation1234','Workstation4321'
-    .NOTES
-        FileName:    Get-CCMCurrentWindowAvailableTime.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-02-01
-        Updated:     2020-02-01
+            It also will determine your client settings for software updates to appropriately fall back to an 'All Deployment Service Window'
+            according to both your settings, and whether a 'Software Update Service Window' is available
+        .PARAMETER MWType
+            Specifies the types of MW you want information for. Defaults to 'Software Update Service Window'. Valid options are below
+                'All Deployment Service Window',
+                'Program Service Window',
+                'Reboot Required Service Window',
+                'Software Update Service Window',
+                'Task Sequences Service Window',
+                'Corresponds to non-working hours'
+        .PARAMETER CimSession
+            Provides CimSession to gather Maintenance Window information info from
+        .PARAMETER ComputerName
+            Provides computer names to gather Maintenance Window information info from
+        .PARAMETER PSSession
+            Provides a PSSession to gather Maintenance Window information info from
+        .EXAMPLE
+            C:\PS> Get-CCMCurrentWindowAvailableTime
+                Return the available time fro the default MWType of 'Software Update Service Window' with fallback
+                based on client settings and 'Software Update Service Window' availability.
+        .EXAMPLE
+            C:\PS> Get-CCMCurrentWindowAvailableTime -ComputerName 'Workstation1234','Workstation4321' -MWType 'Task Sequences Service Window'
+                Return the available time left in a current 'Task Sequences Service Window' for 'Workstation1234','Workstation4321'
+        .NOTES
+            FileName:    Get-CCMCurrentWindowAvailableTime.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-02-01
+            Updated:     2020-02-12
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -50,10 +52,11 @@ function Get-CCMCurrentWindowAvailableTime {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
         #region Create hashtable for mapping MW types
         $MW_Type = @{
             'All Deployment Service Window'    = 1
@@ -65,23 +68,27 @@ function Get-CCMCurrentWindowAvailableTime {
         }
         #endregion Create hashtable for mapping MW types
 
-        $getMWFallbackSplat = @{
-            Namespace = 'root\CCM\Policy\Machine\ActualConfig'
-            Query     = 'SELECT ServiceWindowManagement FROM CCM_SoftwareUpdatesClientConfig'
-        }
         $getCurrentWindowTimeLeft = @{
             Namespace  = 'root\CCM\ClientSDK'
             ClassName  = 'CCM_ServiceWindowManager'
             MethodName = 'GetCurrentWindowAvailableTime'
             Arguments  = @{ }
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Get-CCMCurrentWindowAvailableTime', 'Get-CCMMaintenanceWindow', 'Get-CCMSoftwareUpdateSettings'
+        $getUpdateMWExistenceSplat = @{
+            Namespace = 'root\CCM\ClientSDK'
+            Query     = 'SELECT Duration FROM CCM_ServiceWindow WHERE Type = 4'
+        }
+        $getSoftwareUpdateFallbackSettingsSplat = @{
+            Namespace = 'root\CCM\Policy\Machine\ActualConfig'
+            Query     = 'SELECT ServiceWindowManagement FROM CCM_SoftwareUpdatesClientConfig'
+        }
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Get-CCMCurrentWindowAvailableTime', 'Get-CCMConnection'
         }
 
         $StringArgs = @(switch ($PSBoundParameters.Keys) {
                 'FallbackToAllProgramsWindow' {
-                    [string]::Format('-FallbackToAllProgramsWindow {0}', $FallbackToAllProgramsWindow)
+                    [string]::Format('-FallbackToAllProgramsWindow ${0}', $FallbackToAllProgramsWindow)
                 }
             })
     }
@@ -99,21 +106,22 @@ function Get-CCMCurrentWindowAvailableTime {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
+                        $HasUpdateMW = $null -ne (Get-CimInstance @getUpdateMWExistenceSplat @connectionSplat).Duration
+                        $FallbackSetting = (Get-CimInstance @getSoftwareUpdateFallbackSettingsSplat @connectionSplat).ServiceWindowManagement
+
                         foreach ($MW in $MWType) {
                             $MWFallback = switch ($FallbackToAllProgramsWindow) {
                                 $true {
                                     switch ($MWType) {
                                         'Software Update Service Window' {
-                                            $Setting = (Get-CCMSoftwareUpdateSettings @connectionSplat).ServiceWindowManagement
-                                            switch ($Setting -ne $FallbackToAllProgramsWindow) {
+                                            switch ($FallbackSetting -ne $FallbackToAllProgramsWindow) {
                                                 $true {
                                                     Write-Warning 'Requested fallback setting does not match the computers fallback setting for software updates'
                                                 }
                                             }
-                                            $HasUpdateMW = $null -ne (Get-CCMMaintenanceWindow @connectionSplat -MWType 'Software Update Service Window').Duration
                                             switch ($HasUpdateMW) {
                                                 $true {
-                                                    $Setting -and $HasUpdateMW
+                                                    $FallbackSetting -and $HasUpdateMW
                                                 }
                                                 $false {
                                                     $true
@@ -128,11 +136,9 @@ function Get-CCMCurrentWindowAvailableTime {
                                 $false {
                                     switch ($MWType) {
                                         'Software Update Service Window' {
-                                            $Setting = (Get-CimInstance @getMWFallbackSplat @connectionSplat).ServiceWindowManagement
-                                            $HasUpdateMW = $null -ne (Get-CCMMaintenanceWindow @connectionSplat -MWType 'Software Update Service Window').Duration
                                             switch ($HasUpdateMW) {
                                                 $true {
-                                                    $Setting -and $HasUpdateMW
+                                                    $FallbackSetting -and $HasUpdateMW
                                                 }
                                                 $false {
                                                     $true
@@ -157,8 +163,15 @@ function Get-CCMCurrentWindowAvailableTime {
                     }
                     $false {
                         $ScriptBlock = [string]::Format('Get-CCMCurrentWindowAvailableTime {0} {1}', [string]::Join(' ', $StringArgs), [string]::Format("-MWType '{0}'", [string]::Join("', '", $MWType)))
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                        $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                        switch ($ConnectionInfo.ConnectionType) {
+                            'CimSession' {
+                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                            }
+                            'PSSession' {
+                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                            }
+                        }
                     }
                 }
             }

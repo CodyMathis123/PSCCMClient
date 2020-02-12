@@ -14,6 +14,8 @@ function Remove-CCMCacheContent {
             Provides CimSessions to remove the provided ContentID from the MEMCM cache for
         .PARAMETER ComputerName
             Provides computer names to remove the provided ContentID from the MEMCM cache for
+        .PARAMETER PSSession
+            Provides PSSession to remove the provided ContentID from the MEMCM cache for
         .EXAMPLE
             C:\PS> Remove-CCMCacheContent -Clear
                 Clears the local MEMCM cache
@@ -25,7 +27,7 @@ function Remove-CCMCacheContent {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-12
-            Updated:     2020-01-12
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -39,7 +41,9 @@ function Remove-CCMCacheContent {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         switch ($PSBoundParameters.Keys -contains 'ContentID' -and $PSBoundParameters.Keys -contains 'Clear') {
@@ -47,9 +51,8 @@ function Remove-CCMCacheContent {
                 Write-Error -ErrorAction Stop -Message 'Both ContentID and Clear parameters provided - please only provide one. Note that ParameterSetName is in use, but is currently being used for CimSession/ComputerName distinction. Feel free to make a pull request ;)'
             }
         }
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Remove-CCMCacheContent'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Remove-CCMCacheContent', 'Get-CCMConnection'
         }
     }
     process {
@@ -108,8 +111,15 @@ function Remove-CCMCacheContent {
                     }
                     $false {
                         $ScriptBlock = [string]::Format('Remove-CCMCacheContent {0}', [string]::Join(' ', $removeCacheContentArgs))
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                        $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                        switch ($ConnectionInfo.ConnectionType) {
+                            'CimSession' {
+                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                            }
+                            'PSSession' {
+                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                            }
+                        }
                     }
                 }
             }

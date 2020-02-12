@@ -1,4 +1,6 @@
-﻿function Invoke-CIMPowerShell {
+﻿# TODO - Add Help
+
+function Invoke-CIMPowerShell {
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
 	(
@@ -18,11 +20,10 @@
 		[string[]]$ComputerName = $env:ComputerName
 	)
 	begin {
-		$invokeCIMPowerShellSplat = @{
+		$invokeCommandSplat = @{
 			ClassName  = 'Win32_Process'
 			MethodName = 'Create'
 		}
-		$connectionSplat = @{ }
 
 		$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CliXml', 'ConvertTo-Base64StringFromObject'
 		$HelperFunctions = switch ($PSBoundParameters.ContainsKey('FunctionsToLoad')) {
@@ -62,11 +63,11 @@
 			$Computer = $ConnectionInfo.ComputerName
 			$connectionSplat = $ConnectionInfo.connectionSplat
 
-			$invokeCIMPowerShellSplat['Arguments'] = @{
+			$invokeCommandSplat['Arguments'] = @{
 				CommandLine = [string]::Format("powershell.exe (invoke-command ([scriptblock]::Create([system.text.encoding]::UTF8.GetString([System.convert]::FromBase64string('{0}')))))", $encodedScriptBlock)
 			}
 
-			$null = Invoke-CimMethod @invokeCIMPowerShellSplat @connectionSplat
+			$null = Invoke-CimMethod @invokeCommandSplat @connectionSplat
 
 			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $Computer, "$($PipeName)", "In"
 			$namedPipe.Connect($timeout)

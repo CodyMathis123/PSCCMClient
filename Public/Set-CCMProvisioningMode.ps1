@@ -16,6 +16,8 @@ function Set-CCMProvisioningMode {
         Provides CimSessions to set provisioning mode for
     .PARAMETER ComputerName
         Provides computer names to set provisioning mode for
+    .PARAMETER PSSession
+        Provides PSSession to set provisioning mode for
     .EXAMPLE
         C:\PS> Set-CCMProvisioningMode -Status Enabled
             Enables provisioning mode on the local computer
@@ -31,7 +33,7 @@ function Set-CCMProvisioningMode {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-09
-        Updated:     2020-01-12
+        Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -45,10 +47,11 @@ function Set-CCMProvisioningMode {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
         [bool]$ProvisioningMode = switch ($Status) {
             'Enabled' {
                 $true
@@ -65,8 +68,8 @@ function Set-CCMProvisioningMode {
                 bEnable = $ProvisioningMode
             }
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMProvisioningMode'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Set-CCMProvisioningMode', 'Get-CCMConnection'
         }
         $setCIMRegistryPropertySplat = @{
             RegRoot      = 'HKEY_LOCAL_MACHINE'
@@ -99,8 +102,15 @@ function Set-CCMProvisioningMode {
                                 }
                                 $false {
                                     $ScriptBlock = [string]::Format('Set-CCMProvisioningMode -Status {0}', $Status)
-                                    $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                    switch ($ConnectionInfo.ConnectionType) {
+                                        'CimSession' {
+                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                        }
+                                        'PSSession' {
+                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                        }
+                                    }
                                 }
                             }
                             if ($Invocation) {
@@ -109,6 +119,7 @@ function Set-CCMProvisioningMode {
                             }
                         }
                         'ProvisioningMaxMinutes' {
+                            # ENHANCE - Need to factor in when both actual CIM and remote work need done. Should 'everything' use CIM, or remoting? So perform this in the invoke command? Would allow for 1 session type input
                             $MaxMinutesChange = Set-CIMRegistryProperty @setCIMRegistryPropertySplat @connectionSplat
                             if ($MaxMinutesChange[$Computer]) {
                                 Write-Verbose "Successfully set ProvisioningMaxMinutes for $Computer to $ProvisioningMaxMinutes"

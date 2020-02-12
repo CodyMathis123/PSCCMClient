@@ -16,6 +16,8 @@ function Invoke-CCMClientAction {
             Provides CimSessions to invoke actions on
         .PARAMETER ComputerName
             Provides computer names to invoke actions on
+        .PARAMETER PSSession
+            Provides PSSession to invoke actions on
         .EXAMPLE
             C:\PS> Invoke-CCMClientAction -Schedule MachinePol,HardwareInv
                 Start a machine policy eval and a hardware inventory cycle
@@ -24,7 +26,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-01-11
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -44,20 +46,21 @@ function Invoke-CCMClientAction {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
 
-        $connectionSplat = @{ }
         $invokeClientActionSplat = @{ }
         $getFullHINVSplat = @{
             Namespace   = 'root\ccm\invagt'
             ClassName   = 'InventoryActionStatus'
             ErrorAction = 'Stop'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMClientAction', 'Invoke-CCMTriggerSchedule'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Invoke-CCMClientAction', 'Invoke-CCMTriggerSchedule', 'Get-CCMConnection'
         }
     }
     process {
@@ -130,8 +133,15 @@ function Invoke-CCMClientAction {
                                 }
                                 $false {
                                     $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
-                                    $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                    switch ($ConnectionInfo.ConnectionType) {
+                                        'CimSession' {
+                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                        }
+                                        'PSSession' {
+                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -10,6 +10,8 @@ function Set-CCMSite {
             Provides CimSessions to set the current MEMCM Site for
         .PARAMETER ComputerName
             Provides computer names to set the current MEMCM Site for
+        .PARAMETER PSSession
+            Provides PSSession to set the current MEMCM Site for
         .EXAMPLE
             C:\PS> Set-CCMSite -SiteCode 'TST'
                 Sets the local computer's MEMCM Site to TST
@@ -21,7 +23,7 @@ function Set-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-29
+            Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -31,12 +33,13 @@ function Set-CCMSite {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMSite'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Set-CCMSite', 'Get-CCMConnection'
         }
     }
     process {
@@ -61,8 +64,15 @@ function Set-CCMSite {
                         }
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
                         }
                     }
                 }

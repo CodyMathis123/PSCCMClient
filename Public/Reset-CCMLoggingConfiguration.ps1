@@ -11,6 +11,8 @@ function Reset-CCMLoggingConfiguration {
         Provides CimSession to reset log configuration for
     .PARAMETER ComputerName
         Provides computer names to reset log configuration for
+    .PARAMETER PSSession
+        Provides PSSession to reset log configuration for
     .EXAMPLE
         C:\PS> Reset-CCMLoggingConfiguration
             Resets local computer client logging configuration
@@ -19,7 +21,7 @@ function Reset-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-11
-        Updated:     2020-01-18
+        Updated:     2020-02-12
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -27,7 +29,9 @@ function Reset-CCMLoggingConfiguration {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         $resetLogConfigSplat = @{
@@ -36,10 +40,9 @@ function Reset-CCMLoggingConfiguration {
             MethodName  = 'ResetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Reset-CCMLoggingConfiguration'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Reset-CCMLoggingConfiguration', 'Get-CCMConnection'
         }
-        $ConnectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -60,8 +63,15 @@ function Reset-CCMLoggingConfiguration {
                         }
                         $false {
 
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
                         }
                     }
                     if ($Invocation) {

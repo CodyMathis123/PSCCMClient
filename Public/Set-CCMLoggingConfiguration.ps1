@@ -1,3 +1,4 @@
+# TODO - Add setting the location, which would be a registry edit
 function Set-CCMLoggingConfiguration {
     <#
     .SYNOPSIS
@@ -17,6 +18,8 @@ function Set-CCMLoggingConfiguration {
         Provides CimSession to set log configuration for
     .PARAMETER ComputerName
         Provides computer names to set log configuration for
+    .PARAMETER PSSession
+        Provides PSSession to set log configuration for
     .EXAMPLE
         C:\PS> Set-CCMLoggingConfiguration -LogLevel Verbose
             Sets local computer to use Verbose logging
@@ -28,7 +31,7 @@ function Set-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-11
-        Updated:     2020-01-25
+        Updated:     2020-02-22
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -45,7 +48,9 @@ function Set-CCMLoggingConfiguration {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         $setLogConfigSplat = @{
@@ -54,10 +59,10 @@ function Set-CCMLoggingConfiguration {
             MethodName  = 'SetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMLoggingConfiguration'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Set-CCMLoggingConfiguration', 'Get-CCMConnection'
         }
-        $ConnectionSplat = @{ }
+        
         $LogConfigArgs = @{ }
         $LogLevelInt = switch ($LogLevel) {
             'None' {
@@ -85,7 +90,7 @@ function Set-CCMLoggingConfiguration {
             }
             'DebugLogging' {
                 $LogConfigArgs['DebugLogging'] = [bool]$DebugLogging
-                [string]::Format('-DebugLogging {0}', $DebugLogging)
+                [string]::Format('-DebugLogging ${0}', $DebugLogging)
             }
         }
         $setLogConfigSplat['Arguments'] = $LogConfigArgs
@@ -110,9 +115,16 @@ function Set-CCMLoggingConfiguration {
                         }
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
-                        }
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
+                            }
                     }
                     if ($Invocation) {
                         Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"

@@ -9,6 +9,8 @@ function Test-CCMIsClientAlwaysOnInternet {
             Provides CimSessions to return AlwaysOnInternet setting info from
         .PARAMETER ComputerName
             Provides computer names to return AlwaysOnInternet setting info from
+        .PARAMETER PSSession
+            Provides PSSession to return AlwaysOnInternet setting info from
         .EXAMPLE
             C:\PS> Test-CCMIsClientAlwaysOnInternet
                 Returns the status of the local computer having IsAlwaysOnInternet set
@@ -20,7 +22,7 @@ function Test-CCMIsClientAlwaysOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-01-29
+            Updated:     2020-02-12
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -28,12 +30,13 @@ function Test-CCMIsClientAlwaysOnInternet {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Test-CCMIsClientAlwaysOnInternet'
+        $invokeCommandSplat = @{
+            FunctionsToLoad = 'Test-CCMIsClientAlwaysOnInternet', 'Get-CCMConnection'
         }
     }
     process {
@@ -56,8 +59,15 @@ function Test-CCMIsClientAlwaysOnInternet {
                     }
                     $false {
                         $ScriptBlock = 'Test-CCMIsClientAlwaysOnInternet'
-                        $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                        $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                        switch ($ConnectionInfo.ConnectionType) {
+                            'CimSession' {
+                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                            }
+                            'PSSession' {
+                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                            }
+                        }
                     }
                 }
             }
