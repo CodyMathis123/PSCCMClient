@@ -1,6 +1,41 @@
-﻿# TODO - Add Help
-
-function Invoke-CIMPowerShell {
+﻿function Invoke-CIMPowerShell {
+	<#
+		.SYNOPSIS
+			Invoke PowerShell scriptblocks over CIM
+		.DESCRIPTION
+			This function uses the 'Create' method of the Win32_Process class in order to remotely invoke PowerShell
+			scriptblocks. In order to return the object from the remote machine, Named Pipes are used, which requires
+			Port 445 to be open. 
+		.PARAMETER PipeName
+			The name of the 'NamedPipe' that will be used. By default this is a randomly generated GUID. 
+		.PARAMETER ScriptBlock
+			The scriptblock in which you want to invoke over CIM
+		.PARAMETER FunctionsToLoad
+			An array of 'Functions' you want to load into the remote command. For example, you might have a custom written
+			function to interact with a COM object that you want to load into the remote command. Instead of having an entire
+			scriptblock that recreates the function, you can simply specify the function in this parameter.
+		.PARAMETER Timeout
+			The timeout value before the connection will fail to return data over the NamedPipe
+		.PARAMETER CimSession
+			CimSession to invoke the remote code on
+		.PARAMETER ComputerName
+			Computer name to invoke the remote code on
+		.EXAMPLE
+			C:\PS> Invoke-CimPowerShell -Scriptblock { 
+				$Client = New-Object -ComObject Microsoft.SMS.Client
+				$Client.GetDNSSuffix()
+			 } -ComputerName Workstation123
+			 	Return the current DNS Suffix for the MEMCM on Workstation123 using the ComObject and a scriptblock
+		.EXAMPLE
+			C:\PS> Invoke-CimPowerShell -Scriptblock { Get-CCMDNSSuffix } -ComputerName Workstation123 -FunctionsToLoad Get-CCMDNSSuffix
+			 	Return the current DNS Suffix for the MEMCM on Workstation123 by loading our existing function that does this work
+        .NOTES
+            FileName:    Invoke-CIMPowerShell.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-07
+            Updated:     2020-02-12
+	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
 	(
