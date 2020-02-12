@@ -59,17 +59,13 @@ function Get-CCMConnection {
     switch ($PSBoundParameters.Keys) {
         'CimSession' {
             Write-Verbose "CimSession passed to Get-CCMConnection - Passing CimSession out"
-            $return['connectionSplat'].Remove('ComputerName')
-            $return['connectionSplat'].Remove('Session')
-            $return['connectionSplat']['CimSession'] = $CimSession
+            $return['connectionSplat'] = @{ CimSession = $CimSession }
             $return['ComputerName'] = $CimSession.ComputerName
             $return['ConnectionType'] = 'CimSession'
         }
         'PSSession' {
             Write-Verbose "Session passed to Get-CCMConnection - Passing Session out"
-            $return['connectionSplat'].Remove('ComputerName')
-            $return['connectionSplat'].Remove('CimSession')
-            $return['connectionSplat']['Session'] = $PSSession
+            $return['connectionSplat'] = @{ Session = $PSSession }
             $return['ComputerName'] = $PSSession.ComputerName
             $return['ConnectionType'] = 'PSSession'
         }
@@ -78,9 +74,7 @@ function Get-CCMConnection {
             switch ($ComputerName -eq $env:ComputerName) {
                 $true {
                     Write-Verbose "Local computer provided - will return empty connection"
-                    $return['connectionSplat'].Remove('CimSession')
-                    $return['connectionSplat'].Remove('Session')
-                    $return['connectionSplat'].Remove('ComputerName')
+                    $return['connectionSplat'] = @{ }
                     $return['ConnectionType'] = 'ComputerName'
                 }
                 $false {
@@ -88,48 +82,34 @@ function Get-CCMConnection {
                         'CimSession' {
                             if ($ExistingCimSession = Get-CimSession -ComputerName $ComputerName -ErrorAction Ignore) {
                                 Write-Verbose "Active CimSession found for $ComputerName - Passing CimSession out"
-                                $return['connectionSplat'].Remove('ComputerName')
-                                $return['connectionSplat'].Remove('Session')
-                                $return['connectionSplat']['CimSession'] = $ExistingCimSession
+                                $return['connectionSplat'] = @{ CimSession = $ExistingCimSession }
                                 $return['ConnectionType'] = 'CimSession'
                             }
                             elseif ($ExistingSession = Get-Session -ComputerName $ComputerName -ErrorAction Ignore -State Opened) {
                                 Write-Verbose "Fallback active PSSession found for $ComputerName - Passing Session out"
-                                $return['connectionSplat'].Remove('ComputerName')
-                                $return['connectionSplat'].Remove('CimSession')
-                                $return['connectionSplat']['Session'] = $ExistingSession
-                                $return['ComputerName'] = $ExistingSession.ComputerName
+                                $return['connectionSplat'] = @{ Session = $ExistingSession }
                                 $return['ConnectionType'] = 'PSSession'
                             }
                             else {
                                 Write-Verbose "No active CimSession (preferred), or PSSession found for $Connection - falling back to -ComputerName"
-                                $return['connectionSplat'].Remove('CimSession')
-                                $return['connectionSplat'].Remove('Session')
-                                $return['connectionSplat']['ComputerName'] = $Connection
+                                $return['connectionSplat'] = @{ ComputerName = $Connection }
                                 $return['ConnectionType'] = 'CimSession'
                             }
                         }
                         'PSSession' {
                             if ($ExistingSession = Get-Session -ComputerName $ComputerName -ErrorAction Ignore -State Opened) {
                                 Write-Verbose "Active PSSession found for $ComputerName - Passing Session out"
-                                $return['connectionSplat'].Remove('ComputerName')
-                                $return['connectionSplat'].Remove('CimSession')
-                                $return['connectionSplat']['Session'] = $ExistingSession
-                                $return['ComputerName'] = $ExistingSession.ComputerName
+                                $return['connectionSplat'] = @{ Session = $ExistingSession }
                                 $return['ConnectionType'] = 'PSSession'
                             }
                             elseif ($ExistingCimSession = Get-CimSession -ComputerName $ComputerName -ErrorAction Ignore) {
                                 Write-Verbose "Fallback active CimSession found for $ComputerName - Passing CimSession out"
-                                $return['connectionSplat'].Remove('ComputerName')
-                                $return['connectionSplat'].Remove('Session')
-                                $return['connectionSplat']['CimSession'] = $ExistingCimSession
+                                $return['connectionSplat'] = @{ CimSession = $ExistingCimSession }
                                 $return['ConnectionType'] = 'CimSession'
                             }
                             else {
                                 Write-Verbose "No active PSSession (preferred), or CimSession found for $ComputerName - falling back to -ComputerName"
-                                $return['connectionSplat'].Remove('CimSession')
-                                $return['connectionSplat'].Remove('Session')
-                                $return['connectionSplat']['ComputerName'] = $ComputerName
+                                $return['connectionSplat'] = @{ ComputerName = $ComputerName }
                                 $return['ConnectionType'] = 'PSSession'
                             }
                         }
