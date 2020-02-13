@@ -65,6 +65,7 @@ Current list of functions:
 * Set-CCMCacheLocation
 * Set-CCMCacheSize
 * Set-CCMDNSSuffix
+* Set-CCMClientAlwaysOnInternet
 * Set-CCMLoggingConfiguration
 * Set-CCMManagementPoint
 * Set-CCMProvisioningMode

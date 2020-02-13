@@ -115,6 +115,7 @@
         'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMClientAlwaysOnInternet',
         'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
@@ -183,6 +184,7 @@ v0.2.4
 * Add PSSession parameter to functions that have to invoke commands remotely. Provides alternative to Invoke-CIMPowerShell
 * Add Invoke-CCMCommand to module
             This function is used similar to Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
+* Add Set-CCMClientAlwaysOnInternet to module
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'

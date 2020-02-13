@@ -101,6 +101,7 @@ $ExportModule = @{
         'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMClientAlwaysOnInternet',
         'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
