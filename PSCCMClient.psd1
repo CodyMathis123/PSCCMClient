@@ -103,6 +103,7 @@
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
+        'Invoke-CCMCommand',
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
         'Invoke-CCMTriggerSchedule',
