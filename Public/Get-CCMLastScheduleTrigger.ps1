@@ -162,7 +162,14 @@ function Get-CCMLastScheduleTrigger {
         }
         $RequestedScheduleQuery = switch($ForceWildcard) {
             $true {
-                [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID LIKE "%{0}%"', [string]::Join('%" OR ScheduleID LIKE "%', $RequestedSchedulesRaw))
+                switch ($RequestedSchedulesRaw -match '%') {
+                    $true {
+                        [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID LIKE "{0}"', [string]::Join('" OR ScheduleID LIKE "', $RequestedSchedulesRaw))
+                    }
+                    $false {
+                        [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID LIKE "%{0}%"', [string]::Join('%" OR ScheduleID LIKE "%', $RequestedSchedulesRaw))
+                    }
+                }
             }
             $false {
                 [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
