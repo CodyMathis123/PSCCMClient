@@ -12,6 +12,8 @@ function Get-CCMBaseline {
             Provides computer names to find the configuration baselines on.
         .PARAMETER CimSession
             Provides cimsessions to return baselines from.
+        .PARAMETER PSSession
+           Provides PSSessions to return baselines from.
         .EXAMPLE
             C:\PS> Get-CCMBaseline
                 Gets all baselines identified in WMI on the local computer.
@@ -26,7 +28,7 @@ function Get-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2020-01-31
+            Updated:     2020-02-13
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
             with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
@@ -50,7 +52,9 @@ function Get-CCMBaseline {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
@@ -68,6 +72,10 @@ function Get-CCMBaseline {
             4 = 'Error'
         }
         #endregion hash table for translating compliance status
+
+        #region define our splat for InvokeCommand
+        $invokeCommandSplat = @{ }
+        #endregion define our splat for InvokeCommand
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -83,7 +91,7 @@ function Get-CCMBaseline {
 
             foreach ($BLName in $BaselineName) {
                 #region Query WMI for Configuration Baselines based off DisplayName
-                $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
+                $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName') -and $BLName -ne 'NotSpecified') {
                     $true {
                         [string]::Format("SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = '{0}'", $BLName)
                     }
@@ -94,7 +102,23 @@ function Get-CCMBaseline {
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
                 $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-CimInstance @getBaselineSplat @connectionSplat
+                    $Baselines = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Get-CimInstance @getBaselineSplat @connectionSplat
+                        }
+                        $false {
+                            switch ($ConnectionInfo.ConnectionType) {
+                                'CimSession' {
+                                    Get-CimInstance @getBaselineSplat @connectionSplat
+                                }
+                                'PSSession' {
+                                    $ScriptBlock = [string]::Format('Get-CimInstance -Query "{0}" -NameSpace {1}', $BLQuery, $getBaselineSplat.Namespace)
+                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                            }
+                        }
+                    }
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
