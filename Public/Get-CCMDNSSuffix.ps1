@@ -58,14 +58,7 @@ function Get-CCMDNSSuffix {
                     . $GetDNSSuffixScriptBlock
                 }
                 $false {
-                    switch ($ConnectionInfo.ConnectionType) {
-                        'CimSession' {
-                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                        }
-                        'PSSession' {
-                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                        }
-                    }
+                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                 }
             }
             [pscustomobject]$Result
