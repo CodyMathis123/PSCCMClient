@@ -30,7 +30,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-12
+            Updated:     2020-02-13
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
