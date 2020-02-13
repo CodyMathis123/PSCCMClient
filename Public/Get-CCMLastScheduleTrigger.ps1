@@ -10,6 +10,8 @@ function Get-CCMLastScheduleTrigger {
         on a schedule.
     .PARAMETER ScheduleID
         Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing.
+    .PARAMETER ForceWildcard
+        Switch that forces the CIM queries to surround your ScheduleID with % and changes the condition to 'LIKE' instead of =
     .PARAMETER CimSession
         Provides CimSessions to gather schedule trigger info from
     .PARAMETER ComputerName
@@ -25,7 +27,7 @@ function Get-CCMLastScheduleTrigger {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-12-31
-        Updated:     2020-01-05
+        Updated:     2020-02-13
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -83,9 +85,17 @@ function Get-CCMLastScheduleTrigger {
         [parameter(ParameterSetName = 'CimSession')]
         [parameter(ParameterSetName = 'ComputerName')]
         [string[]]$ScheduleID,
+        [parameter(Mandatory = $false, ParameterSetName = 'ByID')]
+        [parameter(Mandatory = $false, ParameterSetName = 'CimSession')]
+        [parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [switch]$ForceWildcard,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName
     )
@@ -139,7 +149,7 @@ function Get-CCMLastScheduleTrigger {
             'Endpoint AM policy reevaluate'                                                = '{00000000-0000-0000-0000-000000000222}'
             'External event detection'                                                     = '{00000000-0000-0000-0000-000000000223}'
         }
-        $PSBoundParameters.Keys
+
         $RequestedSchedulesRaw = switch ($PSBoundParameters.Keys) {
             'Schedule' {
                 foreach ($One in $Schedule) {
@@ -150,7 +160,14 @@ function Get-CCMLastScheduleTrigger {
                 $ScheduleID
             }
         }
-        $RequestedScheduleQuery = [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
+        $RequestedScheduleQuery = switch($ForceWildcard) {
+            $true {
+                [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID LIKE "%{0}%"', [string]::Join('%" OR ScheduleID LIKE "%', $RequestedSchedulesRaw))
+            }
+            $false {
+                [string]::Format('SELECT * FROM CCM_Scheduler_History WHERE ScheduleID = "{0}"', [string]::Join('" OR ScheduleID = "', $RequestedSchedulesRaw))
+            }
+        }
         #endregion hashtable for mapping schedule names to IDs, and create CIM query
 
         $getSchedHistSplat = @{
