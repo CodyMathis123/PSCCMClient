@@ -36,7 +36,7 @@ function Get-CCMConnection {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-02-06
-        Updated:     2020-02-12
+        Updated:     2020-02-13
     #>
     [CmdletBinding()]
     param (
