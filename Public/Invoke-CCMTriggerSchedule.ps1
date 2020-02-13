@@ -35,21 +35,20 @@ function Invoke-CCMTriggerSchedule {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
     (
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [string[]]$ScheduleID,
         [parameter(Mandatory = $false)]
         [ValidateRange(0, 30)]
-        [ValidateNotNullOrEmpty()]
         [int]$Delay = 0,
         [parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
         [int]$Timeout = 5,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
@@ -93,9 +92,16 @@ function Invoke-CCMTriggerSchedule {
                                     Invoke-CimMethod @invokeClientActionSplat
                                 }
                                 $false {
-                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID {0} -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
+                                    $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID "{0}" -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
                                     $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                    switch ($ConnectionInfo.ConnectionType) {
+                                        'CimSession' {
+                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
+                                        }
+                                        'PSSession' {
+                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                        }
+                                    }        
                                 }
                             }
                         }
