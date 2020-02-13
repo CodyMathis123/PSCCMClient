@@ -21,7 +21,7 @@ function Set-CCMClientAlwaysOnInternet {
             FileName:    Set-CCMClientAlwaysOnInternet.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
-            Created:     2020-02-1W3
+            Created:     2020-02-13
             Updated:     2020-02-13
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]

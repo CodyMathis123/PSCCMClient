@@ -4,7 +4,7 @@ function Set-CIMRegistryProperty {
         Set registry properties values using the CIM StdRegProv
     .DESCRIPTION
         Relies on remote CIM and StdRegProv to allow for setting a Registry Property value.
-        You can provide an array of computers, or cimsessions. 
+        You can provide an array of computers, or cimsessions.
     .PARAMETER RegRoot
         The root key you want to search under
         ('HKEY_LOCAL_MACHINE', 'HKEY_USERS', 'HKEY_CURRENT_CONFIG', 'HKEY_DYN_DATA', 'HKEY_CLASSES_ROOT', 'HKEY_CURRENT_USER')
@@ -31,7 +31,11 @@ function Set-CIMRegistryProperty {
     .OUTPUTS
         [System.Collections.Hashtable]
     .NOTES
-        Returns a hashtable with the computername as the key, and the value is a boolean based on successs
+        FileName:    Set-CIMRegistryProperty.ps1
+        Author:      Cody Mathis
+        Contact:     @CodyMathis123
+        Created:     Uhh... I forget
+        Updated:     2020-02-13
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -125,7 +129,7 @@ function Set-CIMRegistryProperty {
             $setCIMRegPropSplat['Arguments'] = @{
                 hDefKey     = [uint32]$Root
                 sSubKeyName = $Key
-            }  
+            }
 
             $EnumValues = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
 
@@ -144,7 +148,7 @@ function Set-CIMRegistryProperty {
                                 $SetProperty = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
                             }
                             $false {
-                                Write-Warning ([string]::Format('[Property = {0}] does not exist under [Key = {1}\{2}] and the force parameter was not specified. No changes will be made', $Property, $RootKey, $Key))
+                                Write-Warning ([string]::Format('[Property = {0}] does not exist under [Key = {1}\{2}] and the force parameter was not specified. No changes will be made', $Property, $RegRoot, $Key))
                             }
                         }
                     }
@@ -155,7 +159,7 @@ function Set-CIMRegistryProperty {
                             $Return[$Computer] = $true
                         }
                         default {
-                            Write-Error ([string]::Format('Failed to set value [Property = {0}] [Key = {1}\{2}] [Value = {3}] [PropertyType = {4}] [Method = {5}}', $Property, $RootKey, $Key, $Value, $PropertyType, $Method))
+                            Write-Error ([string]::Format('Failed to set value [Property = {0}] [Key = {1}\{2}] [Value = {3}] [PropertyType = {4}] [Method = {5}]', $Property, $RegRoot, $Key, $Value, $PropertyType, $Method))
                         }
                     }
                 }
