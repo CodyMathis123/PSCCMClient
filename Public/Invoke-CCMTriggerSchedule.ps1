@@ -30,7 +30,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-13
+            Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -94,14 +94,7 @@ function Invoke-CCMTriggerSchedule {
                                 $false {
                                     $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID "{0}" -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
                                     $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    switch ($ConnectionInfo.ConnectionType) {
-                                        'CimSession' {
-                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                        }
-                                        'PSSession' {
-                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                        }
-                                    }        
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                                 }
                             }
                         }

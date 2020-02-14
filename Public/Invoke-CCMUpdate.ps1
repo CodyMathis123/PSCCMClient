@@ -28,7 +28,7 @@ function Invoke-CCMUpdate {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-12-22
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -116,6 +116,7 @@ function Invoke-CCMUpdate {
                             [string]::Format('SELECT * FROM CCM_SoftwareUpdate WHERE ComplianceState = 0')
                         }
                     }
+                    # TODO - Need to factor in when CIM commands are in use as well that don't need cimpowershell
                     [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @connectionSplat
                     if ($MissingUpdates -is [ciminstance[]]) {
                         switch ($PSBoundParameters.ContainsKey('ArticleID')) {
@@ -137,14 +138,7 @@ function Invoke-CCMUpdate {
                         $false {
                             $ScriptBlock = [string]::Format('Invoke-CCMUpdate -ArticleID {0}', [string]::Join(', ', $ArticleID))
                             $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            switch ($ConnectionInfo.ConnectionType) {
-                                'CimSession' {
-                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                }
-                                'PSSession' {
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                     if ($Invocation) {

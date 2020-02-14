@@ -26,7 +26,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -115,6 +115,7 @@ function Invoke-CCMClientAction {
                                 $getFullHINVSplat['Filter'] = "InventoryActionID ='$Action'"
 
                                 Write-Verbose "Attempting to delete Hardware Inventory history for $Computer as a FullHardwareInv was requested"
+                                # TODO - Need to factor in when CIM commands are in use as well that don't need cimpowershell
                                 $HWInv = Get-CimInstance @getFullHINVSplat @connectionSplat
                                 if ($null -ne $HWInv) {
                                     Remove-CimInstance -InputObject $HWInv
@@ -134,14 +135,7 @@ function Invoke-CCMClientAction {
                                 $false {
                                     $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
                                     $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    switch ($ConnectionInfo.ConnectionType) {
-                                        'CimSession' {
-                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                        }
-                                        'PSSession' {
-                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                        }
-                                    }
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                                 }
                             }
                         }

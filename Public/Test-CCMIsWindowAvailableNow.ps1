@@ -38,7 +38,7 @@ function Test-CCMIsWindowAvailableNow {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -188,14 +188,7 @@ function Test-CCMIsWindowAvailableNow {
                     $false {
                         $ScriptBlock = [string]::Format('Test-CCMIsWindowAvailableNow {0} {1}', [string]::Join(' ', $StringArgs), [string]::Format("-MWType '{0}'", [string]::Join("', '", $MWType)))
                         $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        switch ($ConnectionInfo.ConnectionType) {
-                            'CimSession' {
-                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                            }
-                            'PSSession' {
-                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                            }
-                        }
+                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
             }

@@ -23,7 +23,7 @@ function Set-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -65,14 +65,7 @@ function Set-CCMSite {
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
                             $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            switch ($ConnectionInfo.ConnectionType) {
-                                'CimSession' {
-                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                }
-                                'PSSession' {
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                 }

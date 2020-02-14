@@ -27,7 +27,7 @@ function Invoke-CCMResetPolicy {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-10-30
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -71,7 +71,7 @@ function Invoke-CCMResetPolicy {
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
-            
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['PolicyReset'] = $false
@@ -83,14 +83,7 @@ function Invoke-CCMResetPolicy {
                         }
                         $false {
                             $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
-                            switch ($ConnectionInfo.ConnectionType) {
-                                'CimSession' {
-                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                }
-                                'PSSession' {
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                     if ($Invocation) {

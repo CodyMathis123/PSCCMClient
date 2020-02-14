@@ -31,7 +31,7 @@ function Set-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-11
-        Updated:     2020-02-22
+        Updated:     2020-02-14
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -116,15 +116,8 @@ function Set-CCMLoggingConfiguration {
                         $false {
                             $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
                             $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            switch ($ConnectionInfo.ConnectionType) {
-                                'CimSession' {
-                                    Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                }
-                                'PSSession' {
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                            }
-                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        }
                     }
                     if ($Invocation) {
                         Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"

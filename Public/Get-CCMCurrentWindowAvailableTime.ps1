@@ -34,7 +34,7 @@ function Get-CCMCurrentWindowAvailableTime {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-02-01
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -164,14 +164,7 @@ function Get-CCMCurrentWindowAvailableTime {
                     $false {
                         $ScriptBlock = [string]::Format('Get-CCMCurrentWindowAvailableTime {0} {1}', [string]::Join(' ', $StringArgs), [string]::Format("-MWType '{0}'", [string]::Join("', '", $MWType)))
                         $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        switch ($ConnectionInfo.ConnectionType) {
-                            'CimSession' {
-                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                            }
-                            'PSSession' {
-                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                            }
-                        }
+                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
             }

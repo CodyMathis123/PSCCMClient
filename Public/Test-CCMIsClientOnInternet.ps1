@@ -22,7 +22,7 @@ function Test-CCMIsClientOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-02-12
+            Updated:     2020-02-14
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -35,8 +35,12 @@ function Test-CCMIsClientOnInternet {
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
+        $IsClientOnInternetScriptBlock = {
+            $Client = New-Object -ComObject Microsoft.SMS.Client
+            [bool]$Client.IsClientOnInternet()
+        }
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Test-CCMIsClientOnInternet', 'Get-CCMConnection'
+            ScriptBlock = $IsClientOnInternetScriptBlock
         }
     }
     process {
@@ -53,21 +57,13 @@ function Test-CCMIsClientOnInternet {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Result['IsClientOnInternet'] = [bool]$Client.IsClientOnInternet()
+                        $Result['IsClientOnInternet'] = . $IsClientOnInternetScriptBlock
                         [pscustomobject]$Result
                     }
                     $false {
                         $ScriptBlock = 'Test-CCMIsClientOnInternet'
                         $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        switch ($ConnectionInfo.ConnectionType) {
-                            'CimSession' {
-                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                            }
-                            'PSSession' {
-                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                            }
-                        }
+                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
             }
