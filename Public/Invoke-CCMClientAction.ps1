@@ -26,7 +26,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-02-14
+            Updated:     2020-02-15
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -51,8 +51,6 @@ function Invoke-CCMClientAction {
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession
     )
     begin {
-        $TimeSpan = New-TimeSpan -Minutes $Timeout
-
         $invokeClientActionSplat = @{ }
         $getFullHINVSplat = @{
             Namespace   = 'root\ccm\invagt'
@@ -106,59 +104,45 @@ function Invoke-CCMClientAction {
                             '{00000000-0000-0000-0000-000000000111}'
                         }
                     }
-                    $StopWatch = [System.Diagnostics.Stopwatch]::StartNew()
-                    do {
-                        try {
-                            Remove-Variable MustExit -ErrorAction SilentlyContinue
-                            Remove-Variable Invocation -ErrorAction SilentlyContinue
-                            if ($Option -eq 'FullHardwareInv') {
-                                $getFullHINVSplat['Filter'] = "InventoryActionID ='$Action'"
+                    try {
+                        $Invocation = switch ($Computer -eq $env:ComputerName) {
+                            $true {
+                                if ($Option -eq 'FullHardwareInv') {
+                                    $getFullHINVSplat['Filter'] = "InventoryActionID ='$Action'"
 
-                                Write-Verbose "Attempting to delete Hardware Inventory history for $Computer as a FullHardwareInv was requested"
-                                # TODO - Need to factor in when CIM commands are in use as well that don't need cimpowershell
-                                $HWInv = Get-CimInstance @getFullHINVSplat @connectionSplat
-                                if ($null -ne $HWInv) {
-                                    Remove-CimInstance -InputObject $HWInv
-                                    Write-Verbose "Hardware Inventory history deleted for $Computer"
+                                    Write-Verbose "Attempting to delete Hardware Inventory history for $Computer as a FullHardwareInv was requested"
+                                    $HWInv = Get-CimInstance @getFullHINVSplat @connectionSplat
+                                    if ($null -ne $HWInv) {
+                                        Remove-CimInstance -InputObject $HWInv
+                                        Write-Verbose "Hardware Inventory history deleted for $Computer"
+                                    }
+                                    else {
+                                        Write-Verbose "No Hardware Inventory history to delete for $Computer"
+                                    }
                                 }
-                                else {
-                                    Write-Verbose "No Hardware Inventory history to delete for $Computer"
-                                }
-                            }
-                            $invokeClientActionSplat['ScheduleID'] = $Action
+                                $invokeClientActionSplat['ScheduleID'] = $Action
 
-                            Write-Verbose "Triggering a $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
-                            $Invocation = switch ($Computer -eq $env:ComputerName) {
-                                $true {
-                                    Invoke-CCMTriggerSchedule @invokeClientActionSplat
-                                }
-                                $false {
-                                    $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
-                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
+                                Write-Verbose "Triggering a $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
+                                Invoke-CCMTriggerSchedule @invokeClientActionSplat -Delay $Delay -Timeout $Timeout
                             }
-                        }
-                        catch [System.UnauthorizedAccessException] {
-                            Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
-                            $MustExit = $true
-                        }
-                        catch {
-                            Write-Warning "Failed to invoke the $Option cycle via CIM. Will retry every 10 seconds until [StopWatch $($StopWatch.Elapsed) -ge $Timeout minutes] Error: $($_.Exception.Message)"
-                            Start-Sleep -Seconds 10
+                            $false {
+                                $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
+                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                            }
                         }
                     }
-                    until ($Invocation -or $StopWatch.Elapsed -ge $TimeSpan -or $MustExit)
+                    catch [System.UnauthorizedAccessException] {
+                        Write-Error -Message "Access denied to $Computer" -Category AuthenticationError -Exception $_.Exception
+                    }
+                    catch {
+                        Write-Warning "Failed to invoke the $Option cycle via CIM. Error: $($_.Exception.Message)"
+                    }
                     if ($Invocation) {
                         Write-Verbose "Successfully invoked the $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
                         $Result['Invoked'] = $true
                         Start-Sleep -Seconds $Delay
                     }
-                    elseif ($StopWatch.Elapsed -ge $TimeSpan) {
-                        Write-Error "Failed to invoke $Option cycle via CIM after $Timeout minutes of retrying."
-                        $Result['Invoked'] = $false
-                    }
-                    $StopWatch.Reset()
                     [pscustomobject]$Result
                 }
             }
