@@ -25,7 +25,7 @@ function Set-CCMCacheSize {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-02-12
+        Updated:     2020-02-15
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -46,10 +46,8 @@ function Set-CCMCacheSize {
             ClassName   = 'CacheConfig'
             ErrorAction = 'Stop'
         }
-
-        $SetCacheSizeScriptBlock = [scriptblock]::Create([string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size))
         $invokeCommandSplat = @{
-            ScriptBlock = $SetCacheSizeScriptBlock
+            FunctionsToLoad = 'Set-CCMCacheSize'
         }
     }
     process {
@@ -64,40 +62,34 @@ function Set-CCMCacheSize {
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Size = '$Size']", "Set CCM Cache Size")) {
-                    # ENHANCE - Need to factor in when both actual CIM and remote work need done. Should 'everything' use CIM, or remoting? So perform this in the invoke command? Would allow for 1 session type input
-                    $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
-                    if ($Cache -is [object]) {
-                        switch ($Cache.Size) {
-                            $Size {
-                                $Return[$Computer] = $true
-                            }
-                            default {
-                                switch ($Computer -eq $env:ComputerName) {
-                                    $true {
-                                        . $SetCacheSizeScriptBlock
+                    switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
+                            if ($Cache -is [object]) {
+                                switch ($Cache.Size) {
+                                    $Size {
+                                        $Return[$Computer] = $true
                                     }
-                                    $false {
-                                        switch ($ConnectionInfo.ConnectionType) {
-                                            'CimSession' {
-                                                Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                            }
-                                            'PSSession' {
-                                                Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                            }
-                                        }            
+                                    default {
+                                        (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = $Size
+                                        $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
+                                        if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
+                                            $Return[$Computer] = $true
+                                        }
+                                        else {
+                                            $Return[$Computer] = $false
+                                        }
                                     }
                                 }
-                                $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
-                                if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
-                                    $Return[$Computer] = $true
-                                }
-                                else {
-                                    $Return[$Computer] = $false
-                                }
                             }
+                            Write-Output $Return
+                        }
+                        $false {
+                            $ScriptBlock = [string]::Format('Set-CCMCacheSize -Size {0}', $Size)
+                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
-                    Write-Output $Return
                 }
             }
             catch {
