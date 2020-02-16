@@ -47,7 +47,7 @@ function Set-CCMCacheSize {
             ErrorAction = 'Stop'
         }
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMCacheSize'
+            FunctionsToLoad = 'Set-CCMCacheSize', 'Get-CCMConnection'
         }
     }
     process {
