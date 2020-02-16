@@ -129,7 +129,7 @@ function Invoke-CCMUpdate {
                         }
                     }
                     else {
-                        Write-Output "$Computer has no updates available to invoke"
+                        Write-Warning "$Computer has no updates available to invoke"
                     }
                     $Invocation = switch ($Computer -eq $env:ComputerName) {
                         $true {
