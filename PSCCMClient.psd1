@@ -74,6 +74,7 @@
         'Get-CCMBaseline',
         'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
+        'Get-CCMCimInstance',
         'Get-CCMClientDirectory',
         'Get-CCMClientInfo',
         'Get-CCMClientVersion',
@@ -186,6 +187,7 @@ v0.2.4
 * Add Invoke-CCMCommand to module
             This function is used similar to Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
 * Add Set-CCMClientAlwaysOnInternet to module
+* Add Get-CCMCimInstance to module
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'

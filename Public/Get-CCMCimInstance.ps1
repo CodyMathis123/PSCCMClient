@@ -17,32 +17,26 @@ function Get-CCMCimInstance {
 		[Parameter(Mandatory = $true, ParameterSetName = 'CimQuery-PSSession')]
 		[Parameter(Mandatory = $true, ParameterSetName = 'CimQuery-ComputerName')]
 		[string]$Query,
-		[Parameter(Mandatory = $true, ParameterSetName = 'CimQuery-ComputerName')]
-		[Parameter(Mandatory = $true, ParameterSetName = 'CimFilter-ComputerName')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'CimQuery-ComputerName')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'CimFilter-ComputerName')]
 		[ValidateSet('CimSession', 'PSSession')]
 		[string]$ConnectionPreference = 'CimSession',
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimQuery-CimSession')]
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimFilter-CimSession')]
-		[Alias('CimQuery-CimSession', 'CimFilter-CimSession')]
 		[Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'PassThrough-ComputerName')]
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimQuery-ComputerName')]
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimFilter-ComputerName')]
 		[Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
 		[string[]]$ComputerName = $env:ComputerName,
 		[Parameter(Mandatory = $false, ParameterSetName = 'CimQuery-PSSession')]
 		[Parameter(Mandatory = $false, ParameterSetName = 'CimFilter-PSSession')]
-		[Alias('Session', 'CimQuery-PSSession', 'CimFilter-PSSession')]
+		[Alias('Session')]
 		[System.Management.Automation.Runspaces.PSSession[]]$PSSession
 	)
 	begin {
-		$ConnectionChecker = switch -regex ($PSCmdlet.ParameterSetName) {
-			'ComputerName$' {
-				$ConnectionPreference
-			}
-			default {
-				($PSCmdlet.ParameterSetName).Split('-')[1]
-			}
-		}
+		$ConnectionChecker = ($PSCmdlet.ParameterSetName).Split('-')[1]
+
 		$GetCimInstanceSplat = @{ }
 		$StringArgs = switch ($PSBoundParameters.Keys) {
 			'Namespace' {
@@ -55,23 +49,24 @@ function Get-CCMCimInstance {
 			}
 			'Filter' {
 				$GetCimInstanceSplat['Filter'] = $Filter
-				[string]::Format('-Filter "{0}"', $($Filter -replace '"','\"'))
+				[string]::Format("-Filter '{0}'", $($Filter -replace "'", "''"))
 			}
 			'Query' {
 				$GetCimInstanceSplat['Query'] = $Query
-				[string]::Format('-Query "{0}"', $($Query -replace '"','\"'))
+				[string]::Format("-Query '{0}'", $($Query -replace "'", "''"))
 			}
 		}
 	}
 	process {
 		foreach ($Connection in (Get-Variable -Name $ConnectionChecker -ValueOnly -Scope Local)) {
 			$getConnectionInfoSplat = @{
-				$PSCmdlet.ParameterSetName = $Connection
+				$ConnectionChecker = $Connection
 			}
-			$ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat -Prefer $ConnectionChecker
+			$ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat -Prefer $ConnectionPreference
+			$ConnectionPreference = $ConnectionInfo.ConnectionType
 			$connectionSplat = $ConnectionInfo.connectionSplat
 
-			switch ($ConnectionChecker) {
+			switch ($ConnectionPreference) {
 				'CimSession' {
 					Get-CimInstance @GetCimInstanceSplat @connectionSplat
 				}
