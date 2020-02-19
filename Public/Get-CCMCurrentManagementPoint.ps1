@@ -19,7 +19,7 @@ function Get-CCMCurrentManagementPoint {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-16
-        Updated:     2020-01-18
+        Updated:     2020-02-18
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMCurrentMP', 'Get-CCMMP')]
@@ -28,7 +28,12 @@ function Get-CCMCurrentManagementPoint {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getCurrentMPSplat = @{
@@ -41,6 +46,11 @@ function Get-CCMCurrentManagementPoint {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -48,7 +58,14 @@ function Get-CCMCurrentManagementPoint {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentMP = Get-CimInstance @getCurrentMPSplat @connectionSplat
+                [ciminstance[]]$CurrentMP = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getCurrentMPSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getCurrentMPSplat @connectionSplat
+                    }
+                }
                 if ($CurrentMP -is [Object] -and $CurrentMP.Count -gt 0) {
                     foreach ($MP in $CurrentMP) {
                         $Result['CurrentManagementPoint'] = $MP.CurrentManagementPoint

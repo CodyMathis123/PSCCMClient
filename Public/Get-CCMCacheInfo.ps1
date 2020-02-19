@@ -20,7 +20,7 @@ function Get-CCMCacheInfo {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-11-06
-        Updated:     2020-01-24
+        Updated:     2020-02-18
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -28,7 +28,12 @@ function Get-CCMCacheInfo {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getCacheInfoSplat = @{
@@ -42,6 +47,11 @@ function Get-CCMCacheInfo {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -49,7 +59,14 @@ function Get-CCMCacheInfo {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CimResult = Get-CimInstance @getCacheInfoSplat @connectionSplat
+                [ciminstance[]]$CimResult = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getCacheInfoSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getCacheInfoSplat @connectionSplat
+                    }
+                }
                 if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
                     foreach ($Object in $CimResult) {
                         $Result['Location'] = $Object.Location

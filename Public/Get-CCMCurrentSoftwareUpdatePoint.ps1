@@ -28,7 +28,12 @@ function Get-CCMCurrentSoftwareUpdatePoint {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $CurrentSUPSplat = @{
@@ -41,6 +46,11 @@ function Get-CCMCurrentSoftwareUpdatePoint {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -48,7 +58,14 @@ function Get-CCMCurrentSoftwareUpdatePoint {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentSUP = Get-CimInstance @CurrentSUPSplat @connectionSplat
+                [ciminstance[]]$CurrentSUP = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @CurrentSUPSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @CurrentSUPSplat @connectionSplat
+                    }
+                }
                 if ($CurrentSUP -is [Object] -and $CurrentSUP.Count -gt 0) {
                     foreach ($SUP in $CurrentSUP) {
                         $Result['CurrentSoftwareUpdatePoint'] = $SUP.ContentLocation

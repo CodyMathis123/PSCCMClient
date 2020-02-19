@@ -27,7 +27,12 @@ function Get-CCMClientVersion {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getClientVersionSplat = @{
@@ -40,6 +45,11 @@ function Get-CCMClientVersion {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -47,7 +57,14 @@ function Get-CCMClientVersion {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$Currentversion = Get-CimInstance @getClientVersionSplat @connectionSplat
+                [ciminstance[]]$Currentversion = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getClientVersionSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getClientVersionSplat @connectionSplat
+                    }
+                }
                 if ($Currentversion -is [Object] -and $Currentversion.Count -gt 0) {
                     foreach ($SMSClient in $Currentversion) {
                         $Result['ClientVersion'] = $SMSClient.ClientVersion
