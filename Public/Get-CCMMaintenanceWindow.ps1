@@ -118,8 +118,8 @@ function Get-CCMMaintenanceWindow {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['StartTime'] = ($ServiceWindow.StartTime).ToUniversalTime()
                         $Result['EndTime'] = ($ServiceWindow.EndTime).ToUniversalTime()
-                        $Result['DurationSeconds'] = $ServiceWindow.Duration
-                        $Result['Duration'] = Get-StringFromTimespan -Seconds $ServiceWindow.Duration
+                        $Result['Duration'] = $ServiceWindow.Duration
+                        $Result['DurationDescription'] = Get-StringFromTimespan -Seconds $ServiceWindow.Duration
                         $Result['MWID'] = $ServiceWindow.ID
                         $Result['Type'] = $MW_Type.Item([int]$($ServiceWindow.Type))
                         [PSCustomObject]$Result
@@ -128,8 +128,8 @@ function Get-CCMMaintenanceWindow {
                 else {
                     $Result['StartTime'] = $null
                     $Result['EndTime'] = $null
-                    $Result['DurationSeconds'] = $null
                     $Result['Duration'] = $null
+                    $Result['DurationDescription'] = $null
                     $Result['MWID'] = $null
                     $Result['Type'] = "No ServiceWindow of type(s) $([string]::Join(', ',$RequestedTypesRaw))"
                     [PSCustomObject]$Result
