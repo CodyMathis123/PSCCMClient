@@ -91,15 +91,19 @@ function Get-CCMMaintenanceWindow {
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
 
+            $Result = [ordered]@{ }
+            $Result['ComputerName'] = $Computer
+
             try {
-                $Result['TimeZone'] = $(switch ($Computer -eq $env:ComputerName) {
-                        $true {
-                            Get-CimInstance @getTimeZoneSplat @connectionSplat
-                        }
-                        $false {
-                            Get-CCMCimInstance @getTimeZoneSplat @connectionSplat
-                        }
-                    }).Caption
+                $TZ = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getTimeZoneSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getTimeZoneSplat @connectionSplat
+                    }
+                }
+                $Result['TimeZone'] = $TZ.Caption
 
                 [ciminstance[]]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
                     $true {
@@ -109,6 +113,7 @@ function Get-CCMMaintenanceWindow {
                         Get-CCMCimInstance @getMaintenanceWindowSplat @connectionSplat
                     }
                 }
+
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['StartTime'] = ($ServiceWindow.StartTime).ToUniversalTime()
