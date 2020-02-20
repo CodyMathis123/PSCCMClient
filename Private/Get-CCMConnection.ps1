@@ -86,7 +86,7 @@ function Get-CCMConnection {
                                 $return['connectionSplat'] = @{ CimSession = $ExistingCimSession }
                                 $return['ConnectionType'] = 'CimSession'
                             }
-                            elseif ($ExistingSession = Get-PSSession -ComputerName $ComputerName -ErrorAction Ignore -State Opened) {
+                            elseif ($ExistingSession = (Get-PSSession -ErrorAction Ignore).Where({$_.ComputerName -eq $ComputerName -and $_.State -eq 'Opened'})) {
                                 Write-Verbose "Fallback active PSSession found for $ComputerName - Passing Session out"
                                 $return['connectionSplat'] = @{ Session = $ExistingSession }
                                 $return['ConnectionType'] = 'PSSession'
@@ -98,7 +98,7 @@ function Get-CCMConnection {
                             }
                         }
                         'PSSession' {
-                            if ($ExistingSession = Get-PSSession -ComputerName $ComputerName -ErrorAction Ignore -State Opened) {
+                            if ($ExistingSession = (Get-PSSession -ErrorAction Ignore).Where({$_.ComputerName -eq $ComputerName -and $_.State -eq 'Opened'})) {
                                 Write-Verbose "Active PSSession found for $ComputerName - Passing Session out"
                                 $return['connectionSplat'] = @{ Session = $ExistingSession }
                                 $return['ConnectionType'] = 'PSSession'
