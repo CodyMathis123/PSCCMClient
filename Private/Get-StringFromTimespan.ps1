@@ -16,13 +16,7 @@ function Get-StringFromTimespan {
 
     $TS = switch ($PSCmdlet.ParameterSetName) {
         'ByTimeInterval' {
-            $TimeSpanSplat = @{ }
-            switch ($PSBoundParameters.Keys) {
-                default {
-                    $TimeSpanSplat[$PSItem] = Get-Variable -Name $PSItem -ValueOnly -Scope Local
-                }
-            }
-            New-TimeSpan @TimeSpanSplat
+            New-TimeSpan @PSBoundParameters
         }
         'ByTimeSpan' {
             Write-Output $TimeSpan
