@@ -3,8 +3,8 @@ function Get-CCMLastHeartbeat {
     .SYNOPSIS
         Returns info about the last time a heartbeat ran. Also known as a DDR.
     .DESCRIPTION
-        This function will return info about the last time Discovery Data Collection Cycle was ran. This is pulled from the InventoryActionStatus WMI Class. 
-        The Discovery Data Collection Cycle major, and minor version is included. 
+        This function will return info about the last time Discovery Data Collection Cycle was ran. This is pulled from the InventoryActionStatus WMI Class.
+        The Discovery Data Collection Cycle major, and minor version is included.
 
         This is also known as a 'Heartbeat' or 'DDR'
     .PARAMETER CimSession
@@ -22,7 +22,7 @@ function Get-CCMLastHeartbeat {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-01
-        Updated:     2020-01-18
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMLastDDR')]
@@ -31,7 +31,12 @@ function Get-CCMLastHeartbeat {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getLastDDRSplat = @{
@@ -44,6 +49,11 @@ function Get-CCMLastHeartbeat {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -52,7 +62,14 @@ function Get-CCMLastHeartbeat {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastDDR = Get-CimInstance @getLastDDRSplat @connectionSplat
+                [ciminstance[]]$LastDDR = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getLastDDRSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getLastDDRSplat @connectionSplat
+                    }
+                }
                 if ($LastDDR -is [Object] -and $LastDDR.Count -gt 0) {
                     foreach ($Occurrence in $LastDDR) {
                         $Result['LastCycleStartedDate'] = $Occurrence.LastCycleStartedDate

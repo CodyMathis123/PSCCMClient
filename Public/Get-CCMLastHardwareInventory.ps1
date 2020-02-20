@@ -20,7 +20,7 @@ function Get-CCMLastHardwareInventory {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-01
-        Updated:     2020-01-18
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMLastHINV')]
@@ -29,7 +29,12 @@ function Get-CCMLastHardwareInventory {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getLastHinvSplat = @{
@@ -42,6 +47,11 @@ function Get-CCMLastHardwareInventory {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -50,7 +60,14 @@ function Get-CCMLastHardwareInventory {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastHinv = Get-CimInstance @getLastHinvSplat @connectionSplat
+                [ciminstance[]]$LastHinv = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getLastHinvSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getLastHinvSplat @connectionSplat
+                    }
+                }
                 if ($LastHinv -is [Object] -and $LastHinv.Count -gt 0) {
                     foreach ($Occurrence in $LastHinv) {
                         $Result['LastCycleStartedDate'] = $Occurrence.LastCycleStartedDate

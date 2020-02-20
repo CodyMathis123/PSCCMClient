@@ -19,7 +19,7 @@ function Get-CCMGUID {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-18
-        Updated:     2020-01-18
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -27,7 +27,12 @@ function Get-CCMGUID {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getGUIDSplat = @{
@@ -40,14 +45,27 @@ function Get-CCMGUID {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentGUID = Get-CimInstance @getGUIDSplat @connectionSplat
+                [ciminstance[]]$CurrentGUID = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getGUIDSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getGUIDSplat @connectionSplat
+                    }
+                }
                 if ($CurrentGUID -is [Object] -and $CurrentGUID.Count -gt 0) {
                     foreach ($GUID in $CurrentGUID) {
                         $Result['GUID'] = $GUID.ClientID

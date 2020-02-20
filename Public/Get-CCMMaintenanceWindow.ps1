@@ -1,35 +1,35 @@
 function Get-CCMMaintenanceWindow {
     <#
-    .SYNOPSIS
-        Get ConfigMgr Maintenance Window information from computers via CIM
-    .DESCRIPTION
-        This function will allow you to gather maintenance window information from multiple computers using CIM queries. You can provide an array of computer names, or cimsessions,
-        or you can pass them through the pipeline. You are also able to specify the Maintenance Window Type (MWType) you wish to query for.
-    .PARAMETER MWType
-        Specifies the types of MW you want information for. Valid options are below
-            'All Deployment Service Window',
-            'Program Service Window',
-            'Reboot Required Service Window',
-            'Software Update Service Window',
-            'Task Sequences Service Window',
-            'Corresponds to non-working hours'
-    .PARAMETER CimSession
-        Provides CimSession to gather Maintenance Window information info from
-    .PARAMETER ComputerName
-        Provides computer names to gather Maintenance Window information info from
-    .EXAMPLE
-        C:\PS> Get-CCMMaintenanceWindow
-            Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types
-            that the function looks for
-    .EXAMPLE
-        C:\PS> Get-CCMMaintenanceWindow -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
-            Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMMaintenanceWindow.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2019-08-14
-        Updated:     2020-01-29
+        .SYNOPSIS
+            Get ConfigMgr Maintenance Window information from computers via CIM
+        .DESCRIPTION
+            This function will allow you to gather maintenance window information from multiple computers using CIM queries. You can provide an array of computer names, or cimsessions,
+            or you can pass them through the pipeline. You are also able to specify the Maintenance Window Type (MWType) you wish to query for.
+        .PARAMETER MWType
+            Specifies the types of MW you want information for. Valid options are below
+                'All Deployment Service Window',
+                'Program Service Window',
+                'Reboot Required Service Window',
+                'Software Update Service Window',
+                'Task Sequences Service Window',
+                'Corresponds to non-working hours'
+        .PARAMETER CimSession
+            Provides CimSession to gather Maintenance Window information info from
+        .PARAMETER ComputerName
+            Provides computer names to gather Maintenance Window information info from
+        .EXAMPLE
+            C:\PS> Get-CCMMaintenanceWindow
+                Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types
+                that the function looks for
+        .EXAMPLE
+            C:\PS> Get-CCMMaintenanceWindow -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
+                Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMMaintenanceWindow.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-08-14
+            Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMMW')]
@@ -46,7 +46,12 @@ function Get-CCMMaintenanceWindow {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Create hashtable for mapping MW types, and create CIM filter based on input params
@@ -77,16 +82,33 @@ function Get-CCMMaintenanceWindow {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
-            $Result = [ordered]@{ }
-            $Result['ComputerName'] = $Computer
 
             try {
-                $Result['TimeZone'] = (Get-CimInstance @getTimeZoneSplat @connectionSplat).Caption
+                $Result['TimeZone'] = $(switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Get-CimInstance @getTimeZoneSplat @connectionSplat
+                        }
+                        $false {
+                            Get-CCMCimInstance @getTimeZoneSplat @connectionSplat
+                        }
+                    }).Caption
 
-                [ciminstance[]]$ServiceWindows = Get-CimInstance @getMaintenanceWindowSplat @connectionSplat
+                [ciminstance[]]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getMaintenanceWindowSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getMaintenanceWindowSplat @connectionSplat
+                    }
+                }
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['StartTime'] = ($ServiceWindow.StartTime).ToUniversalTime()

@@ -21,7 +21,7 @@ function Get-CCMLoggingConfiguration {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-10
-        Updated:     2020-01-10
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -29,7 +29,12 @@ function Get-CCMLoggingConfiguration {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getLogInfoSplat = @{
@@ -43,6 +48,11 @@ function Get-CCMLoggingConfiguration {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -51,7 +61,14 @@ function Get-CCMLoggingConfiguration {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CimResult = Get-CimInstance @getLogInfoSplat @connectionSplat
+                [ciminstance[]]$CimResult = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getLogInfoSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getLogInfoSplat @connectionSplat
+                    }
+                }
                 if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
                     foreach ($Object in $CimResult) {
                         $Result['LogDirectory'] = $Object.LogDirectory
