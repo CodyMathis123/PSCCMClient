@@ -17,7 +17,7 @@ function Get-CCMSoftwareUpdateSettings {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-29
-        Updated:     2020-01-29
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -25,8 +25,13 @@ function Get-CCMSoftwareUpdateSettings {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
-    )
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
+            )
     begin {
         $getSoftwareUpdateSettingsSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
@@ -38,13 +43,26 @@ function Get-CCMSoftwareUpdateSettings {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
-            [ciminstance[]]$Settings = Get-CimInstance @getSoftwareUpdateSettingsSplat @ConnectionSplat
+            [ciminstance[]]$Settings = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getSoftwareUpdateSettingsSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getSoftwareUpdateSettingsSplat @connectionSplat
+                }
+            }
             if ($Settings -is [Object] -and $Settings.Count -gt 0) {
                 foreach ($Setting in $Settings) {
                     $Result['ComponentName'] = $Setting.ComponentName

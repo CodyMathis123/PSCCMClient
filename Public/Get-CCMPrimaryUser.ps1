@@ -16,7 +16,7 @@ function Get-CCMPrimaryUser {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-05
-        Updated:     2020-01-05
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -24,7 +24,12 @@ function Get-CCMPrimaryUser {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
@@ -39,6 +44,11 @@ function Get-CCMPrimaryUser {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -47,7 +57,14 @@ function Get-CCMPrimaryUser {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$PrimaryUsers = Get-CimInstance @getPrimaryUserSplat @connectionSplat
+                [ciminstance[]]$PrimaryUsers = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getPrimaryUserSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getPrimaryUserSplat @connectionSplat
+                    }
+                }
                 if ($PrimaryUsers -is [Object] -and $PrimaryUsers.Count -gt 0) {
                     $Result['PrimaryUser'] = $PrimaryUsers.User
                     [PSCustomObject]$Result

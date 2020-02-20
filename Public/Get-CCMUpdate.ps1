@@ -18,7 +18,7 @@ function Get-CCMUpdate {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-15
-        Updated:     2020-01-17
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -28,7 +28,12 @@ function Get-CCMUpdate {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $EvaluationStateMap = @{
@@ -90,14 +95,27 @@ function Get-CCMUpdate {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @ConnectionSplat
+                [ciminstance[]]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getUpdateSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getUpdateSplat @connectionSplat
+                    }
+                }
                 if ($MissingUpdates -is [Object] -and $MissingUpdates.Count -gt 0) {
                     foreach ($Update in $MissingUpdates) {
                         $Result['ArticleID'] = $Update.ArticleID

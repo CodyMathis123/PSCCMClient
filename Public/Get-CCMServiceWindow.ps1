@@ -34,7 +34,7 @@ function Get-CCMServiceWindow {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2019-12-12
-        Updated:     2019-12-31
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -51,7 +51,12 @@ function Get-CCMServiceWindow {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Create hashtable for mapping MW types, and create CIM filter based on input params
@@ -79,6 +84,11 @@ function Get-CCMServiceWindow {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
@@ -87,7 +97,14 @@ function Get-CCMServiceWindow {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ServiceWindows = Get-CimInstance @getServiceWindowSplat @connectionSplat
+                [ciminstance[]]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getServiceWindowSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getServiceWindowSplat @connectionSplat
+                    }
+                }
                 if ($ServiceWindows -is [Object] -and $ServiceWindows.Count -gt 0) {
                     foreach ($ServiceWindow in $ServiceWindows) {
                         $Result['Schedules'] = $ServiceWindow.Schedules

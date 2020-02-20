@@ -27,7 +27,7 @@ function Get-CCMTaskSequence {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-14
-        Updated:     2020-01-14
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -39,7 +39,12 @@ function Get-CCMTaskSequence {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
@@ -52,6 +57,11 @@ function Get-CCMTaskSequence {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
@@ -76,7 +86,14 @@ function Get-CCMTaskSequence {
                 }
                 $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_TaskSequence{0}', $Filter)
 
-                [ciminstance[]]$Packages = Get-CimInstance @getPackageSplat @connectionSplat
+                [ciminstance[]]$Packages = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getPackageSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getPackageSplat @connectionSplat
+                    }
+                }
                 if ($Packages -is [Object] -and $Packages.Count -gt 0) {
                     Write-Output -InputObject $Packages
                 }

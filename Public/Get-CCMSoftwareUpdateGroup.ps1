@@ -21,7 +21,7 @@ function Get-CCMSoftwareUpdateGroup {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-01-21
-        Updated:     2020-01-21
+        Updated:     2020-02-19
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMSUG')]
@@ -34,7 +34,12 @@ function Get-CCMSoftwareUpdateGroup {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getSUGSplat = @{
@@ -56,9 +61,15 @@ function Get-CCMSoftwareUpdateGroup {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
@@ -81,14 +92,29 @@ function Get-CCMSoftwareUpdateGroup {
                 }
                 $getSUGSplat['Query'] = [string]::Format('SELECT * FROM CCM_UpdateCIAssignment{0}', $Filter)
 
-                [ciminstance[]]$DeployedSUG = Get-CimInstance @getSUGSplat @ConnectionSplat
+                [ciminstance[]]$DeployedSUG = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getSUGSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getSUGSplat @connectionSplat
+                    }
+                }
                 if ($DeployedSUG -is [Object] -and $DeployedSUG.Count -gt 0) {
                     foreach ($SUG in $DeployedSUG) {
                         $Result['AssignmentName'] = $SUG.AssignmentName
 
                         #region Query CCM_AssignmentCompliance to return SUG compliance
                         $getSUGComplianceSplat['Query'] = [string]::Format('SELECT IsCompliant FROM CCM_AssignmentCompliance WHERE AssignmentID = "{0}"', $SUG.AssignmentID)
-                        $Result['AssignmentCompliance'] = (Get-CimInstance @getSUGComplianceSplat @ConnectionSplat).IsCompliant
+                        $AssignmentCompliance = switch ($Computer -eq $env:ComputerName) {
+                            $true {
+                                Get-CimInstance @getSUGComplianceSplat @connectionSplat
+                            }
+                            $false {
+                                Get-CCMCimInstance @getSUGComplianceSplat @connectionSplat
+                            }
+                        }
+                        $Result['AssignmentCompliance'] = $AssignmentCompliance.IsCompliant
                         #endregion Query CCM_AssignmentCompliance to return SUG compliance
 
                         $Result['StartTime'] = $SUG.StartTime
