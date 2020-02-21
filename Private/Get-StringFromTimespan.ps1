@@ -72,5 +72,12 @@ function Get-StringFromTimespan {
         }
     }
 
-    [string]::Join(' ', $DescriptiveTSArray)
+    switch ($DescriptiveTSArray.Count) {
+        0 {
+            $PSItem
+        }
+        default {
+            [string]::Join(' ', $DescriptiveTSArray)
+        }
+    }
 }
