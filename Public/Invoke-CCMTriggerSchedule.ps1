@@ -1,4 +1,4 @@
-
+# TODO - Add ConnectionPreference support
 function Invoke-CCMTriggerSchedule {
     <#
         .SYNOPSIS

@@ -1,3 +1,4 @@
+# TODO - Add PSSession Support
 function Set-CIMRegistryProperty {
     <#
     .SYNOPSIS

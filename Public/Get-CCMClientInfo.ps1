@@ -1,3 +1,5 @@
+# TODO - Add PSSession support
+# TODO - Update help
 function Get-CCMClientInfo {
     <#
     .SYNOPSIS

@@ -1,3 +1,5 @@
+# TODO - Update help
+# TODO - Add ConnectionPreference support
 function Get-CCMCurrentWindowAvailableTime {
     <#
         .SYNOPSIS

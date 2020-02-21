@@ -1,3 +1,4 @@
+# TODO - Add PSSession support
 function Get-CCMProvisioningMode {
     <#
     .SYNOPSIS

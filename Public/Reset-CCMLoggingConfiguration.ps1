@@ -1,3 +1,4 @@
+# TODO - Add ConnectionPreference support
 function Reset-CCMLoggingConfiguration {
     <#
     .SYNOPSIS

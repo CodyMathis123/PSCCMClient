@@ -1,3 +1,4 @@
+# TODO - Update help
 function Get-CCMCurrentManagementPoint {
     <#
     .SYNOPSIS

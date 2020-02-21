@@ -1,3 +1,4 @@
+# TODO - Add ConnectionPreference support
 # TODO - Add setting the location, which would be a registry edit
 function Set-CCMLoggingConfiguration {
     <#
