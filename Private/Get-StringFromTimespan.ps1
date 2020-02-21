@@ -58,16 +58,19 @@ function Get-StringFromTimespan {
         }
     }
 
-    $DescriptiveTSArray = foreach ($TimeIncrement in 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds') {
-        switch ($TS.$TimeIncrement) {
-            0 {
-                continue
-            }
-            1 {
-                [string]::Format('{0} {1}', $PSItem, ($TimeIncrement -replace 's$'))
-            }
-            default {
-                [string]::Format('{0} {1}', $PSItem, $TimeIncrement)
+    $DescriptiveTSArray = switch ('Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds') {
+        default {
+            $TimeIncrement = $PSItem
+            switch ($TS.$TimeIncrement) {
+                0 {
+                    continue
+                }
+                1 {
+                    [string]::Format('{0} {1}', $PSItem, ($TimeIncrement -replace 's$'))
+                }
+                default {
+                    [string]::Format('{0} {1}', $PSItem, $TimeIncrement)
+                }
             }
         }
     }
