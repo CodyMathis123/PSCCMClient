@@ -1,4 +1,3 @@
-# TODO - Update help
 function Get-CCMBaseline {
     <#
         .SYNOPSIS
@@ -15,6 +14,14 @@ function Get-CCMBaseline {
             Provides cimsessions to return baselines from.
         .PARAMETER PSSession
            Provides PSSessions to return baselines from.
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to. 
         .EXAMPLE
             C:\PS> Get-CCMBaseline
                 Gets all baselines identified in WMI on the local computer.
@@ -29,7 +36,7 @@ function Get-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2020-02-18
+            Updated:     2020-02-22
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
             with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'

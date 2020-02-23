@@ -1,4 +1,3 @@
-# TODO - Update help
 function Get-CCMCacheContent {
     <#
         .SYNOPSIS
@@ -9,6 +8,16 @@ function Get-CCMCacheContent {
             Provides CimSessions to gather the content of the MEMCM cache from
         .PARAMETER ComputerName
             Provides computer names to gather the content of the MEMCM cache from
+        .PARAMETER PSSession
+            Provides PSSessions to gather the content of the MEMCM cache from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to. 
         .EXAMPLE
             C:\PS> Get-CCMCacheContent
                 Returns the content of the MEMCM cache for the local computer
@@ -20,7 +29,7 @@ function Get-CCMCacheContent {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-12
-            Updated:     2020-02-18
+            Updated:     2020-02-22
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
