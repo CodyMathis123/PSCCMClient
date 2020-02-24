@@ -95,7 +95,14 @@ function Set-CCMCacheLocation {
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Location = '$Location']", "Set CCM Cache Location")) {
-                    $Cache = Get-CCMCimInstance @GetCacheSplat @connectionSplat
+                    $Cache = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Get-CimInstance @GetCacheSplat @connectionSplat
+                        }
+                        $false {
+                            Get-CCMCimInstance @GetCacheSplat @connectionSplat
+                        }
+                    }
                     if ($Cache -is [object]) {
                         switch ($Cache.Location) {
                             $FullCachePath {
@@ -110,7 +117,14 @@ function Set-CCMCacheLocation {
                                         Invoke-CCMCommand @SetCacheSplat @connectionSplat
                                     }
                                 }
-                                $Cache = Get-CCMCimInstance @GetCacheSplat @connectionSplat
+                                $Cache = switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        Get-CimInstance @GetCacheSplat @connectionSplat
+                                    }
+                                    $false {
+                                        Get-CCMCimInstance @GetCacheSplat @connectionSplat
+                                    }
+                                }
                                 switch ($Cache.Location) {
                                     $FullCachePath {
                                         $Return[$Computer] = $true
