@@ -44,6 +44,7 @@ Catch {
 #region Export Module Members
 $ExportModule = @{
     Alias    = @('Get-CCMCB',
+        'Get-CIMRegistryProperty',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -55,6 +56,7 @@ $ExportModule = @{
         'Get-CCMSUG',
         'Set-CCMMP'
     )
+
     Function = @('ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
@@ -80,13 +82,13 @@ $ExportModule = @{
         'Get-CCMPackage',
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
+        'Get-CCMRegistryProperty',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
-        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',

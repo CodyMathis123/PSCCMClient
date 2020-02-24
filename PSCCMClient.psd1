@@ -94,13 +94,13 @@
         'Get-CCMPackage',
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
+        'Get-CCMRegistryProperty',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
         'Get-CCMUpdate',
-        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
@@ -139,6 +139,7 @@
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
     AliasesToExport   = @('Get-CCMCB',
+        'Get-CIMRegistryProperty',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -188,6 +189,7 @@ v0.2.4
             This function is used similar to Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
 * Add Set-CCMClientAlwaysOnInternet to module
 * Add Get-CCMCimInstance to module
+* Change 'Get-CIMRegistryProperty' to 'Get-CCMRegistryProperty' - alias is in place
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
