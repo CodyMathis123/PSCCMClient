@@ -150,7 +150,7 @@ function Get-CCMRegistryProperty {
                         $PropIndex = $EnumValues.sNames.IndexOf($PropertyName)
                         switch ($PropIndex) {
                             -1 {
-                                Write-Error ([string]::Format('Failed to find [Property = {0}] under [Key = {1}\{2}]', $PropertyName, $RootKey, $Key))
+                                Write-Error ([string]::Format('Failed to find [Property = {0}] under [Key = {1}\{2}]', $PropertyName, $RegRoot, $Key))
                             }
                             default {
                                 $PropType = $EnumValues.Types[$PropIndex]
@@ -167,7 +167,7 @@ function Get-CCMRegistryProperty {
                                     }
                                     default {
                                         $Return[$Computer] = $null
-                                        Write-Error ([string]::Format('Failed to resolve value [Property = {0}] [Key = {1}\{2}]', $PropertyName, $RootKey, $Key))
+                                        Write-Error ([string]::Format('Failed to resolve value [Property = {0}] [Key = {1}\{2}]', $PropertyName, $RegRoot, $Key))
                                     }
                                 }
                             }
