@@ -1,4 +1,3 @@
-# TODO - Add ConnectionPreference support
 function Test-CCMIsClientOnInternet {
     <#
         .SYNOPSIS
@@ -12,6 +11,14 @@ function Test-CCMIsClientOnInternet {
             Provides computer names to return IsClientOnInternet setting info from
         .PARAMETER PSSession
             Provides PSSession to return IsClientOnInternet setting info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Test-CCMIsClientOnInternet
                 Returns the status of the local computer having IsClientOnInternet set
@@ -23,7 +30,7 @@ function Test-CCMIsClientOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-02-14
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -33,7 +40,10 @@ function Test-CCMIsClientOnInternet {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $IsClientOnInternetScriptBlock = {
@@ -49,9 +59,15 @@ function Test-CCMIsClientOnInternet {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 

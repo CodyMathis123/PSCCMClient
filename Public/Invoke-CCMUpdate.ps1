@@ -1,4 +1,3 @@
-# TODO - Add ConnectionPreference support
 function Invoke-CCMUpdate {
     <#
         .SYNOPSIS
@@ -18,6 +17,14 @@ function Invoke-CCMUpdate {
             Computer name(s) which you want to get invoke SCCM patches for
         .PARAMETER PSSession
             PSSession(s) which you want to get invoke SCCM patches for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Invoke-CCMUpdate
                 Invokes all updates on the local machine
@@ -29,7 +36,7 @@ function Invoke-CCMUpdate {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-12-22
-            Updated:     2020-02-14
+            Updated:     2020-02-23
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -41,38 +48,12 @@ function Invoke-CCMUpdate {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
-        $UpdateStatus = @{
-            "23" = "WaitForOrchestration";
-            "22" = "WaitPresModeOff";
-            "21" = "WaitingRetry";
-            "20" = "PendingUpdate";
-            "19" = "PendingUserLogoff";
-            "18" = "WaitUserReconnect";
-            "17" = "WaitJobUserLogon";
-            "16" = "WaitUserLogoff";
-            "15" = "WaitUserLogon";
-            "14" = "WaitServiceWindow";
-            "13" = "Error";
-            "12" = "InstallComplete";
-            "11" = "Verifying";
-            "10" = "WaitReboot";
-            "9"  = "PendingHardReboot";
-            "8"  = "PendingSoftReboot";
-            "7"  = "Installing";
-            "6"  = "WaitInstall";
-            "5"  = "Downloading";
-            "4"  = "PreDownload";
-            "3"  = "Detecting";
-            "2"  = "Submitted";
-            "1"  = "Available";
-            "0"  = "None";
-        }
-        #$UpdateStatus.Get_Item("$EvaluationState")
-        #endregion status type hashtable
-
         $invokeCIMMethodSplat = @{
             Namespace  = 'root\ccm\clientsdk'
             MethodName = 'InstallUpdates'
@@ -86,23 +67,19 @@ function Invoke-CCMUpdate {
         }
     }
     process {
-        # temp fix for when PSComputerName from pipeline is empty - we assume it is $env:ComputerName
-        switch ($PSCmdlet.ParameterSetName) {
-            'ComputerName' {
-                switch ([string]::IsNullOrWhiteSpace($ComputerName)) {
-                    $true {
-                        $ComputerName = $env:ComputerName
-                    }
-                }
-            }
-        }        
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['Invoked'] = $false
@@ -117,8 +94,16 @@ function Invoke-CCMUpdate {
                             [string]::Format('SELECT * FROM CCM_SoftwareUpdate WHERE ComplianceState = 0')
                         }
                     }
-                    # TODO - Need to factor in when CIM commands are in use as well that don't need cimpowershell
-                    [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @connectionSplat
+
+                    [ciminstance[]]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Get-CimInstance @getUpdateSplat @connectionSplat
+                        }
+                        $false {
+                            Get-CCMCimInstance @getUpdateSplat @connectionSplat
+                        }
+                    }
+
                     if ($MissingUpdates -is [ciminstance[]]) {
                         switch ($PSBoundParameters.ContainsKey('ArticleID')) {
                             $false {

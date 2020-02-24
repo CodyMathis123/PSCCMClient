@@ -1,4 +1,3 @@
-# TODO - Add ConnectionPreference support
 function Test-CCMIsWindowAvailableNow {
     <#
         .SYNOPSIS

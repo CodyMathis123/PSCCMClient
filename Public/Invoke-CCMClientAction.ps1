@@ -1,5 +1,3 @@
-# TODO - Add ConnectionPreference support
-
 function Invoke-CCMClientAction {
     <#
         .SYNOPSIS
@@ -19,6 +17,14 @@ function Invoke-CCMClientAction {
             Provides computer names to invoke actions on
         .PARAMETER PSSession
             Provides PSSession to invoke actions on
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Invoke-CCMClientAction -Schedule MachinePol,HardwareInv
                 Start a machine policy eval and a hardware inventory cycle
@@ -27,7 +33,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-02-15
+            Updated:     2020-02-23
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -49,7 +55,10 @@ function Invoke-CCMClientAction {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $invokeClientActionSplat = @{ }
@@ -67,9 +76,15 @@ function Invoke-CCMClientAction {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 

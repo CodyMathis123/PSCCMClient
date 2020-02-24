@@ -1,4 +1,4 @@
-# TODO - Add ConnectionPreference support
+# TODO - Add PSSession Support
 function Set-CCMClientAlwaysOnInternet {
     <#
         .SYNOPSIS
@@ -12,6 +12,16 @@ function Set-CCMClientAlwaysOnInternet {
             Provides CimSessions to set the ClientAlwaysOnInternet setting for
         .PARAMETER ComputerName
             Provides computer names to set the ClientAlwaysOnInternet setting for
+        .PARAMETER PSSession
+            Provides PSSessions to set the ClientAlwaysOnInternet setting for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Set-CCMClientAlwaysOnInternet -Status Enabled
                 Sets ClientAlwaysOnInternet to Enabled for the local computer
@@ -23,7 +33,7 @@ function Set-CCMClientAlwaysOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-02-13
-            Updated:     2020-02-13
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -36,7 +46,10 @@ function Set-CCMClientAlwaysOnInternet {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $Enablement = switch ($Status) {
@@ -60,6 +73,11 @@ function Set-CCMClientAlwaysOnInternet {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName

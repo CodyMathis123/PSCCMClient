@@ -1,4 +1,3 @@
-# TODO - Add ConnectionPreference support
 function Invoke-CCMTriggerSchedule {
     <#
         .SYNOPSIS
@@ -18,6 +17,14 @@ function Invoke-CCMTriggerSchedule {
             Provides computer names to invoke IDs on
         .PARAMETER PSSession
             Provides PSSession to invoke IDs on
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Invoke-CCMTriggerSchedule -ScheduleID TST20000
                 Performs a TriggerSchedule operation on the TST20000 ScheduleID for the local computer using the default values for Delay and Timeout
@@ -30,7 +37,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-14
+            Updated:     2020-02-23
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -48,7 +55,10 @@ function Invoke-CCMTriggerSchedule {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $TimeSpan = New-TimeSpan -Minutes $Timeout
@@ -69,11 +79,15 @@ function Invoke-CCMTriggerSchedule {
                 $getConnectionInfoSplat = @{
                     $PSCmdlet.ParameterSetName = $Connection
                 }
+                switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                    $true {
+                        $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                    }
+                }
                 $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
                 $Computer = $ConnectionInfo.ComputerName
                 $connectionSplat = $ConnectionInfo.connectionSplat
-
-                $Result = [ordered]@{ }
+                    $Result = [ordered]@{ }
                 $Result['ComputerName'] = $Computer
 
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ScheduleID = '$ID']", "Invoke ScheduleID")) {
