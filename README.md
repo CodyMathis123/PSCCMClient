@@ -70,8 +70,8 @@ Current list of functions:
 * Set-CCMLoggingConfiguration
 * Set-CCMManagementPoint
 * Set-CCMProvisioningMode
+* Set-CCMRegistryProperty
 * Set-CCMSite
-* Set-CIMRegistryProperty
 * Test-CCMIsClientOnInternet
 * Test-CCMIsClientAlwaysOnInternet
 * Test-CCMIsWindowAvailableNow

@@ -54,7 +54,8 @@ $ExportModule = @{
         'Get-CCMMW',
         'Get-CCMSUP',
         'Get-CCMSUG',
-        'Set-CCMMP'
+        'Set-CCMMP',
+        'Set-CIMRegistryProperty'
     )
 
     Function = @('ConvertFrom-CCMSchedule',
@@ -110,8 +111,8 @@ $ExportModule = @{
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Set-CIMRegistryProperty',
         'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
         'Test-CCMIsWindowAvailableNow',

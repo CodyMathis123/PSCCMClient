@@ -122,8 +122,8 @@
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Set-CIMRegistryProperty',
         'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
         'Test-CCMIsWindowAvailableNow',
@@ -149,7 +149,8 @@
         'Get-CCMMW',
         'Get-CCMSUP',
         'Get-CCMSUG',
-        'Set-CCMMP'
+        'Set-CCMMP',
+        'Set-CIMRegistryProperty'
     )
 
     # DSC resources to export from this module
