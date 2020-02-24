@@ -1,5 +1,3 @@
-# TODO - Update help
-# TODO - Add ConnectionPreference support
 function Get-CCMCurrentWindowAvailableTime {
     <#
         .SYNOPSIS
@@ -24,6 +22,14 @@ function Get-CCMCurrentWindowAvailableTime {
             Provides computer names to gather Maintenance Window information info from
         .PARAMETER PSSession
             Provides a PSSession to gather Maintenance Window information info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Get-CCMCurrentWindowAvailableTime
                 Return the available time fro the default MWType of 'Software Update Service Window' with fallback
@@ -36,7 +42,7 @@ function Get-CCMCurrentWindowAvailableTime {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-02-01
-            Updated:     2020-02-14
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -56,7 +62,10 @@ function Get-CCMCurrentWindowAvailableTime {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Create hashtable for mapping MW types
@@ -98,6 +107,11 @@ function Get-CCMCurrentWindowAvailableTime {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName

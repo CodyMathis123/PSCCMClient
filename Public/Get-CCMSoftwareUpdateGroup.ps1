@@ -1,28 +1,37 @@
-# TODO - Update help
 function Get-CCMSoftwareUpdateGroup {
     <#
-    .SYNOPSIS
-        Get information for the Software Update Groups deployed to a computer, including compliance
-    .DESCRIPTION
-        Uses CIM to find information for the Software Update Groups deployed to a computer. This includes checking the currently
-        reported 'compliance' for a software update group using the CCM_AssignmentCompliance CIM class
-    .PARAMETER AssignmentName
-        Provide an array of Software Update Group names to query for
-    .PARAMETER AssignmentID
-        Provide an array of Software Update Group assignemnt ID to query for
-    .PARAMETER CimSession
-        Computer CimSession(s) which you want to get information for the Software Update Groups
-    .PARAMETER ComputerName
-        Computer name(s) which you want to get information for the Software Update Groups
-    .EXAMPLE
-        PS C:\> Get-CCMSoftwareUpdateGroup -Computer Testing123
-            Will return all info available for the Software Update Groups deployed to Testing123
-    .NOTES
-        FileName:    Get-CCMSoftwareUpdateGroup.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-21
-        Updated:     2020-02-19
+        .SYNOPSIS
+            Get information for the Software Update Groups deployed to a computer, including compliance
+        .DESCRIPTION
+            Uses CIM to find information for the Software Update Groups deployed to a computer. This includes checking the currently
+            reported 'compliance' for a software update group using the CCM_AssignmentCompliance CIM class
+        .PARAMETER AssignmentName
+            Provide an array of Software Update Group names to query for
+        .PARAMETER AssignmentID
+            Provide an array of Software Update Group assignemnt ID to query for
+        .PARAMETER CimSession
+            Computer CimSession(s) which you want to get information for the Software Update Groups
+        .PARAMETER ComputerName
+            Computer name(s) which you want to get information for the Software Update Groups
+        .PARAMETER PSSession
+            PSSessions which you want to get information for the Software Update Groups
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
+        .EXAMPLE
+            PS C:\> Get-CCMSoftwareUpdateGroup -Computer Testing123
+                Will return all info available for the Software Update Groups deployed to Testing123
+        .NOTES
+            FileName:    Get-CCMSoftwareUpdateGroup.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-21
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMSUG')]

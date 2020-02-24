@@ -1,23 +1,32 @@
-# TODO - Update help
 function Get-CCMPrimaryUser {
     <#
-    .SYNOPSIS
-        Return primary users for a computer
-    .DESCRIPTION
-        Pulls a list of primary users from WMI on the specified computer(s) or CIMSession(s)
-    .PARAMETER CimSession
-        Provides CimSession to gather primary users info from
-    .PARAMETER ComputerName
-        Provides computer names to gather primary users info from
-    .EXAMPLE
-        PS> Get-CCMPrimaryUser
-            Returns all primary users listed in WMI on the local computer
-    .NOTES
-        FileName:    Get-CCMPrimaryUser.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-05
-        Updated:     2020-02-19
+        .SYNOPSIS
+            Return primary users for a computer
+        .DESCRIPTION
+            Pulls a list of primary users from WMI on the specified computer(s) or CIMSession(s)
+        .PARAMETER CimSession
+            Provides CimSession to gather primary users info from
+        .PARAMETER ComputerName
+            Provides computer names to gather primary users info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather primary users info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
+        .EXAMPLE
+            PS> Get-CCMPrimaryUser
+                Returns all primary users listed in WMI on the local computer
+        .NOTES
+            FileName:    Get-CCMPrimaryUser.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-05
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (

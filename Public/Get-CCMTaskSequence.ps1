@@ -1,34 +1,43 @@
-# TODO - Update help
 function Get-CCMTaskSequence {
     <#
-    .SYNOPSIS
-        Return deployed task sequences from a computer
-    .DESCRIPTION
-        Pulls a list of deployed task sequences from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
-        to Invoke-CCMTaskSequence if desired.
+        .SYNOPSIS
+            Return deployed task sequences from a computer
+        .DESCRIPTION
+            Pulls a list of deployed task sequences from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
+            to Invoke-CCMTaskSequence if desired.
 
-        Note that the parameters for filter are all joined together with OR.
-    .PARAMETER PackageID
-        An array of PackageID to filter on
-    .PARAMETER TaskSequenceName
-        An array of task sequence names to filter on
-    .PARAMETER CimSession
-        Provides CimSession to gather deployed task sequence info from
-    .PARAMETER ComputerName
-        Provides computer names to gather deployed task sequence info from
-    .EXAMPLE
-        PS> Get-CCMTaskSequence
-            Returns all deployed task sequences listed in WMI on the local computer
-    .EXAMPLE
-        PS> Get-CCMTaskSequence -TaskSequenceName 'Windows 10' -PackageID 'TST00443'
-            Returns all deployed task sequences listed in WMI on the local computer which have either a task sequence name of 'Windows 10' or
-            a PackageID of 'TST00443'
-    .NOTES
-        FileName:    Get-CCMTaskSequence.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-14
-        Updated:     2020-02-19
+            Note that the parameters for filter are all joined together with OR.
+        .PARAMETER PackageID
+            An array of PackageID to filter on
+        .PARAMETER TaskSequenceName
+            An array of task sequence names to filter on
+        .PARAMETER CimSession
+            Provides CimSession to gather deployed task sequence info from
+        .PARAMETER ComputerName
+            Provides computer names to gather deployed task sequence info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather deployed task sequence info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
+        .EXAMPLE
+            PS> Get-CCMTaskSequence
+                Returns all deployed task sequences listed in WMI on the local computer
+        .EXAMPLE
+            PS> Get-CCMTaskSequence -TaskSequenceName 'Windows 10' -PackageID 'TST00443'
+                Returns all deployed task sequences listed in WMI on the local computer which have either a task sequence name of 'Windows 10' or
+                a PackageID of 'TST00443'
+        .NOTES
+            FileName:    Get-CCMTaskSequence.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-14
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (

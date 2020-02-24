@@ -1,4 +1,3 @@
-# TODO - Update help
 function Get-CCMMaintenanceWindow {
     <#
         .SYNOPSIS
@@ -18,6 +17,16 @@ function Get-CCMMaintenanceWindow {
             Provides CimSession to gather Maintenance Window information info from
         .PARAMETER ComputerName
             Provides computer names to gather Maintenance Window information info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather Maintenance Window information info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
         .EXAMPLE
             C:\PS> Get-CCMMaintenanceWindow
                 Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types

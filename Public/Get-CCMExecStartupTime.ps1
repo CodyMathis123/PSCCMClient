@@ -1,28 +1,37 @@
-# TODO - Update help
 function Get-CCMExecStartupTime {
     <#
-    .SYNOPSIS
-        Return the CCMExec service startup time based on process creation date
-    .DESCRIPTION
-        This function will return the startup time of the CCMExec service if it is currently running. The method used is querying
-        for the Win32_Service CIM object, and passing the ProcessID to Win32_Process CIM class. This lets us determine the 
-        creation date of the CCMExec process, which would coorelate to service startup time. 
-    .PARAMETER CimSession
-        Provides CimSessions to gather CCMExec service startup time from
-    .PARAMETER ComputerName
-        Provides computer names to gather CCMExec service startup time from
-    .EXAMPLE
-        C:\PS> Get-CCMExecStartupTime
-            Returns CCMExec service startup time for the local computer
-    .EXAMPLE
-        C:\PS> Get-CCMExecStartupTime -ComputerName 'Workstation1234','Workstation4321'
-            Returns CCMExec service startup time for Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMExecStartupTime.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-29
-        Updated:     2020-01-29
+        .SYNOPSIS
+            Return the CCMExec service startup time based on process creation date
+        .DESCRIPTION
+            This function will return the startup time of the CCMExec service if it is currently running. The method used is querying
+            for the Win32_Service CIM object, and passing the ProcessID to Win32_Process CIM class. This lets us determine the
+            creation date of the CCMExec process, which would coorelate to service startup time.
+        .PARAMETER CimSession
+            Provides CimSessions to gather CCMExec service startup time from
+        .PARAMETER ComputerName
+            Provides computer names to gather CCMExec service startup time from
+        .PARAMETER PSSession
+            Provides PSSessions to gather CCMExec service startup time from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to.
+        .EXAMPLE
+            C:\PS> Get-CCMExecStartupTime
+                Returns CCMExec service startup time for the local computer
+        .EXAMPLE
+            C:\PS> Get-CCMExecStartupTime -ComputerName 'Workstation1234','Workstation4321'
+                Returns CCMExec service startup time for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMExecStartupTime.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-29
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -39,7 +48,7 @@ function Get-CCMExecStartupTime {
     )
     begin {
         $getCCMExecServiceSplat = @{
-            Query = "SELECT State, ProcessID from Win32_Service WHERE Name = 'CCMExec'" 
+            Query = "SELECT State, ProcessID from Win32_Service WHERE Name = 'CCMExec'"
         }
         $getCCMExecProcessSplat = @{ }
     }
@@ -80,7 +89,7 @@ function Get-CCMExecStartupTime {
                             }
                         }
                         if ($CCMExecProcess -is [Object] -and $CCMExecProcess.Count -gt 0) {
-                            foreach ($Process in $CCMExecProcess) {        
+                            foreach ($Process in $CCMExecProcess) {
                                 $Result['ServiceState'] = $Service.State
                                 $Result['StartupTime'] = $Process.CreationDate
                                 [pscustomobject]$Result
