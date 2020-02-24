@@ -185,7 +185,7 @@ function Get-CCMRegistryProperty {
                             ' '
                         }
                     }
-                    $ScriptBlockString = [string]::Format('Get-ItemProperty -Path {0} {1}', $RegPath, $PropertyFilter)
+                    $ScriptBlockString = [string]::Format('Get-ItemProperty -Path "{0}" {1}', $RegPath, $PropertyFilter)
                     $ScriptBlock = [scriptblock]::Create($ScriptBlockString)
                     $InvokeCommandSplat = @{
                         ScriptBlock = $ScriptBlock
