@@ -3,7 +3,7 @@ function Set-CCMClientAlwaysOnInternet {
         .SYNOPSIS
             Set the ClientAlwaysOnInternet registry key on a computer
         .DESCRIPTION
-            This function leverages the Set-CimRegistryProperty function in order to configure
+            This function leverages the Set-CCMRegistryProperty function in order to configure
             the ClientAlwaysOnInternet property for the MEMCM Client.
         .PARAMETER Status
             Determines if the setting should be Enabled or Disabled
