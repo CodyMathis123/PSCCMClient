@@ -1,40 +1,49 @@
-# TODO - Add PSSession support
 function Get-CCMLastScheduleTrigger {
     <#
-    .SYNOPSIS
-        Returns the last time a specified schedule was triggered
-    .DESCRIPTION
-        This function will return the last time a schedule was triggered. Keep in mind this is when a scheduled run happens, such as the periodic machine
-        policy refresh. This is why you won't see the timestamp increment if you force a eval, and then check the schedule LastTriggerTime.
-    .PARAMETER Schedule
-        Specifies the schedule to get trigger history info for. This has a validate set of all possible 'standard' options that the client can perform
-        on a schedule.
-    .PARAMETER ScheduleID
-        Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing.
-    .PARAMETER ForceWildcard
-        Switch that forces the CIM queries to surround your ScheduleID with % and changes the condition to 'LIKE' instead of =
-    .PARAMETER CimSession
-        Provides CimSessions to gather schedule trigger info from
-    .PARAMETER ComputerName
-        Provides computer names to gather schedule trigger info from
-    .EXAMPLE
-        C:\PS> Get-CCMLastScheduleTrigger -Schedule 'Hardware Inventory'
-        Returns a [pscustomobject] detailing the schedule trigger history info available in WMI for Hardware Inventory
-    .EXAMPLE
-        C:\PS> Get-CCMLastScheduleTrigger -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
-            Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMLastScheduleTrigger.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2019-12-31
-        Updated:     2020-02-13
+        .SYNOPSIS
+            Returns the last time a specified schedule was triggered
+        .DESCRIPTION
+            This function will return the last time a schedule was triggered. Keep in mind this is when a scheduled run happens, such as the periodic machine
+            policy refresh. This is why you won't see the timestamp increment if you force a eval, and then check the schedule LastTriggerTime.
+        .PARAMETER Schedule
+            Specifies the schedule to get trigger history info for. This has a validate set of all possible 'standard' options that the client can perform
+            on a schedule.
+        .PARAMETER ScheduleID
+            Specifies the ScheduleID to get trigger history info for. This is a non-validated parameter that lets you simply query for a ScheduleID of your choosing.
+        .PARAMETER ForceWildcard
+            Switch that forces the CIM queries to surround your ScheduleID with % and changes the condition to 'LIKE' instead of =
+        .PARAMETER CimSession
+            Provides CimSessions to gather schedule trigger info from
+        .PARAMETER ComputerName
+            Provides computer names to gather schedule trigger info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather schedule trigger info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determins what type of connection / command
+            the ComputerName paramter is passed to. 
+        .EXAMPLE
+            C:\PS> Get-CCMLastScheduleTrigger -Schedule 'Hardware Inventory'
+            Returns a [pscustomobject] detailing the schedule trigger history info available in WMI for Hardware Inventory
+        .EXAMPLE
+            C:\PS> Get-CCMLastScheduleTrigger -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
+                Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMLastScheduleTrigger.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-12-31
+            Updated:     2020-02-23
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
-        [parameter(Mandatory = $true, ParameterSetName = 'ByName')]
-        [parameter(ParameterSetName = 'CimSession')]
-        [parameter(ParameterSetName = 'ComputerName')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByName-CimSession')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByName-PSSession')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByName-ComputerName')]
         [ValidateSet('Hardware Inventory',
             'Software Inventory',
             'Discovery Inventory',
@@ -82,25 +91,32 @@ function Get-CCMLastScheduleTrigger {
             'Endpoint AM policy reevaluate',
             'External event detection')]
         [string[]]$Schedule,
-        [parameter(Mandatory = $true, ParameterSetName = 'ByID')]
-        [parameter(ParameterSetName = 'CimSession')]
-        [parameter(ParameterSetName = 'ComputerName')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByID-CimSession')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByID-PSSession')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByID-ComputerName')]
         [string[]]$ScheduleID,
-        [parameter(Mandatory = $false, ParameterSetName = 'ByID')]
-        [parameter(Mandatory = $false, ParameterSetName = 'CimSession')]
-        [parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [parameter(Mandatory = $false, ParameterSetName = 'ByID-CimSession')]
+        [parameter(Mandatory = $false, ParameterSetName = 'ByID-PSSession')]
+        [parameter(Mandatory = $false, ParameterSetName = 'ByID-ComputerName')]
         [switch]$ForceWildcard,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID')]
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName-CimSession')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID-CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID')]
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByName-ComputerName')]
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ByID-ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [parameter(Mandatory = $true, ParameterSetName = 'ByName-PSSession')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByID-PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [parameter(Mandatory = $true, ParameterSetName = 'ByName-ComputerName')]
+        [parameter(Mandatory = $true, ParameterSetName = 'ByID-ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
+        $ConnectionChecker = ($PSCmdlet.ParameterSetName).Split('-')[1]
+
         #region hashtable for mapping schedule names to IDs, and create CIM query
         $ScheduleTypeMap = @{
             'Hardware Inventory'                                                           = '{00000000-0000-0000-0000-000000000001}'
@@ -184,9 +200,14 @@ function Get-CCMLastScheduleTrigger {
         }
     }
     process {
-        foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $getConnectionInfoSplat = @{
-                $PSCmdlet.ParameterSetName = $Connection
+		foreach ($Connection in (Get-Variable -Name $ConnectionChecker -ValueOnly -Scope Local)) {
+			$getConnectionInfoSplat = @{
+				$ConnectionChecker = $Connection
+			}
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
@@ -196,7 +217,14 @@ function Get-CCMLastScheduleTrigger {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ScheduleHistory = Get-CimInstance @getSchedHistSplat @connectionSplat
+                [ciminstance[]]$ScheduleHistory = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getSchedHistSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getSchedHistSplat @connectionSplat
+                    }
+                }
                 if ($ScheduleHistory -is [Object] -and $ScheduleHistory.Count -gt 0) {
                     foreach ($Trigger in $ScheduleHistory) {
                         $Result['ScheduleID'] = $Trigger.ScheduleID
