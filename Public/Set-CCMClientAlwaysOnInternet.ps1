@@ -1,4 +1,3 @@
-# TODO - Add PSSession Support
 function Set-CCMClientAlwaysOnInternet {
     <#
         .SYNOPSIS
@@ -33,7 +32,7 @@ function Set-CCMClientAlwaysOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-02-13
-            Updated:     2020-02-23
+            Updated:     2020-02-24
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -84,7 +83,7 @@ function Set-CCMClientAlwaysOnInternet {
             $connectionSplat = $ConnectionInfo.connectionSplat
 
             try {
-                Set-CIMRegistryProperty @SetAlwaysOnInternetSplat @connectionSplat
+                Set-CCMRegistryProperty @SetAlwaysOnInternetSplat @connectionSplat
             }
             catch {
                 Write-Error "Failure to set MEMCM ClientAlwaysOnInternet to $Enablement for $Computer - $($_.Exception.Message)"
