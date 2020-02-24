@@ -41,7 +41,7 @@ function Set-CCMProvisioningMode {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-09
-            Updated:     2020-02-23
+            Updated:     2020-02-24
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -120,14 +120,7 @@ function Set-CCMProvisioningMode {
                                 $false {
                                     $ScriptBlock = [string]::Format('Set-CCMProvisioningMode -Status {0}', $Status)
                                     $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                                    switch ($ConnectionInfo.ConnectionType) {
-                                        'CimSession' {
-                                            Invoke-CIMPowerShell @invokeCommandSplat @connectionSplat
-                                        }
-                                        'PSSession' {
-                                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                        }
-                                    }
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                                 }
                             }
                             if ($Invocation) {
@@ -136,8 +129,7 @@ function Set-CCMProvisioningMode {
                             }
                         }
                         'ProvisioningMaxMinutes' {
-                            # ENHANCE - Need to factor in when both actual CIM and remote work need done. Should 'everything' use CIM, or remoting? So perform this in the invoke command? Would allow for 1 session type input
-                            $MaxMinutesChange = Set-CIMRegistryProperty @setCIMRegistryPropertySplat @connectionSplat
+                            $MaxMinutesChange = Set-CCMRegistryProperty @setCIMRegistryPropertySplat @connectionSplat
                             if ($MaxMinutesChange[$Computer]) {
                                 Write-Verbose "Successfully set ProvisioningMaxMinutes for $Computer to $ProvisioningMaxMinutes"
                                 $Return['ProvisioningMaxMinutesChanged'] = $true
