@@ -147,8 +147,10 @@ Function Invoke-CCMApplication {
 
                                 Invoke-CimMethod @invokeAppMethodSplat
 '@, $Method, $Priority, $EnforcePreferenceMap[$EnforcePreference], $IsRebootIfNeeded, $AppID, $Revision[0], $IsMachineTarget[0])
-
-                                Invoke-CCMCommand -ScriptBlock $([scriptblock]::Create($ScriptBlockString)) @connectionSplat
+                                $InvokeCommandSplat = @{
+                                    ScriptBlock = [scriptblock]::Create($ScriptBlockString)
+                                }
+                                Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
                             }
                         }
 
