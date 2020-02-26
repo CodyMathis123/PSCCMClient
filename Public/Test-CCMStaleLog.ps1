@@ -125,7 +125,7 @@ Function Test-CCMStaleLog {
 
             Write-Verbose $([string]::Format('Checking {0} for activity', $LogFullPath))
 
-            $getRequestedLogInfoSplat['Query'] = [string]::Format('SELECT Readable, LastModified FROM CIM_DataFile WHERE Name = "{0}"', ($LogFullPath -replace "\\", "\\"))
+            $getRequestedLogInfoSplat['Query'] = [string]::Format('SELECT Readable, LastModified FROM CIM_DataFile WHERE Name = "{0}" OR Name = "{1}"', ($LogFullPath -replace "\\", "\\"), ($MEMCMClientInstallLog -replace "\\", "\\"))
             # 'Poke' the log by querying it once. Log files sometimes do not show an accurate LastModified time until they are accessed
             $null = switch ($Computer -eq $env:ComputerName) {
                 $true {
@@ -143,31 +143,13 @@ Function Test-CCMStaleLog {
                     Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
                 }
             }
-
-            $getRequestedLogInfoSplat['Query'] = [string]::Format('SELECT Readable, LastModified FROM CIM_DataFile WHERE Name = "{0}"', ($MEMCMClientInstallLog -replace "\\", "\\"))
-            # 'Poke' the log by querying it once. Log files sometimes do not show an accurate LastModified time until they are accessed
-            $null = switch ($Computer -eq $env:ComputerName) {
-                $true {
-                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
-                }
-                $false {
-                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
-                }
+            $RequestedLog = $RequestedLogInfo.Where({ $_.Name -eq $LogFullPath})
+            $MEMCMSetupLog = $RequestedLogInfo.Where({ $_.Name -eq $MEMCMClientInstallLog})
+            if ($null -ne $MEMCMSetupLog) {
+                $Result['CCMSetupLastWriteTime'] = ([datetime]$dtmMEMCMClientInstallLogDate = $MEMCMSetupLog.LastModified)
             }
-            $MEMCMClientInstallLogInfo = switch ($Computer -eq $env:ComputerName) {
-                $true {
-                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
-                }
-                $false {
-                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
-                }
-            }
-            
-            if ($null -ne $MEMCMClientInstallLogInfo) {
-                $Result['CCMSetupLastWriteTime'] = ([datetime]$dtmMEMCMClientInstallLogDate = $MEMCMClientInstallLogInfo.LastModified)
-            }
-            if ($null -ne $RequestedLogInfo) {
-                $Result['LogLastWriteTime'] = ([datetime]$LogLastWriteTime = $RequestedLogInfo.LastModified)
+            if ($null -ne $RequestedLog) {
+                $Result['LogLastWriteTime'] = ([datetime]$LogLastWriteTime = $RequestedLog.LastModified)
                 $LastWriteDiff = New-TimeSpan -Start $LogLastWriteTime -End (Get-Date -format yyyy-MM-dd)
                 if ($LastWriteDiff -gt $StaleTimeframe) {
                     Write-Verbose $([string]::Format('{0} is not active', $LogFullPath))
