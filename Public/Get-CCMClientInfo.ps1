@@ -49,6 +49,11 @@ function Get-CCMClientInfo {
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
+            #region site code
+            $SiteCode = Get-CCMSite @connectionSplat
+            $Result['SiteCode'] = $SiteCode.SiteCode
+            #endregion site code
+
             #region cache info
             $CacheInfo = Get-CCMCacheInfo @connectionSplat
             $Result['CacheLocation'] = $CacheInfo.Location
