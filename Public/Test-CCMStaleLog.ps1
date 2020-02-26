@@ -1,42 +1,55 @@
-# TODO - Add PSSession Support
 Function Test-CCMStaleLog {
     <#
-    .SYNOPSIS
-        Returns a boolean based on whether a log file has been written to in the timeframe specified
-    .DESCRIPTION
-        This function is used to check the LastWriteTime property of a specified file. It will be compared to
-        the *Stale parameters. Note that logs are assumed to be under the MEMCM Log directory. Note that
-        this function uses the CIM_DataFile so that SMB is NOT needed. Get-CimInstance is able to query for
-        file information.
-    .PARAMETER LogFileName
-        Name of the log file under the CCM\Logs directory to check. Not, online the log name is required. The path for the MEMCM logs
-        will be automatically identified. The .log extension is optional
-    .PARAMETER DaysStale
-        Number of days of inactivity that you would consider the specified log stale.
-    .PARAMETER HoursStale
-        Number of days of inactivity that you would consider the specified log stale.
-    .PARAMETER MinutesStale
-        Number of minutes of inactivity that you would consider the specified log stale.
-    .PARAMETER DisableCCMSetupFallback
-        Disable the CCMSetup fallback check - details below.
+        .SYNOPSIS
+            Returns a boolean based on whether a log file has been written to in the timeframe specified
+        .DESCRIPTION
+            This function is used to check the LastWriteTime property of a specified file. It will be compared to
+            the *Stale parameters. Note that logs are assumed to be under the MEMCM Log directory. Note that
+            this function uses the CIM_DataFile so that SMB is NOT needed. Get-CimInstance is able to query for
+            file information.
+        .PARAMETER LogFileName
+            Name of the log file under the CCM\Logs directory to check. Not, online the log name is required. The path for the MEMCM logs
+            will be automatically identified. The .log extension is optional
+        .PARAMETER DaysStale
+            Number of days of inactivity that you would consider the specified log stale.
+        .PARAMETER HoursStale
+            Number of days of inactivity that you would consider the specified log stale.
+        .PARAMETER MinutesStale
+            Number of minutes of inactivity that you would consider the specified log stale.
+        .PARAMETER DisableCCMSetupFallback
+            Disable the CCMSetup fallback check - details below.
 
-        When the desired log file is not found, then the last modified timestamp for the CCMSetup log is checked.
-        When the CCMSetup file has activity within the last 24 hours, then we assume that, even though our desired
-        log file was not found, it isn't stale because the MEMCM client is recently installed or repaired.
-        If the CCMSetup is found, and has no activity, or is just not found, then we assume the desired
-        log is 'stale.' This additional chack can be disabled with this switch parameter.
-    .EXAMPLE
-        C:\PS> Test-CCMStaleLog -LogFileName ccmexec -DaysStale 2
-            Check if the ccmexec log file has been written to within the last 2 days on the local computer
-    .EXAMPLE
-        C:\PS> Test-CCMStaleLog -LogFileName AppDiscovery.log -DaysStale 7 -ComputerName Workstation123
-            Check if the AppDiscovery.log file has been written to within the last 7 days on Workstation123
-    .NOTES
-        FileName:    Test-CCMStaleLog.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-25
-        Updated:     2020-01-26
+            When the desired log file is not found, then the last modified timestamp for the CCMSetup log is checked.
+            When the CCMSetup file has activity within the last 24 hours, then we assume that, even though our desired
+            log file was not found, it isn't stale because the MEMCM client is recently installed or repaired.
+            If the CCMSetup is found, and has no activity, or is just not found, then we assume the desired
+            log is 'stale.' This additional chack can be disabled with this switch parameter.
+        .PARAMETER CimSession
+            CimSessions to check the stale log on.
+        .PARAMETER ComputerName
+            Computer Names to check the stale log on.
+        .PARAMETER PSSession
+            PSSessions to check the stale log on.
+        .PARAMETER ConnectionPreference
+                Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+                is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+                when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+                pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+                specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+                falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+                the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Test-CCMStaleLog -LogFileName ccmexec -DaysStale 2
+                Check if the ccmexec log file has been written to within the last 2 days on the local computer
+        .EXAMPLE
+            C:\PS> Test-CCMStaleLog -LogFileName AppDiscovery.log -DaysStale 7 -ComputerName Workstation123
+                Check if the AppDiscovery.log file has been written to within the last 7 days on Workstation123
+        .NOTES
+            FileName:    Test-CCMStaleLog.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-25
+            Updated:     2020-02-26
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param
@@ -55,7 +68,12 @@ Function Test-CCMStaleLog {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getRequestedLogInfoSplat = @{ }
@@ -87,9 +105,15 @@ Function Test-CCMStaleLog {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['LogFileName'] = $LogFileName
@@ -103,13 +127,41 @@ Function Test-CCMStaleLog {
 
             $getRequestedLogInfoSplat['Query'] = [string]::Format('SELECT Readable, LastModified FROM CIM_DataFile WHERE Name = "{0}"', ($LogFullPath -replace "\\", "\\"))
             # 'Poke' the log by querying it once. Log files sometimes do not show an accurate LastModified time until they are accessed
-            $null = Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
-            $RequestedLogInfo = Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+            $null = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+            }
+            $RequestedLogInfo = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+            }
 
             $getRequestedLogInfoSplat['Query'] = [string]::Format('SELECT Readable, LastModified FROM CIM_DataFile WHERE Name = "{0}"', ($MEMCMClientInstallLog -replace "\\", "\\"))
             # 'Poke' the log by querying it once. Log files sometimes do not show an accurate LastModified time until they are accessed
-            $null = Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
-            $MEMCMClientInstallLogInfo = Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+            $null = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+            }
+            $MEMCMClientInstallLogInfo = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getRequestedLogInfoSplat @connectionSplat
+                }
+            }
             
             if ($null -ne $MEMCMClientInstallLogInfo) {
                 $Result['CCMSetupLastWriteTime'] = ([datetime]$dtmMEMCMClientInstallLogDate = $MEMCMClientInstallLogInfo.LastModified)
