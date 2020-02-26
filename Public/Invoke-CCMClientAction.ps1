@@ -1,16 +1,11 @@
 function Invoke-CCMClientAction {
     <#
         .SYNOPSIS
-            Invokes CM Client actions on local or remote machines
+            Invokes MEMCM Client actions on local or remote machines
         .DESCRIPTION
-            This script will allow you to invoke a set of CM Client actions on a machine (with optional credentials), providing a list of the actions and an optional delay betweens actions.
-            The function will attempt for a default of 5 minutes to invoke the action, with a 10 second delay inbetween attempts. This is to account for invoke-cimmethod failures.
+            This script will allow you to invoke a set of MEMCM Client actions on a machine, providing a list of the actions
         .PARAMETER Schedule
             Define the schedules to run on the machine - 'HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'SourceUpdateMessage', 'SendUnsentStateMessage'
-        .PARAMETER Delay
-            Specify the delay in seconds between each schedule when more than one is ran - 0-30 seconds
-        .PARAMETER Timeout
-            Specifies the timeout in minutes after which any individual computer will stop attempting the schedules. Default is 5 minutes.
         .PARAMETER CimSession
             Provides CimSessions to invoke actions on
         .PARAMETER ComputerName
@@ -33,7 +28,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-02-23
+            Updated:     2020-02-25
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -42,13 +37,7 @@ function Invoke-CCMClientAction {
         [ValidateSet('HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'SourceUpdateMessage', 'SendUnsentStateMessage')]
         [ValidateNotNullOrEmpty()]
         [string[]]$Schedule,
-        [parameter(Mandatory = $false)]
-        [ValidateRange(0, 30)]
-        [ValidateNotNullOrEmpty()]
-        [int]$Delay = 0,
-        [parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [int]$Timeout = 5,
+
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -66,9 +55,6 @@ function Invoke-CCMClientAction {
             Namespace   = 'root\ccm\invagt'
             ClassName   = 'InventoryActionStatus'
             ErrorAction = 'Stop'
-        }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Invoke-CCMClientAction', 'Invoke-CCMTriggerSchedule', 'Get-CCMConnection'
         }
     }
     process {
@@ -91,6 +77,7 @@ function Invoke-CCMClientAction {
             foreach ($Option in $Schedule) {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Schedule = '$Option']", "Invoke Schedule")) {
                     $Result['Action'] = $Option
+                    $Result['Invoked'] = $false
                     $Action = switch -Regex ($Option) {
                         '^HardwareInv$|^FullHardwareInv$' {
                             '{00000000-0000-0000-0000-000000000001}'
@@ -139,11 +126,43 @@ function Invoke-CCMClientAction {
                                 $invokeClientActionSplat['ScheduleID'] = $Action
 
                                 Write-Verbose "Triggering a $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
-                                Invoke-CCMTriggerSchedule @invokeClientActionSplat -Delay $Delay -Timeout $Timeout
+                                Invoke-CCMTriggerSchedule @invokeClientActionSplat
                             }
                             $false {
-                                $ScriptBlock = [string]::Format('Invoke-CCMClientAction -Schedule {0} -Delay {1} -Timeout {2}', $Option, $Delay, $Timeout)
-                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                $invokeCommandSplat = @{ }
+
+                                if ($Option -eq 'FullHardwareInv') {
+                                    $RemoveHINVScriptBlockString = [string]::Format(@"
+                                    `$getFullHINVSplat = @{
+                                        Namespace   = 'root\ccm\invagt'
+                                        ClassName   = 'InventoryActionStatus'
+                                        ErrorAction = 'Stop'
+                                    }
+                                    `$getFullHINVSplat['Filter'] = "InventoryActionID ='{0}'"
+
+                                    `$HWInv = Get-CimInstance @getFullHINVSplat
+                                    if (`$null -ne `$HWInv) {
+                                        Remove-CimInstance -InputObject `$HWInv
+                                    }
+
+"@, $Action)
+                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($RemoveHINVScriptBlockString)
+                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                }
+                                $ScriptBlockString = [string]::Format(@"
+                                `$invokeClientActionSplat = @{{
+                                    MethodName  = 'TriggerSchedule'
+                                    Namespace   = 'root\ccm'
+                                    ClassName   = 'sms_client'
+                                    ErrorAction = 'Stop'
+                                }}
+                                `$invokeClientActionSplat['Arguments'] = @{{
+                                    sScheduleID = '{0}'
+                                }}
+                                Invoke-CimMethod @invokeClientActionSplat
+"@, $Action)
+
+                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlockString)
                                 Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                             }
                         }
@@ -157,14 +176,10 @@ function Invoke-CCMClientAction {
                     if ($Invocation) {
                         Write-Verbose "Successfully invoked the $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
                         $Result['Invoked'] = $true
-                        Start-Sleep -Seconds $Delay
                     }
                     [pscustomobject]$Result
                 }
             }
         }
-    }
-    end {
-        Write-Verbose "Following actions invoked - $Schedule"
     }
 }
