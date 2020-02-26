@@ -1,18 +1,27 @@
-# TODO - Add PSSession Support
 function Invoke-CCMBaseline {
     <#
         .SYNOPSIS
-            Invoke SCCM Configuration Baselines on the specified computers
+            Invoke MEMCCM Configuration Baselines on the specified computers
         .DESCRIPTION
-            This function will allow you to provide an array of computer names, or cimsessions, and configuration baseline names which will be invoked.
+            This function will allow you to provide an array of computer names, PSSessions, or cimsessions, and configuration baseline names which will be invoked.
             If you do not specify a baseline name, then ALL baselines on the machine will be invoked. A [PSCustomObject] is returned that
             outlines the results, including the last time the baseline was ran, and if the previous run returned compliant or non-compliant.
         .PARAMETER BaselineName
             Provides the configuration baseline names that you wish to invoke.
-        .PARAMETER ComputerName
-            Provides computer names to invoke the configuration baselines on.
         .PARAMETER CimSession
             Provides cimsessions to invoke the configuration baselines on.
+        .PARAMETER ComputerName
+            Provides computer names to invoke the configuration baselines on.
+        .PARAMETER PSSession
+            Provides PSSessions to invoke the configuration baselines on.
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
         .EXAMPLE
             C:\PS> Invoke-CCMBaseline
                 Invoke all baselines identified in WMI on the local computer.
@@ -27,7 +36,7 @@ function Invoke-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2020-01-31
+            Updated:     2020-02-26
 
             It is important to note that if a configuration baseline has user settings, the only way to invoke it is if the user is logged in, and you run this script
             with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
@@ -54,7 +63,12 @@ function Invoke-CCMBaseline {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
@@ -90,11 +104,17 @@ function Invoke-CCMBaseline {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             foreach ($BLName in $BaselineName) {
-                #region Query WMI for Configuration Baselines based off DisplayName
+                #region Query CIM for Configuration Baselines based off DisplayName
                 $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
                     $true {
                         [string]::Format("SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = '{0}'", $BLName)
@@ -106,14 +126,21 @@ function Invoke-CCMBaseline {
                 Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
                 $getBaselineSplat['Query'] = $BLQuery
                 try {
-                    $Baselines = Get-CimInstance @getBaselineSplat @connectionSplat
+                    $Baselines = switch -regex ($ConnectionInfo.ConnectionType) {
+                        '^ComputerName$|^CimSession$' {
+                            Get-CimInstance @getBaselineSplat @connectionSplat
+                        }
+                        'PSSession' {
+                            Get-CCMCimInstance @getBaselineSplat @connectionSplat
+                        }
+                    }
                 }
                 catch {
                     # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
                     # Maybe write a function???
                     Write-Error "Failed to query for baselines on $Computer - $_"
                 }
-                #endregion Query WMI for Configuration Baselines based off DisplayName
+                #endregion Query CIM for Configuration Baselines based off DisplayName
 
                 #region Based on results of CIM Query, identify arguments and invoke TriggerEvaluation
                 switch ($null -eq $Baselines) {
@@ -148,7 +175,24 @@ function Invoke-CCMBaseline {
                                 #region Trigger the Configuration Baseline to run
                                 Write-Verbose "Identified the Configuration Baseline [BaselineName='$($BL.DisplayName)'] on [ComputerName='$Computer'] will trigger via the 'TriggerEvaluation' CIM method"
                                 $Return['Invoked'] = try {
-                                    $Invocation = Invoke-CimMethod @invokeBaselineEvalSplat @connectionSplat
+                                    $Invocation = switch -regex ($ConnectionInfo.ConnectionType) {
+                                        '^ComputerName$|^CimSession$' {
+                                            Invoke-CimMethod @invokeBaselineEvalSplat @connectionSplat
+                                        }
+                                        'PSSession' {
+                                            $InvokeCCMCommandSplat = @{
+                                                Arguments   = $invokeBaselineEvalSplat
+                                                ScriptBlock = {
+                                                    param(
+                                                        $invokeBaselineEvalSplat
+                                                    )
+                                                    Invoke-CimMethod @invokeBaselineEvalSplat
+                                                }
+                                            }
+                                            Invoke-CCMCommand @InvokeCCMCommandSplat @connectionSplat
+
+                                        }
+                                    }
                                     switch ($Invocation.ReturnValue) {
                                         0 {
                                             $true
