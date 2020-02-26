@@ -47,7 +47,7 @@
 			Author:      Cody Mathis
 			Contact:     @CodyMathis123
 			Created:     2020-02-12
-			Updated:     2020-02-24
+			Updated:     2020-02-26
 	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
@@ -56,6 +56,9 @@
 		[scriptblock]$ScriptBlock,
 		[Parameter(Mandatory = $false)]
 		[string[]]$FunctionsToLoad,
+		[Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+		[object[]]$ArgumentList,
 		[Parameter(Mandatory = $false, ParameterSetName = 'CimSession')]
 		[ValidateRange(1000, 900000)]
 		[int32]$Timeout = 120000,
@@ -77,7 +80,7 @@
 				Convert-FunctionToString -FunctionToConvert $FunctionsToLoad
 			}
 		}
-		$ConnectionChecker = switch($PSCmdlet.ParameterSetName) {
+		$ConnectionChecker = switch ($PSCmdlet.ParameterSetName) {
 			'ComputerName' {
 				$ConnectionPreference
 			}
@@ -129,6 +132,11 @@
 
 				$InvokeCommandSplat = @{
 					ScriptBlock = $FullScriptBlock
+				}
+				switch ($PSBoundParameters.ContainsKey('ArgumentList')) {
+					$true {
+						$invokeCommandSplat['ArgumentList'] = $ArgumentList
+					}
 				}
 			}
 		}
