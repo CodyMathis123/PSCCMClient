@@ -33,7 +33,7 @@ function Test-CCMIsWindowAvailableNow {
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
             specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName paramter is passed to. 
+            the ComputerName parameter is passed to. 
         .EXAMPLE
             C:\PS> Test-CCMIsWindowAvailableNow
                 Return information about the default MWType of 'Software Update Service Window' with a runtime of 0, and fallback

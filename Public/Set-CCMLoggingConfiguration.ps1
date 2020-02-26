@@ -27,7 +27,7 @@ function Set-CCMLoggingConfiguration {
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
             specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName paramter is passed to.
+            the ComputerName parameter is passed to.
         .EXAMPLE
             C:\PS> Set-CCMLoggingConfiguration -LogLevel Verbose
                 Sets local computer to use Verbose logging

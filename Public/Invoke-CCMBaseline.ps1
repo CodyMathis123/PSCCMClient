@@ -9,10 +9,20 @@ function Invoke-CCMBaseline {
             outlines the results, including the last time the baseline was ran, and if the previous run returned compliant or non-compliant.
         .PARAMETER BaselineName
             Provides the configuration baseline names that you wish to invoke.
-        .PARAMETER ComputerName
-            Provides computer names to invoke the configuration baselines on.
         .PARAMETER CimSession
             Provides cimsessions to invoke the configuration baselines on.
+        .PARAMETER ComputerName
+            Provides computer names to invoke the configuration baselines on.
+        .PARAMETER PSSession
+            Provides PSSessions to invoke the configuration baselines on.
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
         .EXAMPLE
             C:\PS> Invoke-CCMBaseline
                 Invoke all baselines identified in WMI on the local computer.
@@ -54,7 +64,12 @@ function Invoke-CCMBaseline {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
