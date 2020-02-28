@@ -1,44 +1,53 @@
-# TODO - Add PSSession Support
 function Invoke-CCMPackage {
     <#
-    .SYNOPSIS
-        Invoke deployed packages on a computer
-    .DESCRIPTION
-        This function can invoke a package that is deployed to a computer. It has an optional 'Force' parameter which will
-        temporarily change the RepeatRunBehavioar, and MandatoryAssignments parameters to force a pacakge to run regardless
-        of the schedule and settings assigned to it.
+        .SYNOPSIS
+            Invoke deployed packages on a computer
+        .DESCRIPTION
+            This function can invoke a package that is deployed to a computer. It has an optional 'Force' parameter which will
+            temporarily change the RepeatRunBehavioar, and MandatoryAssignments parameters to force a pacakge to run regardless
+            of the schedule and settings assigned to it.
 
-        Note that the parameters for filter are all joined together with OR.
-    .PARAMETER PackageID
-        An array of PackageID to filter on
-    .PARAMETER PackageName
-        An array of package names to filter on
-    .PARAMETER ProgramName
-        An array of program names to filter on
-    .PARAMETER Force
-        Force the package to run by temporarily changing the RepeatRunBehavioar, and MandatoryAssignments parameters as shown below
+            Note that the parameters for filter are all joined together with OR.
+        .PARAMETER PackageID
+            An array of PackageID to filter on
+        .PARAMETER PackageName
+            An array of package names to filter on
+        .PARAMETER ProgramName
+            An array of program names to filter on
+        .PARAMETER Force
+            Force the package to run by temporarily changing the RepeatRunBehavioar, and MandatoryAssignments parameters as shown below
 
-            Property = @{
-                ADV_RepeatRunBehavior    = 'RerunAlways'
-                ADV_MandatoryAssignments = $true
-            }
-    .PARAMETER CimSession
-        Provides CimSession to gather deployed package info from
-    .PARAMETER ComputerName
-        Provides computer names to gather deployed package info from
-    .EXAMPLE
-        PS> Invoke-CCMPackage
-            Invoke all packages listed in WMI on the local computer
-    .EXAMPLE
-        PS> Invoke-CCMPackage -PackageName 'Software Install' -ProgramName 'Software Install - Silent'
-            Invoke the deployed packages listed in WMI on the local computer which has either a package name of 'Software Install' or
-            a Program Name of 'Software Install - Silent'
-    .NOTES
-        FileName:    Invoke-CCMPackage.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-12
-        Updated:     2020-01-14
+                Property = @{
+                    ADV_RepeatRunBehavior    = 'RerunAlways'
+                    ADV_MandatoryAssignments = $true
+                }
+        .PARAMETER CimSession
+            Provides CimSession to gather deployed package info from
+        .PARAMETER ComputerName
+            Provides computer names to gather deployed package info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather deployed package info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            PS> Invoke-CCMPackage
+                Invoke all packages listed in WMI on the local computer
+        .EXAMPLE
+            PS> Invoke-CCMPackage -PackageName 'Software Install' -ProgramName 'Software Install - Silent'
+                Invoke the deployed packages listed in WMI on the local computer which has either a package name of 'Software Install' or
+                a Program Name of 'Software Install - Silent'
+        .NOTES
+            FileName:    Invoke-CCMPackage.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-12
+            Updated:     2020-02-27
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -57,7 +66,12 @@ function Invoke-CCMPackage {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     Begin {
         $setAlwaysRerunSplat = @{
@@ -88,9 +102,15 @@ function Invoke-CCMPackage {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
             }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
+            }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
@@ -117,18 +137,48 @@ function Invoke-CCMPackage {
                     }
                     $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_SoftwareDistribution{0}', $Filter)
 
-                    [ciminstance[]]$Packages = Get-CimInstance @getPackageSplat @connectionSplat
+                    [ciminstance[]]$Packages = switch ($Computer -eq $env:ComputerName) {
+                        $true {
+                            Get-CimInstance @getPackageSplat @connectionSplat
+                        }
+                        $false {
+                            Get-CCMCimInstance @getPackageSplat @connectionSplat
+                        }
+                    }
                     if ($Packages -is [Object] -and $Packages.Count -gt 0) {
                         foreach ($Advertisement in $Packages) {
                             switch ($Force.IsPresent) {
                                 $true {
                                     Write-Verbose "Force parameter present - Setting package to always rerun"
                                     $setAlwaysRerunSplat['InputObject'] = $Advertisement
-                                    Set-CimInstance @setAlwaysRerunSplat @connectionSplat
+                                    switch -regex ($ConnectionInfo.ConnectionType) {
+                                        '^ComputerName$|^CimSession$' {
+                                            Set-CimInstance @setAlwaysRerunSplat @connectionSplat
+                                        }
+                                        'PSSession' {
+                                            $invokeCommandSplat = @{
+                                                ScriptBlock  = {
+                                                    param (
+                                                        $setAlwaysRerunSplat
+                                                    )
+                                                    Set-CimInstance @setAlwaysRerunSplat
+                                                }
+                                                ArgumentList = $setAlwaysRerunSplat
+                                            }
+                                            Invoke-Command @invokeCommandSplat @connectionSplat
+                                        }
+                                    }
                                 }
                             }
                             $getPackageSplat['Query'] = [string]::Format("SELECT ScheduledMessageID FROM CCM_Scheduler_ScheduledMessage WHERE ScheduledMessageID LIKE '{0}%'", $Advertisement.ADV_AdvertisementID)
-                            $ScheduledMessageID = Get-CimInstance @getPackageSplat @connectionSplat
+                            $ScheduledMessageID = switch ($Computer -eq $env:ComputerName) {
+                                $true {
+                                    Get-CimInstance @getPackageSplat @connectionSplat
+                                }
+                                $false {
+                                    Get-CCMCimInstance @getPackageSplat @connectionSplat
+                                }
+                            }
                             if ($null -ne $ScheduledMessageID) {
                                 Invoke-CCMTriggerSchedule -ScheduleID $ScheduledMessageID.ScheduledMessageID @connectionSplat
                             }
