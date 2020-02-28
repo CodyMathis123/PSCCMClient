@@ -138,7 +138,7 @@ function Get-CCMClientInfo {
 
             #region MEMCM Client internet configuration
             $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet
-            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsAlwaysClientOnInternet
+            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsClientAlwaysOnInternet
             #endregion MEMCM Client internet configuration
 
             [pscustomobject]$Result
