@@ -76,12 +76,12 @@ function Test-CCMIsClientOnInternet {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
                         $Result['IsClientOnInternet'] = . $IsClientOnInternetScriptBlock
-                        [pscustomobject]$Result
                     }
                     $false {
-                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        $Result['IsClientOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
+                [pscustomobject]$Result
             }
             catch {
                 Write-Error "Failure to determine if the MEMCM client is set to always be on the internet for $Computer - $($_.Exception.Message)"

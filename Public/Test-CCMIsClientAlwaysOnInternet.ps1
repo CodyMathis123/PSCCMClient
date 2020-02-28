@@ -40,15 +40,19 @@ function Test-CCMIsClientAlwaysOnInternet {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
         [string]$ConnectionPreference
     )
     begin {
+        $IsClientAlwaysOnInternetScriptBlock = {
+            $Client = New-Object -ComObject Microsoft.SMS.Client
+            [bool]$Client.IsClientAlwaysOnInternet()
+        }
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Test-CCMIsClientAlwaysOnInternet', 'Get-CCMConnection'
+            ScriptBlock = $IsClientAlwaysOnInternetScriptBlock
         }
     }
     process {
@@ -71,16 +75,13 @@ function Test-CCMIsClientAlwaysOnInternet {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        $Client = New-Object -ComObject Microsoft.SMS.Client
-                        $Result['IsClientAlwaysOnInternet'] = [bool]$Client.IsClientAlwaysOnInternet()
-                        [pscustomobject]$Result
+                        $Result['IsClientOnInternet'] = . $IsClientAlwaysOnInternetScriptBlock
                     }
                     $false {
-                        $ScriptBlock = 'Test-CCMIsClientAlwaysOnInternet'
-                        $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        $Result['IsClientOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
+                [pscustomobject]$Result
             }
             catch {
                 Write-Error "Failure to determine if the MEMCM client is set to always be on the internet for $Computer - $($_.Exception.Message)"
