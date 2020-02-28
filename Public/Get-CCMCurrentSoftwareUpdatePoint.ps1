@@ -29,7 +29,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-16
-            Updated:     2020-02-22
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMCurrentSUP', 'Get-CCMSUP')]
@@ -40,6 +40,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]

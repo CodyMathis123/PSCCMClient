@@ -35,7 +35,7 @@ function Invoke-CCMResetPolicy {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-10-30
-            Updated:     2020-02-23
+            Updated:     2020-02-27
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -48,6 +48,7 @@ function Invoke-CCMResetPolicy {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]

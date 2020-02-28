@@ -33,7 +33,7 @@ function Set-CCMCacheSize {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-11-06
-            Updated:     2020-02-23
+            Updated:     2020-02-27
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -46,6 +46,7 @@ function Set-CCMCacheSize {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]

@@ -1,28 +1,37 @@
-# TODO - Add PSSession support
 # TODO - Update help
 function Get-CCMClientInfo {
     <#
-    .SYNOPSIS
-        Returns info about the MEMCM Client
-    .DESCRIPTION
-        This function will return a large amount of info for the MEMCM client using CIM. It leverages many of the existing Get-CCM* functions
-        in the module to present the data as one object.
-    .PARAMETER CimSession
-        Provides CimSessions to gather the client info from
-    .PARAMETER ComputerName
-        Provides computer names to gather the client info from
-    .EXAMPLE
-        C:\PS> Get-CCMClientInfo
-            Returns the client info from local computer
-    .EXAMPLE
-        C:\PS> Get-CCMClientInfo -ComputerName 'Workstation1234','Workstation4321'
-            Returns the client info from Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMClientInfo.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-24
-        Updated:     2020-01-24
+        .SYNOPSIS
+            Returns info about the MEMCM Client
+        .DESCRIPTION
+            This function will return a large amount of info for the MEMCM client using CIM. It leverages many of the existing Get-CCM* functions
+            in the module to present the data as one object.
+        .PARAMETER CimSession
+            Provides CimSessions to gather the client info from
+        .PARAMETER ComputerName
+            Provides computer names to gather the client info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather the client info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Get-CCMClientInfo
+                Returns the client info from local computer
+        .EXAMPLE
+            C:\PS> Get-CCMClientInfo -ComputerName 'Workstation1234','Workstation4321'
+                Returns the client info from Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMClientInfo.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-24
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -30,7 +39,13 @@ function Get-CCMClientInfo {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         
@@ -39,6 +54,11 @@ function Get-CCMClientInfo {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
