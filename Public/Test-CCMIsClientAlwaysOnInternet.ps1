@@ -75,10 +75,10 @@ function Test-CCMIsClientAlwaysOnInternet {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        $Result['IsClientOnInternet'] = . $IsClientAlwaysOnInternetScriptBlock
+                        $Result['IsClientAlwaysOnInternet'] = . $IsClientAlwaysOnInternetScriptBlock
                     }
                     $false {
-                        $Result['IsClientOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                        $Result['IsClientAlwaysOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
                 [pscustomobject]$Result
