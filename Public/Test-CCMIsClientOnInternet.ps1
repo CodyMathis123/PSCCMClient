@@ -79,8 +79,6 @@ function Test-CCMIsClientOnInternet {
                         [pscustomobject]$Result
                     }
                     $false {
-                        $ScriptBlock = 'Test-CCMIsClientOnInternet'
-                        $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                         Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                     }
                 }
