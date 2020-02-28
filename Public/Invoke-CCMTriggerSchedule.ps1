@@ -34,7 +34,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-25
+            Updated:     2020-02-27
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -59,9 +59,6 @@ function Invoke-CCMTriggerSchedule {
             ClassName   = 'sms_client'
             ErrorAction = 'Stop'
         }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Invoke-CCMTriggerSchedule', 'Get-CCMConnection'
-        }
     }
     process {
         foreach ($ID in $ScheduleID) {
@@ -83,8 +80,6 @@ function Invoke-CCMTriggerSchedule {
 
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ScheduleID = '$ID']", "Invoke ScheduleID")) {
                     try {
-                        Remove-Variable MustExit -ErrorAction SilentlyContinue
-                        Remove-Variable Invocation -ErrorAction SilentlyContinue
                         $invokeClientActionSplat['Arguments'] = @{
                             sScheduleID = $ID
                         }
@@ -95,8 +90,19 @@ function Invoke-CCMTriggerSchedule {
                                 Invoke-CimMethod @invokeClientActionSplat
                             }
                             $false {
-                                $ScriptBlock = [string]::Format('Invoke-CCMTriggerSchedule -ScheduleID "{0}" -Delay {1} -Timeout {2}', $ID, $Delay, $Timeout)
-                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                $ScriptBlockString = [string]::Format(@"
+                                `$invokeClientActionSplat = @{{
+                                    MethodName  = 'TriggerSchedule'
+                                    Namespace   = 'root\ccm'
+                                    ClassName   = 'sms_client'
+                                    ErrorAction = 'Stop'
+                                    Arguments   = @{{
+                                        sScheduleID = '{0}'
+                                    }}
+                                }}
+                                Invoke-CimMethod @invokeClientActionSplat
+"@, $ID)
+                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlockString)
                                 Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                             }
                         }
