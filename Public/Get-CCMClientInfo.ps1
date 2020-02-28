@@ -1,4 +1,3 @@
-# TODO - Update help
 function Get-CCMClientInfo {
     <#
         .SYNOPSIS
