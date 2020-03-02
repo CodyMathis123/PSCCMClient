@@ -58,7 +58,7 @@
 		[scriptblock]$ScriptBlock,
 		[Parameter(Mandatory = $false)]
 		[string[]]$FunctionsToLoad,
-		[Paramater(Mandatory = $false)]
+		[Parameter(Mandatory = $false)]
 		[object[]]$ArgumentList,
 		[Parameter(Mandatory = $false, ParameterSetName = 'CimSession')]
 		[ValidateRange(1000, 900000)]
