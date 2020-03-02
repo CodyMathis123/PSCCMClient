@@ -28,7 +28,7 @@ function Invoke-CCMClientAction {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-11-20
-            Updated:     2020-02-27
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -56,6 +56,7 @@ function Invoke-CCMClientAction {
             Namespace   = 'root\ccm\invagt'
             ClassName   = 'InventoryActionStatus'
             ErrorAction = 'Stop'
+            Filter      = "InventoryActionID ='{00000000-0000-0000-0000-000000000001}'"
         }
     }
     process {
@@ -112,8 +113,6 @@ function Invoke-CCMClientAction {
                         $Invocation = switch ($Computer -eq $env:ComputerName) {
                             $true {
                                 if ($Option -eq 'FullHardwareInv') {
-                                    $getFullHINVSplat['Filter'] = "InventoryActionID ='$Action'"
-
                                     Write-Verbose "Attempting to delete Hardware Inventory history for $Computer as a FullHardwareInv was requested"
                                     $HWInv = Get-CimInstance @getFullHINVSplat @connectionSplat
                                     if ($null -ne $HWInv) {
@@ -133,37 +132,31 @@ function Invoke-CCMClientAction {
                                 $invokeCommandSplat = @{ }
 
                                 if ($Option -eq 'FullHardwareInv') {
-                                    $RemoveHINVScriptBlockString = [string]::Format(@"
-                                    `$getFullHINVSplat = @{
-                                        Namespace   = 'root\ccm\invagt'
-                                        ClassName   = 'InventoryActionStatus'
-                                        ErrorAction = 'Stop'
+                                    $invokeCommandSplat['ScriptBlock'] = {
+                                        param($getFullHINVSplat)
+                                        $HWInv = Get-CimInstance @getFullHINVSplat
+                                        if ($null -ne $HWInv) {
+                                            Remove-CimInstance -InputObject $HWInv
+                                        }
                                     }
-                                    `$getFullHINVSplat['Filter'] = "InventoryActionID ='{0}'"
-
-                                    `$HWInv = Get-CimInstance @getFullHINVSplat
-                                    if (`$null -ne `$HWInv) {
-                                        Remove-CimInstance -InputObject `$HWInv
-                                    }
-
-"@, $Action)
-                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($RemoveHINVScriptBlockString)
+                                    $invokeCommandSplat['ArgumentList'] = $getFullHINVSplat
                                     Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                                 }
-                                $ScriptBlockString = [string]::Format(@"
-                                `$invokeClientActionSplat = @{{
+                                $invokeClientActionSplat = @{
                                     MethodName  = 'TriggerSchedule'
                                     Namespace   = 'root\ccm'
                                     ClassName   = 'sms_client'
                                     ErrorAction = 'Stop'
-                                }}
-                                `$invokeClientActionSplat['Arguments'] = @{{
-                                    sScheduleID = '{0}'
-                                }}
-                                Invoke-CimMethod @invokeClientActionSplat
-"@, $Action)
+                                    Arguments = @{
+                                        sScheduleID = $Action
+                                    }
+                                }
 
-                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlockString)
+                                $invokeCommandSplat['ScriptBlock'] = {
+                                    param($invokeClientActionSplat)
+                                    Invoke-CimMethod @invokeClientActionSplat
+                                }
+                                $invokeCommandSplat['ArgumentList'] = $invokeClientActionSplat
                                 Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                             }
                         }
