@@ -31,7 +31,7 @@ function Set-CCMManagementPoint {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     [Alias('Set-CCMMP')]
@@ -44,15 +44,17 @@ function Set-CCMManagementPoint {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
         [string]$ConnectionPreference
     )
     begin {
+        $SetCurrentManagementPointScriptBlockString = [string]::Format('(New-Object -ComObject Microsoft.SMS.Client).SetCurrentManagementPoint("{0}", 1)', $ManagementPointFQDN)
+        $SetCurrentManagementPointScriptBlock = [scriptblock]::Create($SetCurrentManagementPointScriptBlockString)
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMManagementPoint', 'Get-CCMConnection'
+            ScriptBlock = $SetCurrentManagementPointScriptBlock
         }
     }
     process {
@@ -77,12 +79,9 @@ function Set-CCMManagementPoint {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetCurrentManagementPoint($ManagementPointFQDN, 1)
+                            $SetCurrentManagementPointScriptBlock.Invoke()
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMManagementPoint -ManagementPointFQDN ', $ManagementPointFQDN)
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }

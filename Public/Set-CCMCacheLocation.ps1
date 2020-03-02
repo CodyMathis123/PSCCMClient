@@ -39,7 +39,7 @@ function Set-CCMCacheLocation {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-11-06
-            Updated:     2020-02-24
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -111,7 +111,7 @@ function Set-CCMCacheLocation {
                             default {
                                 switch ($Computer -eq $env:ComputerName) {
                                     $true {
-                                        . $SetCacheScriptblock
+                                        $SetCacheScriptblock.Invoke()
                                     }
                                     $false {
                                         Invoke-CCMCommand @SetCacheSplat @connectionSplat

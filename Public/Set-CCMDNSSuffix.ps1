@@ -31,7 +31,7 @@ function Set-CCMDNSSuffix {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -50,8 +50,10 @@ function Set-CCMDNSSuffix {
         [string]$ConnectionPreference
     )
     begin {
+        $SetDNSSuffixScriptBlockString = [string]::Format('(New-Object -ComObject Microsoft.SMS.Client).SetDNSSuffix("{0}")', $DNSSuffix)
+        $SetDNSSuffixScriptBlock = [scriptblock]::Create($SetDNSSuffixScriptBlockString)
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMDNSSuffix', 'Get-CCMConnection'
+            ScriptBlock = $SetDNSSuffixScriptBlock
         }
     }
     process {
@@ -74,12 +76,9 @@ function Set-CCMDNSSuffix {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetDNSSuffix($DNSSuffix)
+                            $SetDNSSuffixScriptBlock.Invoke()
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMDNSSuffix -DNSSuffix {0}', $DNSSuffix)
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
