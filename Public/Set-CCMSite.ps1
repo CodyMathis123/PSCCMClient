@@ -77,7 +77,7 @@ function Set-CCMSite {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            . $SetAssignedSiteCodeScriptBlock
+                            $SetAssignedSiteCodeScriptBlock.Invoke()
                             $Result['SiteSet'] = $true
                             [pscustomobject]$Result
                         }

@@ -30,7 +30,7 @@ function Test-CCMIsClientAlwaysOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -75,7 +75,7 @@ function Test-CCMIsClientAlwaysOnInternet {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        $Result['IsClientAlwaysOnInternet'] = . $IsClientAlwaysOnInternetScriptBlock
+                        $Result['IsClientAlwaysOnInternet'] = $IsClientAlwaysOnInternetScriptBlock.Invoke()
                     }
                     $false {
                         $Result['IsClientAlwaysOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat

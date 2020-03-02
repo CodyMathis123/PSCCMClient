@@ -148,7 +148,7 @@ function Get-CCMApplication {
                     foreach ($AppFound in $applications) {
                         $AppToReturn = switch ($null -ne $Condition) {
                             $true {
-                                switch (. $Condition) {
+                                switch ($Condition.Invoke()) {
                                     $true {
                                         $AppFound
                                     }

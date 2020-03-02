@@ -75,7 +75,7 @@ function Test-CCMIsClientOnInternet {
             try {
                 switch ($Computer -eq $env:ComputerName) {
                     $true {
-                        $Result['IsClientOnInternet'] = . $IsClientOnInternetScriptBlock
+                        $Result['IsClientOnInternet'] = $IsClientOnInternetScriptBlock.Invoke()
                     }
                     $false {
                         $Result['IsClientOnInternet'] = Invoke-CCMCommand @invokeCommandSplat @connectionSplat

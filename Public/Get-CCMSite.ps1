@@ -29,7 +29,7 @@ function Get-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -72,7 +72,7 @@ function Get-CCMSite {
 
             $Result['SiteCode'] = switch ($Computer -eq $env:ComputerName) {
                 $true {
-                    . $GetSiteScriptblock
+                    $GetSiteScriptblock.Invoke()
                 }
                 $false {
                     Invoke-CCMCommand @invokeCommandSplat @connectionSplat
