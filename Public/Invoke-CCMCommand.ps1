@@ -15,6 +15,8 @@
 			A list of functions to load into the remote command exeuction. For example, you could specify that you want 
 			to load "Get-CustomThing" into the remote command, as you've already written the function and want to use
 			it as part of the scriptblock that will be remotely executed.
+		.PARAMETER ArgumentList
+			The list of arguments that will be pass into the script block
 		.PARAMETER Timeout
 			The time in milliseconds after which the NamedPipe will timeout. The NamedPipe connection is used in the 
 			CimSession parameter set, as this is how the object is returned from the remote command. 
@@ -47,7 +49,7 @@
 			Author:      Cody Mathis
 			Contact:     @CodyMathis123
 			Created:     2020-02-12
-			Updated:     2020-02-26
+			Updated:     2020-03-02
 	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
@@ -56,8 +58,7 @@
 		[scriptblock]$ScriptBlock,
 		[Parameter(Mandatory = $false)]
 		[string[]]$FunctionsToLoad,
-		[Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-		[Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+		[Paramater(Mandatory = $false)]
 		[object[]]$ArgumentList,
 		[Parameter(Mandatory = $false, ParameterSetName = 'CimSession')]
 		[ValidateRange(1000, 900000)]
@@ -94,26 +95,45 @@
 					ClassName  = 'Win32_Process'
 					MethodName = 'Create'
 				}
-
-				$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CliXml', 'ConvertTo-Base64StringFromObject'
-				$PipeName = ([guid]::NewGuid()).Guid.ToString()
+				$PipeName = [guid]::NewGuid().Guid
+				$ArgList = switch ($PSBoundParameters.ContainsKey('ArgumentList')) {
+					$true {
+						$SupportFunctionsToConvert = 'ConvertTo-Base64StringFromObject', 'ConvertFrom-CliXml', 'ConvertFrom-Base64ToObject'
+						$PassArgList = $true
+						ConvertTo-Base64StringFromObject -inputObject $ArgumentList
+					}
+					$false {
+						$SupportFunctionsToConvert = 'ConvertTo-Base64StringFromObject'
+						$PassArgList = $false
+						[string]::Empty
+					}
+				}
+				$SupportFunctions = Convert-FunctionToString -FunctionToConvert $SupportFunctionsToConvert
 				$ScriptBlockString = [string]::Format(@'
 		{0}
+
+		{2}
 
 		$namedPipe = New-Object System.IO.Pipes.NamedPipeServerStream "{1}", "Out"
 		$namedPipe.WaitForConnection()
 		$streamWriter = New-Object System.IO.StreamWriter $namedPipe
 		$streamWriter.AutoFlush = $true
-		$TempResultPreConversion = & {{
-			{2}
-
+		$ScriptBlock = {{
 			{3}
+		}}
+		$TempResultPreConversion = switch([bool]${4}) {{
+			$true {{
+				$ScriptBlock.Invoke((ConvertFrom-Base64ToObject -inputString {5}))
+			}}
+			$false {{
+				$ScriptBlock.Invoke()
+			}}
 		}}
 		$results = ConvertTo-Base64StringFromObject -inputObject $TempResultPreConversion
 		$streamWriter.WriteLine("$($results)")
 		$streamWriter.dispose()
 		$namedPipe.dispose()
-'@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock)
+'@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock, $PassArgList, $ArgList)
 
 				$scriptBlockPreEncoded = [scriptblock]::Create($ScriptBlockString)
 				$byteCommand = [System.Text.encoding]::UTF8.GetBytes($scriptBlockPreEncoded)
