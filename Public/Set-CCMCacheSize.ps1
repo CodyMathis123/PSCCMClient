@@ -33,7 +33,7 @@ function Set-CCMCacheSize {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-11-06
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -58,8 +58,10 @@ function Set-CCMCacheSize {
             ClassName   = 'CacheConfig'
             ErrorAction = 'Stop'
         }
+        $SetCacheSizeScriptBlockString = [string]::Format('(New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = {0}', $Size)
+        $SetCacheSizeScriptBlock = [scriptblock]::Create($SetCacheSizeScriptBlockString)
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMCacheSize', 'Get-CCMConnection'
+            ScriptBlock = $SetCacheSizeScriptBlock
         }
     }
     process {
@@ -80,34 +82,46 @@ function Set-CCMCacheSize {
 
             try {
                 if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [Size = '$Size']", "Set CCM Cache Size")) {
-                    switch ($Computer -eq $env:ComputerName) {
+                    $Cache = switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
-                            if ($Cache -is [object]) {
-                                switch ($Cache.Size) {
-                                    $Size {
-                                        $Return[$Computer] = $true
-                                    }
-                                    default {
-                                        (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = $Size
-                                        $Cache = Get-CimInstance @GetCacheSplat @connectionSplat
-                                        if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
-                                            $Return[$Computer] = $true
-                                        }
-                                        else {
-                                            $Return[$Computer] = $false
-                                        }
-                                    }
-                                }
-                            }
-                            Write-Output $Return
+                            Get-CimInstance @GetCacheSplat @connectionSplat
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMCacheSize -Size {0}', $Size)
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                            Get-CCMCimInstance @GetCacheSplat @connectionSplat
                         }
                     }
+                    if ($Cache -is [object]) {
+                        switch ($Cache.Size) {
+                            $Size {
+                                $Return[$Computer] = $true
+                            }
+                            default {
+                                switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        $SetCacheSizeScriptBlock.Invoke()
+                                    }
+                                    $false {
+                                        Invoke-CCMCommand @invokeCommandSplat @connectionSplat
+                                    }
+                                }
+                                $Cache = switch ($Computer -eq $env:ComputerName) {
+                                    $true {
+                                        Get-CimInstance @GetCacheSplat @connectionSplat
+                                    }
+                                    $false {
+                                        Get-CCMCimInstance @GetCacheSplat @connectionSplat
+                                    }
+                                }
+                                if ($Cache -is [Object] -and $Cache.Size -eq $Size) {
+                                    $Return[$Computer] = $true
+                                }
+                                else {
+                                    $Return[$Computer] = $false
+                                }
+                            }
+                        }
+                    }
+                    Write-Output $Return
                 }
             }
             catch {
