@@ -69,11 +69,12 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFrom-CCMSchedule',
+    FunctionsToExport = @(
+        'ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
-        'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
+        'Get-CCMCacheInfo',
         'Get-CCMCimInstance',
         'Get-CCMClientDirectory',
         'Get-CCMClientInfo',
@@ -108,9 +109,9 @@
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
         'Invoke-CCMSoftwareUpdate',
+        'Invoke-CCMTaskSequence',
         'Invoke-CCMTriggerSchedule',
         'Invoke-CIMPowerShell',
-        'Invoke-CCMTaskSequence',
         'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
@@ -124,8 +125,8 @@
         'Set-CCMProvisioningMode',
         'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsClientOnInternet',
         'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
@@ -138,8 +139,8 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMCB',
-        'Get-CIMRegistryProperty',
+    AliasesToExport   = @(
+        'Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -147,11 +148,12 @@
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
-        'Get-CCMSUP',
         'Get-CCMSUG',
+        'Get-CCMSUP',
+        'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
         'Invoke-CCMUpdate',
         'Set-CCMMP',
-        'Get-CCMUpdate',
         'Set-CIMRegistryProperty'
     )
 

@@ -43,8 +43,8 @@ Catch {
 
 #region Export Module Members
 $ExportModule = @{
-    Alias    = @('Get-CCMCB',
-        'Get-CIMRegistryProperty',
+    Alias    = @(
+        'Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -52,19 +52,21 @@ $ExportModule = @{
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
-        'Get-CCMSUP',
         'Get-CCMSUG',
+        'Get-CCMSUP',
+        'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
         'Invoke-CCMUpdate',
         'Set-CCMMP',
-        'Get-CCMUpdate',
         'Set-CIMRegistryProperty'
     )
 
-    Function = @('ConvertFrom-CCMSchedule',
+    Function = @(
+        'ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
-        'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
+        'Get-CCMCacheInfo',
         'Get-CCMCimInstance',
         'Get-CCMClientDirectory',
         'Get-CCMClientInfo',
@@ -99,9 +101,9 @@ $ExportModule = @{
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
         'Invoke-CCMSoftwareUpdate',
+        'Invoke-CCMTaskSequence',
         'Invoke-CCMTriggerSchedule',
         'Invoke-CIMPowerShell',
-        'Invoke-CCMTaskSequence',
         'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
@@ -115,8 +117,8 @@ $ExportModule = @{
         'Set-CCMProvisioningMode',
         'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsClientOnInternet',
         'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
