@@ -39,7 +39,7 @@ function Set-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -102,7 +102,7 @@ function Set-CCMLoggingConfiguration {
             }
             'DebugLogging' {
                 $LogConfigArgs['DebugLogging'] = [bool]$DebugLogging
-                [string]::Format('-DebugLogging ${0}', $DebugLogging)
+                [string]::Format('-DebugLogging [bool]${0}', $DebugLogging)
             }
         }
         $setLogConfigSplat['Arguments'] = $LogConfigArgs
