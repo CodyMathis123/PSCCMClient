@@ -97,18 +97,18 @@
         'Get-CCMRegistryProperty',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
+        'Get-CCMSoftwareUpdate',
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
-        'Get-CCMUpdate',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
         'Invoke-CCMCommand',
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
+        'Invoke-CCMSoftwareUpdate',
         'Invoke-CCMTriggerSchedule',
-        'Invoke-CCMUpdate',
         'Invoke-CIMPowerShell',
         'Invoke-CCMTaskSequence',
         'New-LoopAction',
@@ -149,7 +149,9 @@
         'Get-CCMMW',
         'Get-CCMSUP',
         'Get-CCMSUG',
+        'Invoke-CCMUpdate',
         'Set-CCMMP',
+        'Get-CCMUpdate',
         'Set-CIMRegistryProperty'
     )
 
@@ -185,12 +187,15 @@ v0.2.4
 * Add Get-CCMConnection to module in private folder
             This function is used internally to return connection info, whether it is a CimSession, PSSession, or just computername
 * Convert all functions to using Get-CCMConnection to determine best / preferred connection
-* Add PSSession parameter to functions that have to invoke commands remotely. Provides alternative to Invoke-CIMPowerShell
 * Add Invoke-CCMCommand to module
-            This function is used similar to Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
+            This function is used in place of Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
 * Add Set-CCMClientAlwaysOnInternet to module
 * Add Get-CCMCimInstance to module
 * Change 'Get-CIMRegistryProperty' to 'Get-CCMRegistryProperty' - alias is in place
+            Command now accepts a CimSession, or a PSsession
+* Change 'Set-CIMRegistryProperty' to 'Set-CCMRegistryProperty' - alias is in place
+            Command now accepts a CimSession, or a PSsession
+* All commands that run remotely now support PSSEssion, as well as CimSession
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'

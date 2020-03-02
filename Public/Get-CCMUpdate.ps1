@@ -1,4 +1,4 @@
-function Get-CCMUpdate {
+function Get-CCMSoftwareUpdate {
     <#
         .SYNOPSIS
             Get pending SCCM patches for a machine
@@ -21,16 +21,17 @@ function Get-CCMUpdate {
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
             the ComputerName parameter is passed to.
         .EXAMPLE
-            PS C:\> Get-CCMUpdate -Computer Testing123
+            PS C:\> Get-CCMSoftwareUpdate -Computer Testing123
             will return all non-AV Dev patches for computer Testing123
         .NOTES
-            FileName:    Get-CCMUpdate.ps1
+            FileName:    Get-CCMSoftwareUpdate.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-15
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMUpdate')]
     param(
         [Parameter(Mandatory = $false)]
         [switch]$IncludeDefs,
@@ -40,7 +41,7 @@ function Get-CCMUpdate {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]

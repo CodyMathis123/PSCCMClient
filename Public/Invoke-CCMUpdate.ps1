@@ -1,16 +1,16 @@
-function Invoke-CCMUpdate {
+function Invoke-CCMSoftwareUpdate {
     <#
         .SYNOPSIS
             Invokes updates deployed via Configuration Manager on a client
         .DESCRIPTION
             This script will allow you to invoke updates a machine (with optional credentials). It uses remote CIM to find updates
             based on your input, or you can optionally provide updates via the $Updates parameter, which support pipeline from
-            Get-CCMUpdate.
+            Get-CCMSoftwareUpdate.
 
             Unfortunately, invoke SCCM updates remotely via CIM does NOT seem to work. As an alternative, Invoke-CIMPowerShell is used to
             execute the command 'locally' on the remote machine.
         .PARAMETER Updates
-            [ciminstance[]] object that contains SCCM Updates from CCM_SoftwareUpdate class. Supports pipeline input for CIM object collected from Get-CCMUpdate
+            [ciminstance[]] object that contains SCCM Updates from CCM_SoftwareUpdate class. Supports pipeline input for CIM object collected from Get-CCMSoftwareUpdate
         .PARAMETER CimSession
             Computer CimSession(s) which you want to get invoke SCCM patches for
         .PARAMETER ComputerName
@@ -26,19 +26,20 @@ function Invoke-CCMUpdate {
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
             the ComputerName parameter is passed to.
         .EXAMPLE
-            C:\PS> Invoke-CCMUpdate
+            C:\PS> Invoke-CCMSoftwareUpdate
                 Invokes all updates on the local machine
         .EXAMPLE
-            C:\PS> Invoke-CCMUpdate -ComputerName TestingPC1
+            C:\PS> Invoke-CCMSoftwareUpdate -ComputerName TestingPC1
                 Invokes all updates on the the remote computer TestingPC1
         .NOTES
-            FileName:    Invoke-CCMUpdate.ps1
+            FileName:    Invoke-CCMSoftwareUpdate.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-12-22
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
+    [Alias('Invoke-CCMUpdate')]
     param(
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string[]]$ArticleID,
