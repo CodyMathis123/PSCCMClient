@@ -31,7 +31,7 @@ function Set-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-02-27
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -50,8 +50,10 @@ function Set-CCMSite {
         [string]$ConnectionPreference
     )
     begin {
+        $SetAssignedSiteCodeScriptBlockString = [string]::Format('(New-Object -ComObject Microsoft.SMS.Client).SetAssignedSite("{0}", 0)', $SiteCode)
+        $SetAssignedSiteCodeScriptBlock = [scriptblock]::Create($SetAssignedSiteCodeScriptBlockString)
         $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMSite', 'Get-CCMConnection'
+            ScriptBlock = $SetAssignedSiteCodeScriptBlock
         }
     }
     process {
@@ -75,14 +77,11 @@ function Set-CCMSite {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($SiteCode, 0)
+                            . $SetAssignedSiteCodeScriptBlock
                             $Result['SiteSet'] = $true
                             [pscustomobject]$Result
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
