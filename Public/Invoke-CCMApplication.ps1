@@ -49,7 +49,7 @@ Function Invoke-CCMApplication {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-21
-            Updated:     2020-02-25
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     Param
@@ -125,30 +125,17 @@ Function Invoke-CCMApplication {
                     $invokeAppMethodSplat.Arguments['Revision'] = [string]$Revision
                     $invokeAppMethodSplat.Arguments['IsMachineTarget'] = [bool]$IsMachineTarget
                     try {
-                        $Invocation = switch ($ConnectionInfo.ConnectionType) {
-                            'CimSession' {
+                        $Invocation = switch -regex ($ConnectionInfo.ConnectionType) {
+                            '^CimSession$|^ComputerName$' {
                                 Invoke-CimMethod @invokeAppMethodSplat @connectionSplat
                             }
-                            'PSSession' {
-                                $ScriptBlockString = [string]::Format(@'
-                                $invokeAppMethodSplat = @{{
-                                    NameSpace  = 'root\CCM\ClientSDK'
-                                    ClassName  = 'CCM_Application'
-                                    MethodName = "{0}"
-                                    Arguments  = @{{
-                                        Priority          = "{1}"
-                                        EnforcePreference = [uint32]{2}
-                                        IsRebootIfNeeded  = [bool]${3}
-                                        ID                = "{4}"
-                                        Revision          = "{5}"
-                                        IsMachineTarget   = [bool]${6}
-                                    }}
-                                }}
-
-                                Invoke-CimMethod @invokeAppMethodSplat
-'@, $Method, $Priority, $EnforcePreferenceMap[$EnforcePreference], $IsRebootIfNeeded, $AppID, $Revision[0], $IsMachineTarget[0])
+                            '^PSSession$' {
                                 $InvokeCommandSplat = @{
-                                    ScriptBlock = [scriptblock]::Create($ScriptBlockString)
+                                    ArgumentList = $invokeAppMethodSplat
+                                    ScriptBlock  = {
+                                        param($invokeAppMethodSplat)
+                                        Invoke-CimMethod @invokeAppMethodSplat
+                                    }
                                 }
                                 Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
                             }
