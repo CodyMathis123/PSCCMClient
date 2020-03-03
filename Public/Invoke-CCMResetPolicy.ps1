@@ -35,7 +35,7 @@ function Invoke-CCMResetPolicy {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-10-30
-            Updated:     2020-02-27
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -48,7 +48,7 @@ function Invoke-CCMResetPolicy {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -70,9 +70,6 @@ function Invoke-CCMResetPolicy {
             Arguments  = @{
                 uFlags = [uint32]$uFlags
             }
-        }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Invoke-CCMResetPolicy', 'Get-CCMConnection'
         }
     }
     process {
@@ -99,7 +96,13 @@ function Invoke-CCMResetPolicy {
                             Invoke-CimMethod @policyResetSplat
                         }
                         $false {
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
+                            $invokeCommandSplat = @{
+                                ArgumentList = $policyResetSplat
+                                ScriptBlock  = {
+                                    param($policyResetSplat)
+                                    Invoke-CimMethod @policyResetSplat
+                                }
+                            }
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
