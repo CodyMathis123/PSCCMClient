@@ -28,11 +28,11 @@ function Set-CCMRegistryProperty {
         .PARAMETER ConnectionPreference
             Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
             is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to. 
+            the ComputerName parameter is passed to.
         .EXAMPLE
             PS> Set-CCMRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer" -Value 1 -PropertyType DWORD
             Name                           Value
@@ -45,7 +45,7 @@ function Set-CCMRegistryProperty {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     Uhh... I forget
-            Updated:     2020-02-24
+            Updated:     2020-03-02
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     [Alias('Set-CIMRegistryProperty')]
@@ -146,7 +146,7 @@ function Set-CCMRegistryProperty {
 
             $Return = [ordered]@{ }
             $Return[$Computer] = $false
-            
+
             if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [sValueName = '$Property'] [Value = '$Value']", "Set-CCMRegistryProperty")) {
                 switch -regex ($ConnectionInfo.ConnectionType) {
                     '^CimSession$|^ComputerName$' {
@@ -155,13 +155,13 @@ function Set-CCMRegistryProperty {
                             hDefKey     = [uint32]$Root
                             sSubKeyName = $Key
                         }
-        
+
                         $EnumValues = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
-        
+
                         $setCIMRegPropSplat['MethodName'] = $Method
                         $setCIMRegPropSplat['Arguments']['sValueName'] = $Property
                         $setCIMRegPropSplat['Arguments'][$ReturnValName[$Method]] = $Value -as $PropertyTypeMap[$Method]
-        
+
                         switch ($EnumValues.sNames -contains $Property) {
                             $true {
                                 $SetProperty = Invoke-CimMethod @setCIMRegPropSplat @connectionSplat
@@ -186,47 +186,49 @@ function Set-CCMRegistryProperty {
                                     Write-Error ([string]::Format('Failed to set value [Property = {0}] [Key = {1}\{2}] [Value = {3}] [PropertyType = {4}] [Method = {5}]', $Property, $RegRoot, $Key, $Value, $PropertyType, $Method))
                                 }
                             }
-                        }    
+                        }
                     }
                     '^PSSession$' {
                         $RegPath = [string]::Format('registry::{0}\{1}', $RegRoot, $Key)
-                        $RegPathParam = [string]::Format('-Path "{0}"', $RegPath)
-                        $PropertyNameParam = [string]::Format("-Name '{0}'", $Property)
-                        $ValueParam = [string]::Format("-Value '{0}'", [string]::Join("', '", $Value))
-                        $PropertyTypeParam = [string]::Format("-Type {0}", $PropertyType)
-                        $ScriptBlockString = [string]::Format(@"
-                            `$Exists = Get-ItemProperty {0} {1} -ErrorAction SilentlyContinue
-                            try {{
-                                switch ([bool]`$Exists) {{
-                                    `$true {{
-                                        Set-ItemProperty {0} {1} {2} {3} -ErrorAction Stop
-                                        Write-Output `$true
-                                    }}
-                                    `$false {{
-                                        switch ([bool]`${4}) {{
-                                            `$true {{
-                                                Set-ItemProperty {0} {1} {2} {3} -ErrorAction Stop
-                                                Write-Output `$true
-                                            }}
-                                            `$false {{
-                                                Write-Warning ([string]::Format('[Property = {{0}}] does not exist under [Key = {{1}}] and the force parameter was not specified. No changes will be made', '{5}', '{6}'))
-                                                Write-Output `$false
-                                            }}
-                                        }}
-                                    }}
-                                }}
-                            }}
-                            catch {{
-                                Write-Error `$_.Exception.Message
-                                Write-Output `$false
-                            }}
-"@, $RegPathParam, $PropertyNameParam, $ValueParam, $PropertyTypeParam, $Force, $Property, $RegPath)
-                        $ScriptBlock = [scriptblock]::Create($ScriptBlockString)
                         $InvokeCommandSplat = @{
-                            ScriptBlock = $ScriptBlock
+                            ArgumentList = $RegPath, $Property, $Value, $PropertyType, $Force
                         }
+                        $InvokeCommandSplat['ScriptBlock'] = {
+                            param(
+                                $RegPath,
+                                $Property,
+                                $Value,
+                                $PropertyType,
+                                $Force
+                            )
+                            $Exists = Get-ItemProperty -Path $RegPath -Name $Property -ErrorAction SilentlyContinue
+                            try {
+                                switch ([bool]$Exists) {
+                                    $true {
+                                        Set-ItemProperty -Path $RegPath -Name $Property -Value $Value -Type $PropertyType -ErrorAction Stop
+                                        Write-Output $true
+                                    }
+                                    $false {
+                                        switch ([bool]$Force) {
+                                            $true {
+                                                Set-ItemProperty -Path $RegPath -Name $Property -Value $Value -Type $PropertyType -ErrorAction Stop
+                                                Write-Output $true
+                                            }
+                                            $false {
+                                                Write-Warning ([string]::Format('[Property = {{0}}] does not exist under [Key = {{1}}] and the force parameter was not specified. No changes will be made', $Property, $RegPath))
+                                                Write-Output $false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch {
+                                Write-Error $_.Exception.Message
+                                Write-Output $false
+                            }
 
-                        $Return[$Computer] = Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
+                            $Return[$Computer] = Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
+                        }
                     }
                 }
 
