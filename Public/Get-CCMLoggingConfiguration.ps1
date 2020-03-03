@@ -30,7 +30,7 @@ function Get-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-10
-            Updated:     2020-02-26
+            Updated:     2020-03-03
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -51,6 +51,11 @@ function Get-CCMLoggingConfiguration {
             Namespace   = 'root\ccm\policy\machine\actualconfig'
             ClassName   = 'CCM_Logging_GlobalConfiguration'
             ErrorAction = 'Stop'
+        }
+        $getLogLocationSplat = @{
+            Property = 'LogDirectory'
+            Key      = 'SOFTWARE\Microsoft\CCM\Logging\@Global'
+            RegRoot  = 'HKEY_LOCAL_MACHINE'
         }
     }
     process {
@@ -81,7 +86,7 @@ function Get-CCMLoggingConfiguration {
                 }
                 if ($CimResult -is [Object] -and $CimResult.Count -gt 0) {
                     foreach ($Object in $CimResult) {
-                        $Result['LogDirectory'] = $Object.LogDirectory
+                        $Result['LogDirectory'] = (Get-CCMRegistryProperty @getLogLocationSplat @connectionSplat)[$Computer].LogDirectory
                         $Result['LogMaxSize'] = $Object.LogMaxSize
                         $Result['LogMaxHistory'] = $Object.LogMaxHistory
                         $Result['LogLevel'] = $Object.LogLevel
