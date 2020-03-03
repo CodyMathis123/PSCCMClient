@@ -5,23 +5,23 @@ Function Get-CCMLogFile {
     .DESCRIPTION
         This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
         searched and manipulated easily with PowerShell
-    .PARAMETER LogFilePath
+    .PARAMETER Path
         Path to the log file(s) you would like to parse.
     .PARAMETER ParseSMSTS
         Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
     .PARAMETER Filter
         A custom regex filter to use when reading in log lines
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\ccmexec.log'
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
             Returns the CCMExec.log as a PSCustomObject
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
             Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
     .EXAMPLE 
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
             Returns all the actions that ran according to the SMSTSLog provided
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
             Return all log entires from the CAS.Log which pertain creating download requests for updates
     .OUTPUTS
         [pscustomobject]
@@ -37,13 +37,13 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-09-19
-            Updated:  2020-02-01
+            Updated:  2020-03-03
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
-        [Alias('Fullname')]
-        [string[]]$LogFilePath,
+        [Alias('Fullname','LogFilePath')]
+        [string[]]$Path,
         [Parameter(Mandatory = $false, ParameterSetName = 'ParseSMSTS')]
         [switch]$ParseSMSTS,
         [Parameter(Mandatory = $false, ParameterSetName = 'CustomFilter')]
@@ -96,7 +96,7 @@ Function Get-CCMLogFile {
         }
     }
     process {
-        Foreach ($LogFile in $LogFilePath) {
+        Foreach ($LogFile in $Path) {
             #region ingest log file with StreamReader. Quick, and prevents locks
             $File = [System.IO.File]::Open($LogFile, 'Open', 'Read', 'ReadWrite')
             $StreamReader = New-Object System.IO.StreamReader($File)
