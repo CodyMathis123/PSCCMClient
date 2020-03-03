@@ -8,7 +8,7 @@ function Get-CCMServiceWindow {
             or you can pass them through the pipeline. You are also able to specify the Service Window Type (SWType) you wish to query for, and pass credentials.
             What is returned is the data from the 'ActualConfig' section of WMI on the computer. The data returned will include the 'schedules' as well as
             the schedule type. Note that the schedules are not really 'human readable' and can be passed into ConvertFrom-CCMSchedule to convert
-            them into a readable object. This is the equivalent of the 'Convert-CMSchedule' cmdlet that is part of the SCCM PowerShell module, but
+            them into a readable object. This is the equivalent of the 'Convert-CMSchedule' cmdlet that is part of the MEMCM PowerShell module, but
             it does not require the module and it is much faster.
         .PARAMETER SWType
             Specifies the types of SW you want information for. Valid options are below
@@ -26,7 +26,7 @@ function Get-CCMServiceWindow {
             Provides PSSessions to gather Service Window information info from
         .PARAMETER ConnectionPreference
             Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
             when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
             specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then

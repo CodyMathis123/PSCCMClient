@@ -12,7 +12,7 @@ function Get-CCMGUID {
             Provides PSSEssions to gather the GUID from
         .PARAMETER ConnectionPreference
             Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
             when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
             specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then

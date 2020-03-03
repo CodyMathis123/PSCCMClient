@@ -16,7 +16,7 @@ function Invoke-CCMBaseline {
             Provides PSSessions to invoke the configuration baselines on.
         .PARAMETER ConnectionPreference
             Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the funtion. This is ultimately going to result in the function running faster. The typicaly usecase is
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
             when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
             specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
@@ -52,7 +52,7 @@ function Invoke-CCMBaseline {
             If you try to invoke this same baseline without Jim's credentials being used in some way you will see that the baseline is not found.
 
             Outside of that, it will dynamically generate the arguments to pass to the TriggerEvaluation method. I found a handful of examples on the internet for
-            invoking SCCM Configuration Baselines, and there were always comments about certain scenarios not working. This implementation has been consistent in
+            invoking MEMCM Configuration Baselines, and there were always comments about certain scenarios not working. This implementation has been consistent in
             invoking Configuration Baselines, including those with user settings, as long as the context is correct.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]

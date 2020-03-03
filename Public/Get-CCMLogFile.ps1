@@ -26,10 +26,10 @@ Function Get-CCMLogFile {
     .OUTPUTS
         [pscustomobject]
     .NOTES
-        I've done my best to test this against various SCCM log files. They are all generally 'formatted' the same, but do have some
+        I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
         variance. I had to also balance speed and parsing.
 
-        With that said, it can still parse a typical SCCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
+        With that said, it can still parse a typical MEMCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
         Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of 
         flexibility and speed as well.
 
@@ -107,7 +107,7 @@ Function Get-CCMLogFile {
 
             #region perform a regex match to determine the 'type' of log we are working with and parse appropriately
             switch ($true) {
-                #region parse a 'typical' SCCM log
+                #region parse a 'typical' MEMCM log
                 (([Regex]::Match($LogFileRaw, "LOG\[(.*?)\]LOG(.*?)time(.*?)date")).Success) {
                     # split on what we know is a line beginning
                     switch -regex ($LogFileRaw -split "<!\[LOG\[") {
@@ -174,9 +174,9 @@ Function Get-CCMLogFile {
                         }
                     }
                 }
-                #endregion parse a 'typical' SCCM log
+                #endregion parse a 'typical' MEMCM log
 
-                #region parse a 'simple' SCCM log, usually found on site systems
+                #region parse a 'simple' MEMCM log, usually found on site systems
                 (([Regex]::Match($LogFileRaw, '\$\$\<(.*?)\>\<thread=')).Success) {
                     switch -regex ($LogFileRaw -split [System.Environment]::NewLine) {
                         '^\s*$' {
@@ -236,7 +236,7 @@ Function Get-CCMLogFile {
                         }
                     }
                 }
-                #endregion parse a 'simple' SCCM log, usually found on site systems
+                #endregion parse a 'simple' MEMCM log, usually found on site systems
             }
             #endregion perform a regex match to determine the 'type' of log we are working with and parse appropriately
         }
