@@ -36,7 +36,7 @@ function Invoke-CCMSoftwareUpdate {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2018-12-22
-            Updated:     2020-03-01
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     [Alias('Invoke-CCMUpdate')]
@@ -63,9 +63,6 @@ function Invoke-CCMSoftwareUpdate {
         }
         $getUpdateSplat = @{
             Namespace = 'root\CCM\ClientSDK'
-        }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Invoke-CCMUpdate', 'Get-CCMConnection'
         }
     }
     process {
@@ -124,8 +121,13 @@ function Invoke-CCMSoftwareUpdate {
                             Invoke-CimMethod @invokeCIMMethodSplat
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Invoke-CCMUpdate -ArticleID {0}', [string]::Join(', ', $ArticleID))
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            $invokeCommandSplat = @{
+                                ScriptBlock  = {
+                                    param($invokeCIMMethodSplat)
+                                    Invoke-CimMethod @invokeCIMMethodSplat
+                                }
+                                ArgumentList = $invokeCIMMethodSplat
+                            }
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
