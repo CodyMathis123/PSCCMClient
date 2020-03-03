@@ -41,7 +41,7 @@ function Set-CCMProvisioningMode {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-09
-            Updated:     2020-02-27
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -57,7 +57,7 @@ function Set-CCMProvisioningMode {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -79,9 +79,6 @@ function Set-CCMProvisioningMode {
             Arguments  = @{
                 bEnable = $ProvisioningMode
             }
-        }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMProvisioningMode', 'Get-CCMConnection'
         }
         $setCIMRegistryPropertySplat = @{
             RegRoot      = 'HKEY_LOCAL_MACHINE'
@@ -119,8 +116,13 @@ function Set-CCMProvisioningMode {
                                     Invoke-CimMethod @SetProvisioningModeSplat
                                 }
                                 $false {
-                                    $ScriptBlock = [string]::Format('Set-CCMProvisioningMode -Status {0}', $Status)
-                                    $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                                    $invokeCommandSplat = @{
+                                        ArgumentList = $SetProvisioningModeSplat
+                                        ScriptBlock  = {
+                                            param($StatuSetProvisioningModeSplats)
+                                            Invoke-CimMethod @SetProvisioningModeSplat
+                                        }
+                                    }
                                     Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                                 }
                             }
