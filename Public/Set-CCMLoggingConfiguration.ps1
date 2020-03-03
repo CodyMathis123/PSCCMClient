@@ -1,4 +1,3 @@
-# TODO - Add setting the location, which would be a registry edit
 function Set-CCMLoggingConfiguration {
     <#
         .SYNOPSIS
@@ -6,6 +5,8 @@ function Set-CCMLoggingConfiguration {
         .DESCRIPTION
             This function will allow you to set the ConfigMgr client log configuration for multiple computers using CIM queries.
             You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
+        .PARAMETER LogLocation
+            The location of MEMCM log files. Setting this will not take complete affect until the CCMExec service is restarted.
         .PARAMETER LogLevel
             Preferred logging level, either Default, or Verbose
         .PARAMETER LogMaxSize
@@ -39,10 +40,13 @@ function Set-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-03-02
+            Updated:     2020-03-03
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
+        [Parameter(Mandatory = $false)]
+        [ValidateScript( { Test-Path -Path $_ -PathType Container -ErrorAction Stop } )]
+        [string]$LogLocation,
         [Parameter(Mandatory = $false)]
         [ValidateSet('Default', 'Verbose', 'None')]
         [string]$LogLevel,
@@ -70,6 +74,15 @@ function Set-CCMLoggingConfiguration {
             ClassName   = 'SMS_Client'
             MethodName  = 'SetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
+        }
+
+        $SetLogLocationSplat = @{
+            Force        = $true
+            PropertyType = 'String'
+            Property     = 'LogDirectory'
+            Value        = $LogLocation
+            Key          = 'SOFTWARE\Microsoft\CCM\Logging\@Global'
+            RegRoot      = 'HKEY_LOCAL_MACHINE'
         }
 
         $LogLevelInt = switch ($LogLevel) {
@@ -121,7 +134,7 @@ function Set-CCMLoggingConfiguration {
                 $Result['LogConfigChanged'] = $false
 
                 try {
-                    $Invocation = switch ($Computer -eq $env:ComputerName) {
+                    $LogConfigChanged = switch ($Computer -eq $env:ComputerName) {
                         $true {
                             Invoke-CimMethod @setLogConfigSplat
                         }
@@ -136,10 +149,18 @@ function Set-CCMLoggingConfiguration {
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
-                    if ($Invocation) {
+                    if ($LogConfigChanged) {
                         Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"
                         $Result['LogConfigChanged'] = $true
                     }
+                    switch ($PSBoundParameters.ContainsKey('LogLocation')) {
+                        $true {
+                            $LogLocationChanged = Set-CCMRegistryProperty @SetLogLocationSplat @connectionSplat
+                            Write-Warning "The CCMExec service needs restarted for log location changes to take full affect."
+                            $Result['LogLocationChanged'] = $LogLocationChanged[$Computer]
+                        }
+                    }
+
                     [pscustomobject]$Result
                 }
                 catch {
