@@ -29,7 +29,7 @@ function Reset-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-27
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -39,7 +39,7 @@ function Reset-CCMLoggingConfiguration {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -51,9 +51,6 @@ function Reset-CCMLoggingConfiguration {
             ClassName   = 'SMS_Client'
             MethodName  = 'ResetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
-        }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Reset-CCMLoggingConfiguration', 'Get-CCMConnection'
         }
     }
     process {
@@ -80,8 +77,13 @@ function Reset-CCMLoggingConfiguration {
                             Invoke-CimMethod @resetLogConfigSplat
                         }
                         $false {
-
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
+                            $invokeCommandSplat = @{
+                                ScriptBlock = {
+                                    param($resetLogConfigSplat)
+                                    Invoke-CimMethod @resetLogConfigSplat
+                                }
+                                ArgumentList = $resetLogConfigSplat
+                            }
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
