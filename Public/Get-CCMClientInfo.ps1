@@ -30,7 +30,7 @@ function Get-CCMClientInfo {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-24
-            Updated:     2020-02-27
+            Updated:     2020-03-03
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -137,8 +137,8 @@ function Get-CCMClientInfo {
             #endregion MEMCM Client Log Configuration
 
             #region MEMCM Client internet configuration
-            $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet
-            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsClientAlwaysOnInternet
+            $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet[0]
+            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsClientAlwaysOnInternet[0]
             #endregion MEMCM Client internet configuration
 
             [pscustomobject]$Result
