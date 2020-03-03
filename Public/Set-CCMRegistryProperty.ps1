@@ -191,8 +191,9 @@ function Set-CCMRegistryProperty {
                     '^PSSession$' {
                         $RegPath = [string]::Format('registry::{0}\{1}', $RegRoot, $Key)
                         $InvokeCommandSplat = @{
-                            ArgumentList = $RegPath, $Property, $Value, $PropertyType, $Force
+                            ArgumentList = $RegPath, $Property, $Value, $PropertyType, $Force.IsPresent
                         }
+
                         $InvokeCommandSplat['ScriptBlock'] = {
                             param(
                                 $RegPath,
@@ -226,9 +227,9 @@ function Set-CCMRegistryProperty {
                                 Write-Error $_.Exception.Message
                                 Write-Output $false
                             }
-
-                            $Return[$Computer] = Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
                         }
+                        
+                        $Return[$Computer] = Invoke-CCMCommand @InvokeCommandSplat @connectionSplat
                     }
                 }
 
