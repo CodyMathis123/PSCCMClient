@@ -73,6 +73,11 @@ function Get-CCMClientInfo {
             $Result['SiteCode'] = $SiteCode.SiteCode
             #endregion site code
 
+            #region Current Management Point
+            $Result['CurrentManagementPoint'] = (Get-CCMCurrentManagementPoint @connectionSplat).CurrentManagementPoint
+            $Result['CurrentSoftwareUpdatePoint'] = (Get-CCMCurrentSoftwareUpdatePoint @connectionSplat).CurrentSoftwareUpdatePoint
+            #endregion Current Management Point
+
             #region cache info
             $CacheInfo = Get-CCMCacheInfo @connectionSplat
             $Result['CacheLocation'] = $CacheInfo.Location
@@ -121,11 +126,6 @@ function Get-CCMClientInfo {
             $Result['SINV-LastMajorReportVersion'] = $LastSoftwareInventory.LastMajorReportVersion
             $Result['SINV-LastMinorReportVersion'] = $LastSoftwareInventory.LastMinorReportVersion
             #endregion Last Software Inventory Cycle
-
-            #region Current Management Point
-            $Result['CurrentManagementPoint'] = (Get-CCMCurrentManagementPoint @connectionSplat).CurrentManagementPoint
-            $Result['CurrentSoftwareUpdatePoint'] = (Get-CCMCurrentSoftwareUpdatePoint @connectionSplat).CurrentSoftwareUpdatePoint
-            #endregion Current Management Point
 
             #region MEMCM Client Log Configuration
             $LogConfiguration = Get-CCMLoggingConfiguration @connectionSplat
