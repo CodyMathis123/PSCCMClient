@@ -39,7 +39,7 @@ function Set-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-03-01
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -71,11 +71,7 @@ function Set-CCMLoggingConfiguration {
             MethodName  = 'SetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
         }
-        $invokeCommandSplat = @{
-            FunctionsToLoad = 'Set-CCMLoggingConfiguration', 'Get-CCMConnection'
-        }
 
-        $LogConfigArgs = @{ }
         $LogLevelInt = switch ($LogLevel) {
             'None' {
                 2
@@ -87,22 +83,20 @@ function Set-CCMLoggingConfiguration {
                 0
             }
         }
-        $StringArgs = switch ($PSBoundParameters.Keys) {
+
+        $LogConfigArgs = @{ }
+        switch ($PSBoundParameters.Keys) {
             'LogLevel' {
                 $LogConfigArgs['LogLevel'] = [uint32]$LogLevelInt
-                [string]::Format('-LogLevel {0}', $LogLevel)
             }
             'LogMaxSize' {
                 $LogConfigArgs['LogMaxSize'] = [uint32]$LogMaxSize
-                [string]::Format('-LogMaxSize {0}', $LogMaxSize)
             }
             'LogMaxHistory' {
                 $LogConfigArgs['LogMaxHistory'] = [uint32]$LogMaxHistory
-                [string]::Format('-LogMaxHistory {0}', $LogMaxHistory)
             }
             'DebugLogging' {
                 $LogConfigArgs['DebugLogging'] = [bool]$DebugLogging
-                [string]::Format('-DebugLogging [bool]${0}', $DebugLogging)
             }
         }
         $setLogConfigSplat['Arguments'] = $LogConfigArgs
@@ -132,8 +126,13 @@ function Set-CCMLoggingConfiguration {
                             Invoke-CimMethod @setLogConfigSplat
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMLoggingConfiguration {0}', [string]::Join(' ', $StringArgs))
-                            $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
+                            $invokeCommandSplat = @{
+                                ArgumentList = $setLogConfigSplat
+                                ScriptBlock  = {
+                                    param($setLogConfigSplat)
+                                    Invoke-CimMethod @setLogConfigSplat
+                                }
+                            }
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
