@@ -1,3 +1,4 @@
+# FIXME - Evaluate function - doesn't seem to work?
 function Get-CCMLoggingConfiguration {
     <#
         .SYNOPSIS

@@ -1,4 +1,5 @@
 # TODO - Add setting the location, which would be a registry edit
+# FIXME = evaluate function - doesn't seem to work?
 function Set-CCMLoggingConfiguration {
     <#
         .SYNOPSIS
