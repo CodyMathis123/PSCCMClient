@@ -34,7 +34,7 @@ function Invoke-CCMTriggerSchedule {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-02-27
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
@@ -47,7 +47,7 @@ function Invoke-CCMTriggerSchedule {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -91,19 +91,13 @@ function Invoke-CCMTriggerSchedule {
                                 Invoke-CimMethod @invokeClientActionSplat
                             }
                             $false {
-                                $ScriptBlockString = [string]::Format(@"
-                                `$invokeClientActionSplat = @{{
-                                    MethodName  = 'TriggerSchedule'
-                                    Namespace   = 'root\ccm'
-                                    ClassName   = 'sms_client'
-                                    ErrorAction = 'Stop'
-                                    Arguments   = @{{
-                                        sScheduleID = '{0}'
-                                    }}
-                                }}
-                                Invoke-CimMethod @invokeClientActionSplat
-"@, $ID)
-                                $invokeCommandSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlockString)
+                                $invokeCommandSplat = @{
+                                    ScriptBlock  = {
+                                        param($invokeClientActionSplat)
+                                        Invoke-CimMethod @invokeClientActionSplat
+                                    }
+                                    ArgumentList = $invokeClientActionSplat
+                                }
                                 Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                             }
                         }
