@@ -191,6 +191,7 @@ v0.2.4
 * Convert all functions to using Get-CCMConnection to determine best / preferred connection
 * Add Invoke-CCMCommand to module
             This function is used in place of Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
+            Supports ArgumentList parameter which simplifies many functions internally
 * Add Set-CCMClientAlwaysOnInternet to module
 * Add Get-CCMCimInstance to module
 * Change 'Get-CIMRegistryProperty' to 'Get-CCMRegistryProperty' - alias is in place
