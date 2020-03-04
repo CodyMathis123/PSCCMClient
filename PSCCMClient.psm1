@@ -1,6 +1,5 @@
 $ScriptPath = Split-Path $MyInvocation.MyCommand.Path
 $PSModule = $ExecutionContext.SessionState.Module
-$PSModuleRoot = $PSModule.ModuleBase
 
 #region Load Public Functions
 Try {
