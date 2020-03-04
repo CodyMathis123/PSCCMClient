@@ -186,6 +186,7 @@
             # ReleaseNotes of this module
             ReleaseNotes = @'
 v0.2.4
+* All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
             This function is used internally to return connection info, whether it is a CimSession, PSSession, or just computername
 * Convert all functions to using Get-CCMConnection to determine best / preferred connection
@@ -198,7 +199,6 @@ v0.2.4
             Command now accepts a CimSession, or a PSsession
 * Change 'Set-CIMRegistryProperty' to 'Set-CCMRegistryProperty' - alias is in place
             Command now accepts a CimSession, or a PSsession
-* All commands that run remotely now support PSSEssion, as well as CimSession
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
