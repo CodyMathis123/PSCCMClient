@@ -166,7 +166,7 @@ function Invoke-CCMBaseline {
                                         default {
                                             $TypeString = ($PropExist.Definition.Split(' '))[0]
                                             $Type = [scriptblock]::Create("[$TypeString]")
-                                            $ArgumentList[$Property] = $BL.$Property -as ($Type.Invoke())
+                                            $ArgumentList[$Property] = $BL.$Property -as (. $Type)
                                         }
                                     }
                                 }
