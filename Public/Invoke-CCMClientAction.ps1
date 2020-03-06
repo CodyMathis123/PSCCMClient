@@ -50,7 +50,13 @@ function Invoke-CCMClientAction {
         [string]$ConnectionPreference
     )
     begin {
-        $invokeClientActionSplat = @{ }
+        $invokeClientActionSplat = @{
+            MethodName  = 'TriggerSchedule'
+            Namespace   = 'root\ccm'
+            ClassName   = 'sms_client'
+            ErrorAction = 'Stop'
+        }
+
         $getFullHINVSplat = @{
             Namespace   = 'root\ccm\invagt'
             ClassName   = 'InventoryActionStatus'
@@ -108,6 +114,11 @@ function Invoke-CCMClientAction {
                             '{00000000-0000-0000-0000-000000000111}'
                         }
                     }
+
+                    $invokeClientActionSplat['Arguments'] =  @{
+                        sScheduleID = $Action
+                    }
+
                     try {
                         $Invocation = switch ($Computer -eq $env:ComputerName) {
                             $true {
@@ -122,10 +133,9 @@ function Invoke-CCMClientAction {
                                         Write-Verbose "No Hardware Inventory history to delete for $Computer"
                                     }
                                 }
-                                $invokeClientActionSplat['ScheduleID'] = $Action
 
                                 Write-Verbose "Triggering a $Option Cycle on $Computer via the 'TriggerSchedule' CIM method"
-                                Invoke-CCMTriggerSchedule @invokeClientActionSplat
+                                Invoke-CimMethod @invokeClientActionSplat
                             }
                             $false {
                                 $invokeCommandSplat = @{ }
@@ -140,15 +150,6 @@ function Invoke-CCMClientAction {
                                     }
                                     $invokeCommandSplat['ArgumentList'] = $getFullHINVSplat
                                     Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                                $invokeClientActionSplat = @{
-                                    MethodName  = 'TriggerSchedule'
-                                    Namespace   = 'root\ccm'
-                                    ClassName   = 'sms_client'
-                                    ErrorAction = 'Stop'
-                                    Arguments = @{
-                                        sScheduleID = $Action
-                                    }
                                 }
 
                                 $invokeCommandSplat['ScriptBlock'] = {
