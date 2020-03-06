@@ -11,6 +11,8 @@ Function Get-CCMLogFile {
         Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
     .PARAMETER Filter
         A custom regex filter to use when reading in log lines
+    .PARAMETER Severity
+        A filter to return only messages of a particular severity. By default, all severities are returned. 
     .EXAMPLE
         PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
             Returns the CCMExec.log as a PSCustomObject
@@ -48,9 +50,9 @@ Function Get-CCMLogFile {
         [switch]$ParseSMSTS,
         [Parameter(Mandatory = $false, ParameterSetName = 'CustomFilter')]
         [string]$Filter,
-        [Parameter(Mandatory = $false, ParameterSetName = 'SeverityFilter')]
+        [Parameter(Mandatory = $false)]
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
-        [string[]]$Severity
+        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error')
     )
     begin {
         try {
@@ -138,49 +140,48 @@ Function Get-CCMLogFile {
                             $LogLine['Type'] = [Severity]$LogLineSubArray[9]
                             $LogLine['Component'] = $LogLineSubArray[5]
                             $LogLine['Thread'] = $LogLineSubArray[11]
-                            $DateString = $LogLineSubArray[3]
-                            $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
 
                             # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
-                            switch ($PSCmdlet.ParameterSetName) {
-                                ParseSMSTS {
-                                    switch -regex ($Message) {
-                                        'win32 code 0|failed to run the action' {
-                                            $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            [pscustomobject]$LogLine
+                            switch ($Severity) {
+                                ([Severity]$LogLineSubArray[9]) {
+                                    switch ($PSCmdlet.ParameterSetName) {
+                                        ParseSMSTS {
+                                            switch -regex ($Message) {
+                                                'win32 code 0|failed to run the action' {
+                                                    $DateString = $LogLineSubArray[3]
+                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    [pscustomobject]$LogLine
+                                                }
+                                                default {
+                                                    continue
+                                                }
+                                            }
+                                        }
+                                        CustomFilter {
+                                            switch -regex ($Message) {
+                                                $Filter {
+                                                    $DateString = $LogLineSubArray[3]
+                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    [pscustomobject]$LogLine
+                                                }
+                                                default {
+                                                    continue
+                                                }
+                                            }
                                         }
                                         default {
-                                            continue
-                                        }
-                                    }
-                                }
-                                CustomFilter {
-                                    switch -regex ($Message) {
-                                        $Filter {
-                                            $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                            $DateString = $LogLineSubArray[3]
+                                            $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
-                                        }
-                                        default {
-                                            continue
-                                        }
-                                    }
-                                }
-                                SeverityFilter {
-                                    switch ($Severity) {
-                                        ([Severity]$LogLineSubArray[9]) {
-                                            $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            [pscustomobject]$LogLine
-                                        }
-                                        default {
-                                            continue
                                         }
                                     }
                                 }
                                 default {
-                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                    [pscustomobject]$LogLine
+                                    continue
                                 }
-
                             }
                         }
                     }
@@ -220,15 +221,15 @@ Function Get-CCMLogFile {
                                     $LogLine['Type'] = [Severity]0
                                     $LogLine['Component'] = $LogLineSubArray[0].Trim()
                                     $LogLine['Thread'] = ($LogLineSubArray[2].Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
-                                    $DateTimeString = $LogLineSubArray[1]
-                                    $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
-                                    $DateString = $DateTimeStringArray[0].ToString()
-                                    $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
 
                                     switch ($PSCmdlet.ParameterSetName) {
                                         CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
+                                                    $DateTimeString = $LogLineSubArray[1]
+                                                    $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                                    $DateString = $DateTimeStringArray[0].ToString()
+                                                    $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -238,6 +239,10 @@ Function Get-CCMLogFile {
                                             }
                                         }
                                         default {
+                                            $DateTimeString = $LogLineSubArray[1]
+                                            $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                            $DateString = $DateTimeStringArray[0].ToString()
+                                            $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
