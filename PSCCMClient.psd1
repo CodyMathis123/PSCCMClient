@@ -199,6 +199,7 @@ v0.2.4
             Command now accepts a CimSession, or a PSsession
 * Change 'Set-CIMRegistryProperty' to 'Set-CCMRegistryProperty' - alias is in place
             Command now accepts a CimSession, or a PSsession
+* Get-CCMLogFile now has a -Severity parameter which will filter what 'type' of messages are returned
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
