@@ -56,7 +56,6 @@ function Get-CCMBaseline {
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string[]]$BaselineName = 'NotSpecified',
-
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
