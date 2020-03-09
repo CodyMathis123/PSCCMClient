@@ -38,22 +38,18 @@ function Get-CCMCimInstance {
 		$ConnectionChecker = ($PSCmdlet.ParameterSetName).Split('-')[1]
 
 		$GetCimInstanceSplat = @{ }
-		$StringArgs = switch ($PSBoundParameters.Keys) {
+		switch ($PSBoundParameters.Keys) {
 			'Namespace' {
 				$GetCimInstanceSplat['NameSpace'] = $Namespace
-				[string]::Format('-NameSpace "{0}"', $Namespace)
 			}
 			'ClassName' {
 				$GetCimInstanceSplat['ClassName'] = $ClassName
-				[string]::Format('-ClassName "{0}"', $ClassName)
 			}
 			'Filter' {
 				$GetCimInstanceSplat['Filter'] = $Filter
-				[string]::Format("-Filter '{0}'", $($Filter -replace "'", "''"))
 			}
 			'Query' {
 				$GetCimInstanceSplat['Query'] = $Query
-				[string]::Format("-Query '{0}'", $($Query -replace "'", "''"))
 			}
 		}
 	}
@@ -71,9 +67,15 @@ function Get-CCMCimInstance {
 					Get-CimInstance @GetCimInstanceSplat @connectionSplat
 				}
 				'PSSession' {
-					$ScriptBlockString = [string]::Format('Get-CimInstance {0}', ([string]::Join(' ', $StringArgs)))
-					$ScriptBlock = [scriptblock]::Create($ScriptBlockString)
-					Invoke-Command -ScriptBlock $ScriptBlock @connectionSplat
+					$GetCimInstanceOverPSSessionSplat = @{
+						ArgumentList = $GetCimInstanceSplat
+						ScriptBlock  = {
+							param($GetCimInstanceSplat)
+							Get-CimInstance @GetCimInstanceSplat
+						}
+					}
+					
+					Invoke-Command @GetCimInstanceOverPSSessionSplat @connectionSplat
 				}
 			}
 		}
