@@ -1,23 +1,33 @@
 function Get-CCMSoftwareUpdateSettings {
     <#
-    .SYNOPSIS
-        Get software update settings for a computer
-    .DESCRIPTION
-        Uses CIM to find software update settings for a computer. This includes various configs
-        that are set in the MEMCM Console Client Settings
-    .PARAMETER CimSession
-        Computer CimSession(s) which you want to get software update settings for
-    .PARAMETER ComputerName
-        Computer name(s) which you want to get software update settings for
-    .EXAMPLE
-        PS C:\> Get-CCMSoftwareUpdateSettings -Computer Testing123
-            Will return all software update settings deployed to Testing123
-    .NOTES
-        FileName:    Get-CCMSoftwareUpdateSettings.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-29
-        Updated:     2020-01-29
+        .SYNOPSIS
+            Get software update settings for a computer
+        .DESCRIPTION
+            Uses CIM to find software update settings for a computer. This includes various configs
+            that are set in the MEMCM Console Client Settings
+        .PARAMETER CimSession
+            Computer CimSession(s) which you want to get software update settings for
+        .PARAMETER ComputerName
+            Computer name(s) which you want to get software update settings for
+        .PARAMETER PSSession
+            PSSessions which you want to get software update settings for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            PS C:\> Get-CCMSoftwareUpdateSettings -Computer Testing123
+                Will return all software update settings deployed to Testing123
+        .NOTES
+            FileName:    Get-CCMSoftwareUpdateSettings.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-29
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
@@ -25,11 +35,15 @@ function Get-CCMSoftwareUpdateSettings {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
-    )
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
+            )
     begin {
-
-        $connectionSplat = @{ }
         $getSoftwareUpdateSettingsSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
             Query     = 'SELECT * FROM CCM_SoftwareUpdatesClientConfig'
@@ -37,40 +51,29 @@ function Get-CCMSoftwareUpdateSettings {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $ConnectionSplat.Remove('ComputerName')
-                                $ConnectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $ConnectionSplat.Remove('CimSession')
-                                $ConnectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $ConnectionSplat.Remove('CimSession')
-                            $ConnectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $ConnectionSplat.Remove('ComputerName')
-                    $ConnectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
-            [ciminstance[]]$Settings = Get-CimInstance @getSoftwareUpdateSettingsSplat @ConnectionSplat
+            [ciminstance[]]$Settings = switch ($Computer -eq $env:ComputerName) {
+                $true {
+                    Get-CimInstance @getSoftwareUpdateSettingsSplat @connectionSplat
+                }
+                $false {
+                    Get-CCMCimInstance @getSoftwareUpdateSettingsSplat @connectionSplat
+                }
+            }
             if ($Settings -is [Object] -and $Settings.Count -gt 0) {
                 foreach ($Setting in $Settings) {
                     $Result['ComponentName'] = $Setting.ComponentName

@@ -1,26 +1,36 @@
 function Get-CCMLastSoftwareInventory {
     <#
-    .SYNOPSIS
-        Returns info about the last time Software Inventory ran
-    .DESCRIPTION
-        This function will return info about the last time Software Inventory was ran. This is pulled from the InventoryActionStatus WMI Class.
-        The Software inventory major, and minor version is included. This can be helpful in troubleshooting Software inventory issues.
-    .PARAMETER CimSession
-        Provides CimSession to gather Software inventory last run info from
-    .PARAMETER ComputerName
-        Provides computer names to gather Software inventory last run info from
-    .EXAMPLE
-        C:\PS> Get-CCMLastSoftwareInventory
-            Returns info regarding the last Software inventory cycle for the local computer
-    .EXAMPLE
-        C:\PS> Get-CCMLastSoftwareInventory -ComputerName 'Workstation1234','Workstation4321'
-            Returns info regarding the last Software inventory cycle for Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMLastSoftwareInventory.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-01
-        Updated:     2020-01-18
+        .SYNOPSIS
+            Returns info about the last time Software Inventory ran
+        .DESCRIPTION
+            This function will return info about the last time Software Inventory was ran. This is pulled from the InventoryActionStatus WMI Class.
+            The Software inventory major, and minor version is included. This can be helpful in troubleshooting Software inventory issues.
+        .PARAMETER CimSession
+            Provides CimSession to gather Software inventory last run info from
+        .PARAMETER ComputerName
+            Provides computer names to gather Software inventory last run info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather Software inventory last run info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Get-CCMLastSoftwareInventory
+                Returns info regarding the last Software inventory cycle for the local computer
+        .EXAMPLE
+            C:\PS> Get-CCMLastSoftwareInventory -ComputerName 'Workstation1234','Workstation4321'
+                Returns info regarding the last Software inventory cycle for Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMLastSoftwareInventory.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-01
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMLastSINV')]
@@ -29,7 +39,13 @@ function Get-CCMLastSoftwareInventory {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $getLastSINVSplat = @{
@@ -39,41 +55,30 @@ function Get-CCMLastSoftwareInventory {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getLastSINVSplat.Remove('ComputerName')
-                                $getLastSINVSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getLastSINVSplat.Remove('CimSession')
-                                $getLastSINVSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getLastSINVSplat.Remove('CimSession')
-                            $getLastSINVSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getLastSINVSplat.Remove('ComputerName')
-                    $getLastSINVSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastSINV = Get-CimInstance @getLastSINVSplat
+                [ciminstance[]]$LastSINV = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getLastSINVSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getLastSINVSplat @connectionSplat
+                    }
+                }
                 if ($LastSINV -is [Object] -and $LastSINV.Count -gt 0) {
                     foreach ($Occurrence in $LastSINV) {
                         $Result['LastCycleStartedDate'] = $Occurrence.LastCycleStartedDate

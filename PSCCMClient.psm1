@@ -1,6 +1,5 @@
 $ScriptPath = Split-Path $MyInvocation.MyCommand.Path
 $PSModule = $ExecutionContext.SessionState.Module
-$PSModuleRoot = $PSModule.ModuleBase
 
 #region Load Public Functions
 Try {
@@ -43,7 +42,8 @@ Catch {
 
 #region Export Module Members
 $ExportModule = @{
-    Alias    = @('Get-CCMCB',
+    Alias    = @(
+        'Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -51,15 +51,22 @@ $ExportModule = @{
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
-        'Get-CCMSUP',
         'Get-CCMSUG',
-        'Set-CCMMP'
+        'Get-CCMSUP',
+        'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
+        'Invoke-CCMUpdate',
+        'Set-CCMMP',
+        'Set-CIMRegistryProperty'
     )
-    Function = @('ConvertFrom-CCMSchedule',
+
+    Function = @(
+        'ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
-        'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
+        'Get-CCMCacheInfo',
+        'Get-CCMCimInstance',
         'Get-CCMClientDirectory',
         'Get-CCMClientInfo',
         'Get-CCMClientVersion',
@@ -79,36 +86,38 @@ $ExportModule = @{
         'Get-CCMPackage',
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
+        'Get-CCMRegistryProperty',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
+        'Get-CCMSoftwareUpdate',
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
-        'Get-CCMUpdate',
-        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
+        'Invoke-CCMCommand',
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
-        'Invoke-CCMTriggerSchedule',
-        'Invoke-CCMUpdate',
-        'Invoke-CIMPowerShell',
+        'Invoke-CCMSoftwareUpdate',
         'Invoke-CCMTaskSequence',
+        'Invoke-CCMTriggerSchedule',
+        'Invoke-CIMPowerShell',
         'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
         'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMClientAlwaysOnInternet',
         'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Set-CIMRegistryProperty',
-        'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsClientOnInternet',
         'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'

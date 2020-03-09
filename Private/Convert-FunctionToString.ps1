@@ -1,7 +1,7 @@
 function Convert-FunctionToString {
     <#
         .SYNOPSIS
-        Convert function to string
+            Convert function to string
         .DESCRIPTION
             This function is used to take a function, and convert it to a string. This allows it to be
             moved around more easily

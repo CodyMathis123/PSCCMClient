@@ -1,26 +1,36 @@
 function Get-CCMClientInfo {
     <#
-    .SYNOPSIS
-        Returns info about the MEMCM Client
-    .DESCRIPTION
-        This function will return a large amount of info for the MEMCM client using CIM. It leverages many of the existing Get-CCM* functions
-        in the module to present the data as one object.
-    .PARAMETER CimSession
-        Provides CimSessions to gather the client info from
-    .PARAMETER ComputerName
-        Provides computer names to gather the client info from
-    .EXAMPLE
-        C:\PS> Get-CCMClientInfo
-            Returns the client info from local computer
-    .EXAMPLE
-        C:\PS> Get-CCMClientInfo -ComputerName 'Workstation1234','Workstation4321'
-            Returns the client info from Workstation1234, and Workstation4321
-    .NOTES
-        FileName:    Get-CCMClientInfo.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-24
-        Updated:     2020-01-24
+        .SYNOPSIS
+            Returns info about the MEMCM Client
+        .DESCRIPTION
+            This function will return a large amount of info for the MEMCM client using CIM. It leverages many of the existing Get-CCM* functions
+            in the module to present the data as one object.
+        .PARAMETER CimSession
+            Provides CimSessions to gather the client info from
+        .PARAMETER ComputerName
+            Provides computer names to gather the client info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather the client info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Get-CCMClientInfo
+                Returns the client info from local computer
+        .EXAMPLE
+            C:\PS> Get-CCMClientInfo -ComputerName 'Workstation1234','Workstation4321'
+                Returns the client info from Workstation1234, and Workstation4321
+        .NOTES
+            FileName:    Get-CCMClientInfo.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-24
+            Updated:     2020-03-03
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -28,48 +38,45 @@ function Get-CCMClientInfo {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
-        $connectionSplat = @{ }
+        
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $connectionSplat.Remove('ComputerName')
-                                $connectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $connectionSplat.Remove('CimSession')
-                                $connectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $connectionSplat.Remove('CimSession')
-                            $connectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $connectionSplat.Remove('ComputerName')
-                    $connectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
 
             # ENHANCE - Decide on an order for the properties
 
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
+
+            #region site code
+            $SiteCode = Get-CCMSite @connectionSplat
+            $Result['SiteCode'] = $SiteCode.SiteCode
+            #endregion site code
+
+            #region Current Management Point
+            $Result['CurrentManagementPoint'] = (Get-CCMCurrentManagementPoint @connectionSplat).CurrentManagementPoint
+            $Result['CurrentSoftwareUpdatePoint'] = (Get-CCMCurrentSoftwareUpdatePoint @connectionSplat).CurrentSoftwareUpdatePoint
+            #endregion Current Management Point
 
             #region cache info
             $CacheInfo = Get-CCMCacheInfo @connectionSplat
@@ -120,11 +127,6 @@ function Get-CCMClientInfo {
             $Result['SINV-LastMinorReportVersion'] = $LastSoftwareInventory.LastMinorReportVersion
             #endregion Last Software Inventory Cycle
 
-            #region Current Management Point
-            $Result['CurrentManagementPoint'] = (Get-CCMCurrentManagementPoint @connectionSplat).CurrentManagementPoint
-            $Result['CurrentSoftwareUpdatePoint'] = (Get-CCMCurrentSoftwareUpdatePoint @connectionSplat).CurrentSoftwareUpdatePoint
-            #endregion Current Management Point
-
             #region MEMCM Client Log Configuration
             $LogConfiguration = Get-CCMLoggingConfiguration @connectionSplat
             $Result['LogDirectory'] = $LogConfiguration.LogDirectory
@@ -135,8 +137,8 @@ function Get-CCMClientInfo {
             #endregion MEMCM Client Log Configuration
 
             #region MEMCM Client internet configuration
-            $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet
-            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsAlwaysClientOnInternet
+            $Result['IsClientOnInternet'] = (Test-CCMIsClientOnInternet @connectionSplat).IsClientOnInternet[0]
+            $Result['IsClientAlwaysOnInternet'] = (Test-CCMIsClientAlwaysOnInternet @connectionSplat).IsClientAlwaysOnInternet[0]
             #endregion MEMCM Client internet configuration
 
             [pscustomobject]$Result

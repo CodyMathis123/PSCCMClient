@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.3'
+    ModuleVersion     = '0.2.4'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -69,11 +69,13 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFrom-CCMSchedule',
+    FunctionsToExport = @(
+        'ConvertFrom-CCMSchedule',
         'Get-CCMApplication',
         'Get-CCMBaseline',
-        'Get-CCMCacheInfo',
         'Get-CCMCacheContent',
+        'Get-CCMCacheInfo',
+        'Get-CCMCimInstance',
         'Get-CCMClientDirectory',
         'Get-CCMClientInfo',
         'Get-CCMClientVersion',
@@ -93,36 +95,38 @@
         'Get-CCMPackage',
         'Get-CCMPrimaryUser',
         'Get-CCMProvisioningMode',
+        'Get-CCMRegistryProperty',
         'Get-CCMServiceWindow',
         'Get-CCMSite',
+        'Get-CCMSoftwareUpdate',
         'Get-CCMSoftwareUpdateGroup',
         'Get-CCMSoftwareUpdateSettings',
         'Get-CCMTaskSequence',
-        'Get-CCMUpdate',
-        'Get-CIMRegistryProperty',
         'Invoke-CCMApplication',
         'Invoke-CCMBaseline',
         'Invoke-CCMClientAction',
+        'Invoke-CCMCommand',
         'Invoke-CCMPackage',
         'Invoke-CCMResetPolicy',
-        'Invoke-CCMTriggerSchedule',
-        'Invoke-CCMUpdate',
-        'Invoke-CIMPowerShell',
+        'Invoke-CCMSoftwareUpdate',
         'Invoke-CCMTaskSequence',
+        'Invoke-CCMTriggerSchedule',
+        'Invoke-CIMPowerShell',
         'New-LoopAction',
         'Remove-CCMCacheContent',
         'Repair-CCMCacheLocation',
         'Reset-CCMLoggingConfiguration',
         'Set-CCMCacheLocation',
         'Set-CCMCacheSize',
+        'Set-CCMClientAlwaysOnInternet',
         'Set-CCMDNSSuffix',
         'Set-CCMLoggingConfiguration',
         'Set-CCMManagementPoint',
         'Set-CCMProvisioningMode',
+        'Set-CCMRegistryProperty',
         'Set-CCMSite',
-        'Set-CIMRegistryProperty',
-        'Test-CCMIsClientOnInternet',
         'Test-CCMIsClientAlwaysOnInternet',
+        'Test-CCMIsClientOnInternet',
         'Test-CCMIsWindowAvailableNow',
         'Test-CCMStaleLog',
         'Write-CCMLogEntry'
@@ -135,7 +139,8 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMCB',
+    AliasesToExport   = @(
+        'Get-CCMCB',
         'Get-CCMCurrentMP',
         'Get-CCMCurrentSUP',
         'Get-CCMLastDDR',
@@ -143,9 +148,13 @@
         'Get-CCMLastSINV'
         'Get-CCMMP',
         'Get-CCMMW',
-        'Get-CCMSUP',
         'Get-CCMSUG',
-        'Set-CCMMP'
+        'Get-CCMSUP',
+        'Get-CCMUpdate',
+        'Get-CIMRegistryProperty',
+        'Invoke-CCMUpdate',
+        'Set-CCMMP',
+        'Set-CIMRegistryProperty'
     )
 
     # DSC resources to export from this module
@@ -176,6 +185,21 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.2.4
+* All commands that run remotely now support PSSession, as well as CimSession
+* Add Get-CCMConnection to module in private folder
+            This function is used internally to return connection info, whether it is a CimSession, PSSession, or just computername
+* Convert all functions to using Get-CCMConnection to determine best / preferred connection
+* Add Invoke-CCMCommand to module
+            This function is used in place of Invoke-CIMPowerShell, as a means to execute remote commands inside of functions.
+            Supports ArgumentList parameter which simplifies many functions internally
+* Add Set-CCMClientAlwaysOnInternet to module
+* Add Get-CCMCimInstance to module
+* Change 'Get-CIMRegistryProperty' to 'Get-CCMRegistryProperty' - alias is in place
+            Command now accepts a CimSession, or a PSsession
+* Change 'Set-CIMRegistryProperty' to 'Set-CCMRegistryProperty' - alias is in place
+            Command now accepts a CimSession, or a PSsession
+* Get-CCMLogFile now has a -Severity parameter which will filter what 'type' of messages are returned
 v0.2.3
 * Fix ConvertFrom-CCMSchedule function export name... again 
 * ConvertFrom-CCMSchedule now outputs datetime object with proper 'Kind'
@@ -217,7 +241,7 @@ v0.1.5
 * Add Invoke-CCMApplication to module
 * Add Get-CCMCB alias to Get-CCMBaseline
 * Update Write-CCMLogEntry function to support pipeline by property name for the message
-            Usecase would be custom objects with a 'ToLog' property
+            Use case would be custom objects with a 'ToLog' property
 v0.1.4
 * Correct alias implementation
 v0.1.3

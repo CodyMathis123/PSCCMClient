@@ -1,7 +1,7 @@
 function Get-CCMBaseline {
     <#
         .SYNOPSIS
-            Get SCCM Configuration Baselines on the specified computer(s) or cimsession(s)
+            Get MEMCM Configuration Baselines on the specified computer(s) or cimsession(s)
         .DESCRIPTION
             This function is used to identify baselines on computers. You can provide an array of computer names, or cimsessions, and
             configuration baseline names which will be queried for. If you do not specify a baseline name, then there will be no filter applied.
@@ -12,6 +12,16 @@ function Get-CCMBaseline {
             Provides computer names to find the configuration baselines on.
         .PARAMETER CimSession
             Provides cimsessions to return baselines from.
+        .PARAMETER PSSession
+           Provides PSSessions to return baselines from.
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to. 
         .EXAMPLE
             C:\PS> Get-CCMBaseline
                 Gets all baselines identified in WMI on the local computer.
@@ -26,7 +36,7 @@ function Get-CCMBaseline {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2019-07-24
-            Updated:     2020-01-31
+            Updated:     2020-02-27
 
             It is important to note that if a configuration baseline has user settings, the only way to search for it is if the user is logged in, and you run this script
             with those credentials provided to a CimSession. An example would be if Workstation1234 has user Jim1234 logged in, with a configuration baseline 'FixJimsStuff'
@@ -50,7 +60,13 @@ function Get-CCMBaseline {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region Setup our *-CIM* parameters that will apply to the CIM cmdlets in use based on input parameters
@@ -71,79 +87,67 @@ function Get-CCMBaseline {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getBaselineSplat.Remove('ComputerName')
-                                $getBaselineSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getBaselineSplat.Remove('CimSession')
-                                $getBaselineSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getBaselineSplat.Remove('CimSession')
-                            $getBaselineSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getBaselineSplat.Remove('ComputerName')
-                    $getBaselineSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
 
-            foreach ($BLName in $BaselineName) {
-                #region Query WMI for Configuration Baselines based off DisplayName
-                $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName')) {
-                    $true {
-                        [string]::Format("SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = '{0}'", $BLName)
-                    }
-                    $false {
-                        "SELECT * FROM SMS_DesiredConfiguration"
-                    }
+            $BLQuery = switch ($PSBoundParameters.ContainsKey('BaselineName') -and $BaselineName -ne 'NotSpecified') {
+                $true {
+                    [string]::Format('SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = "{0}"', [string]::Join('" OR DisplayName = "', $BaselineName))
                 }
-                Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
-                $getBaselineSplat['Query'] = $BLQuery
-                try {
-                    $Baselines = Get-CimInstance @getBaselineSplat
+                $false {
+                    "SELECT * FROM SMS_DesiredConfiguration"
                 }
-                catch {
-                    # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
-                    # Maybe write a function???
-                    Write-Error "Failed to query for baselines on $Connection - $($_)"
-                    continue
-                }
-                #endregion Query WMI for Configuration Baselines based off DisplayName
-
-                #region Based on results of CIM Query, return additional information around compliance and eval time
-                switch ($null -eq $Baselines) {
-                    $false {
-                        foreach ($BL in $Baselines) {
-                            $Return['BaselineName'] = $BL.DisplayName
-                            $Return['Version'] = $BL.Version
-                            $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
-                            $Return['LastEvalTime'] = $BL.LastEvalTime
-                            [pscustomobject]$Return
-                        }
-                    }
-                    $true {
-                        Write-Warning "Failed to identify any Configuration Baselines on [ConnectionName='$Connection'] with [Query=`"$BLQuery`"]"
-                    }
-                }
-                #endregion Based on results of CIM Query, return additional information around compliance and eval time
             }
+
+            #region Query WMI for Configuration Baselines based off DisplayName
+            Write-Verbose "Checking for Configuration Baselines on [ComputerName='$Computer'] with [Query=`"$BLQuery`"]"
+            $getBaselineSplat['Query'] = $BLQuery
+            try {
+                $Baselines = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getBaselineSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getBaselineSplat @connectionSplat
+                    }
+                }
+            }
+            catch {
+                # need to improve this - should catch access denied vs RPC, and need to do this on ALL CIM related queries across the module.
+                # Maybe write a function???
+                Write-Error "Failed to query for baselines on $Connection - $($_)"
+                continue
+            }
+            #endregion Query WMI for Configuration Baselines based off DisplayName
+
+            #region Based on results of CIM Query, return additional information around compliance and eval time
+            switch ($null -eq $Baselines) {
+                $false {
+                    foreach ($BL in $Baselines) {
+                        $Return['BaselineName'] = $BL.DisplayName
+                        $Return['Version'] = $BL.Version
+                        $Return['LastComplianceStatus'] = $LastComplianceStatus[[int]$BL.LastComplianceStatus]
+                        $Return['LastEvalTime'] = $BL.LastEvalTime
+                        [pscustomobject]$Return
+                    }
+                }
+                $true {
+                    Write-Warning "Failed to identify any Configuration Baselines on [ConnectionName='$Connection'] with [Query=`"$BLQuery`"]"
+                }
+            }
+            #endregion Based on results of CIM Query, return additional information around compliance and eval time
         }
     }
 }

@@ -10,6 +10,16 @@ function Set-CCMSite {
             Provides CimSessions to set the current MEMCM Site for
         .PARAMETER ComputerName
             Provides computer names to set the current MEMCM Site for
+        .PARAMETER PSSession
+            Provides PSSession to set the current MEMCM Site for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
         .EXAMPLE
             C:\PS> Set-CCMSite -SiteCode 'TST'
                 Sets the local computer's MEMCM Site to TST
@@ -21,7 +31,7 @@ function Set-CCMSite {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-18
-            Updated:     2020-01-29
+            Updated:     2020-03-01
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param(
@@ -31,46 +41,35 @@ function Set-CCMSite {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
-        $connectionSplat = @{ }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Set-CCMSite'
+        $SetAssignedSiteCodeScriptBlockString = [string]::Format('(New-Object -ComObject Microsoft.SMS.Client).SetAssignedSite("{0}", 0)', $SiteCode)
+        $SetAssignedSiteCodeScriptBlock = [scriptblock]::Create($SetAssignedSiteCodeScriptBlockString)
+        $invokeCommandSplat = @{
+            ScriptBlock = $SetAssignedSiteCodeScriptBlock
         }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $connectionSplat.Remove('ComputerName')
-                                $connectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $connectionSplat.Remove('CimSession')
-                                $connectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $connectionSplat.Remove('CimSession')
-                            $connectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $connectionSplat.Remove('ComputerName')
-                    $connectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
@@ -78,15 +77,12 @@ function Set-CCMSite {
                 try {
                     switch ($Computer -eq $env:ComputerName) {
                         $true {
-                            $Client = New-Object -ComObject Microsoft.SMS.Client
-                            $Client.SetAssignedSite($SiteCode, 0)
+                            $SetAssignedSiteCodeScriptBlock.Invoke()
                             $Result['SiteSet'] = $true
                             [pscustomobject]$Result
                         }
                         $false {
-                            $ScriptBlock = [string]::Format('Set-CCMSite -SiteCode "{0}"', $SiteCode)
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create($ScriptBlock)
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @connectionSplat
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                 }

@@ -1,22 +1,32 @@
 function Get-CCMPrimaryUser {
     <#
-    .SYNOPSIS
-        Return primary users for a computer
-    .DESCRIPTION
-        Pulls a list of primary users from WMI on the specified computer(s) or CIMSession(s)
-    .PARAMETER CimSession
-        Provides CimSession to gather primary users info from
-    .PARAMETER ComputerName
-        Provides computer names to gather primary users info from
-    .EXAMPLE
-        PS> Get-CCMPrimaryUser
-            Returns all primary users listed in WMI on the local computer
-    .NOTES
-        FileName:    Get-CCMPrimaryUser.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-05
-        Updated:     2020-01-05
+        .SYNOPSIS
+            Return primary users for a computer
+        .DESCRIPTION
+            Pulls a list of primary users from WMI on the specified computer(s) or CIMSession(s)
+        .PARAMETER CimSession
+            Provides CimSession to gather primary users info from
+        .PARAMETER ComputerName
+            Provides computer names to gather primary users info from
+        .PARAMETER PSSession
+            Provides PSSessions to gather primary users info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            PS> Get-CCMPrimaryUser
+                Returns all primary users listed in WMI on the local computer
+        .NOTES
+            FileName:    Get-CCMPrimaryUser.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-05
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -24,7 +34,13 @@ function Get-CCMPrimaryUser {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
@@ -36,41 +52,30 @@ function Get-CCMPrimaryUser {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $getPrimaryUserSplat.Remove('ComputerName')
-                                $getPrimaryUserSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $getPrimaryUserSplat.Remove('CimSession')
-                                $getPrimaryUserSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $getPrimaryUserSplat.Remove('CimSession')
-                            $getPrimaryUserSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $getPrimaryUserSplat.Remove('ComputerName')
-                    $getPrimaryUserSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$PrimaryUsers = Get-CimInstance @getPrimaryUserSplat
+                [ciminstance[]]$PrimaryUsers = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getPrimaryUserSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getPrimaryUserSplat @connectionSplat
+                    }
+                }
                 if ($PrimaryUsers -is [Object] -and $PrimaryUsers.Count -gt 0) {
                     $Result['PrimaryUser'] = $PrimaryUsers.User
                     [PSCustomObject]$Result

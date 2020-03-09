@@ -5,49 +5,54 @@ Function Get-CCMLogFile {
     .DESCRIPTION
         This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
         searched and manipulated easily with PowerShell
-    .PARAMETER LogFilePath
+    .PARAMETER Path
         Path to the log file(s) you would like to parse.
     .PARAMETER ParseSMSTS
         Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
     .PARAMETER Filter
         A custom regex filter to use when reading in log lines
+    .PARAMETER Severity
+        A filter to return only messages of a particular severity. By default, all severities are returned.
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\ccmexec.log'
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
             Returns the CCMExec.log as a PSCustomObject
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
             Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
-    .EXAMPLE 
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
+    .EXAMPLE
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
             Returns all the actions that ran according to the SMSTSLog provided
     .EXAMPLE
-        PS C:\> Get-CCMLogFile -LogFilePath 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
+        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
             Return all log entires from the CAS.Log which pertain creating download requests for updates
     .OUTPUTS
         [pscustomobject]
     .NOTES
-        I've done my best to test this against various SCCM log files. They are all generally 'formatted' the same, but do have some
+        I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
         variance. I had to also balance speed and parsing.
 
-        With that said, it can still parse a typical SCCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
-        Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of 
+        With that said, it can still parse a typical MEMCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
+        Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of
         flexibility and speed as well.
 
             FileName: Get-CCMLogFile.ps1
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-09-19
-            Updated:  2020-02-01
+            Updated:  2020-03-06
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
-        [Alias('Fullname')]
-        [string[]]$LogFilePath,
+        [Alias('Fullname', 'LogFilePath')]
+        [string[]]$Path,
         [Parameter(Mandatory = $false, ParameterSetName = 'ParseSMSTS')]
         [switch]$ParseSMSTS,
         [Parameter(Mandatory = $false, ParameterSetName = 'CustomFilter')]
-        [string]$Filter
+        [string]$Filter,
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('None', 'Informational', 'Warning', 'Error')]
+        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error')
     )
     begin {
         try {
@@ -62,13 +67,13 @@ Function Get-CCMLogFile {
 "@
         }
         catch {
-            Write-Debug "Type Severity already exists"
+            Write-Verbose "Type Severity already exists"
         }
 
         function Get-TimeStampFromLogLine {
             <#
             .SYNOPSIS
-                Parses a datetime object from an MEMCM log line 
+                Parses a datetime object from an MEMCM log line
             .DESCRIPTION
                 This will return a datetime object if it is passed the part of an MEMCM log line that contains the date and time
             .PARAMETER DateString
@@ -85,7 +90,7 @@ Function Get-CCMLogFile {
                 [Parameter(Mandatory = $true)]
                 [string]$TimeString
             )
-            $DateStringArray = $DateString.Split("-")
+            $DateStringArray = [regex]::Split($DateString, '-')
 
             $MonthParser = $DateStringArray[0] -replace '\d', 'M'
             $DayParser = $DateStringArray[1] -replace '\d', 'd'
@@ -96,7 +101,7 @@ Function Get-CCMLogFile {
         }
     }
     process {
-        Foreach ($LogFile in $LogFilePath) {
+        Foreach ($LogFile in $Path) {
             #region ingest log file with StreamReader. Quick, and prevents locks
             $File = [System.IO.File]::Open($LogFile, 'Open', 'Read', 'ReadWrite')
             $StreamReader = New-Object System.IO.StreamReader($File)
@@ -107,10 +112,10 @@ Function Get-CCMLogFile {
 
             #region perform a regex match to determine the 'type' of log we are working with and parse appropriately
             switch ($true) {
-                #region parse a 'typical' SCCM log
-                (([Regex]::Match($LogFileRaw, "LOG\[(.*?)\]LOG(.*?)time(.*?)date")).Success) {
+                #region parse a 'typical' MEMCM log
+                (([Regex]::Match($LogFileRaw, 'LOG\[(.*?)\]LOG(.*?)time(.*?)date')).Success) {
                     # split on what we know is a line beginning
-                    switch -regex ($LogFileRaw -split "<!\[LOG\[") {
+                    switch -regex ([regex]::Split($LogFileRaw, '<!\[LOG\[')) {
                         '^\s*$' {
                             # ignore empty lines
                             continue
@@ -121,41 +126,44 @@ Function Get-CCMLogFile {
                                 first item contains the message which can be parsed
                                 second item contains all the information about the message/line (ie. type, component, datetime, thread) which can be parsed
                             #>
-                            $LogLineArray = $PSItem -split "]LOG]!><"
+                            $LogLineArray = [regex]::Split($PSItem, ']LOG]!><')
 
                             # Strip the log message out of our first array index
                             $Message = $LogLineArray[0]
 
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = $LogLineArray[1].Split('"')
+                            $LogLineSubArray = [regex]::Split($LogLineArray[1], '"')
 
                             $LogLine = [ordered]@{ }
                             # Rebuild the LogLine into a hash table
                             $LogLine['Message'] = $Message
-                            $LogLine['Type'] = [Severity]$LogLineSubArray[9]
+                            $Type = [Severity]$LogLineSubArray[9]
+                            $LogLine['Type'] = $Type
                             $LogLine['Component'] = $LogLineSubArray[5]
                             $LogLine['Thread'] = $LogLineSubArray[11]
-                            $DateString = $LogLineSubArray[3]
-                            $TimeString = ($LogLineSubArray[1]).Split("+|-")[0].ToString().Substring(0, 12)                                        
 
                             # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
-                            switch ($ParseSMSTS.IsPresent) {
-                                $true {
-                                    switch -regex ($Message) {
-                                        'win32 code 0|failed to run the action' {
-                                            $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            [pscustomobject]$LogLine
-                                        }
-                                        default {
-                                            continue
-                                        }
-                                    }
-                                }
-                                $false {
+                            switch ($Severity) {
+                                ($Type) {
                                     switch ($PSCmdlet.ParameterSetName) {
-                                        'CustomFilter' {
+                                        ParseSMSTS {
+                                            switch -regex ($Message) {
+                                                'win32 code 0|failed to run the action' {
+                                                    $DateString = $LogLineSubArray[3]
+                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    [pscustomobject]$LogLine
+                                                }
+                                                default {
+                                                    continue
+                                                }
+                                            }
+                                        }
+                                        CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
+                                                    $DateString = $LogLineSubArray[3]
+                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -165,18 +173,23 @@ Function Get-CCMLogFile {
                                             }
                                         }
                                         default {
+                                            $DateString = $LogLineSubArray[3]
+                                            $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
                                     }
                                 }
+                                default {
+                                    continue
+                                }
                             }
                         }
                     }
                 }
-                #endregion parse a 'typical' SCCM log
+                #endregion parse a 'typical' MEMCM log
 
-                #region parse a 'simple' SCCM log, usually found on site systems
+                #region parse a 'simple' MEMCM log, usually found on site systems
                 (([Regex]::Match($LogFileRaw, '\$\$\<(.*?)\>\<thread=')).Success) {
                     switch -regex ($LogFileRaw -split [System.Environment]::NewLine) {
                         '^\s*$' {
@@ -189,13 +202,13 @@ Function Get-CCMLogFile {
                                 first item contains the message which can be parsed
                                 second item contains all the information about the message/line (ie. type, component, timestamp, thread) which can be parsed
                             #>
-                            $LogLineArray = $PSItem -split '\$\$<'
+                            $LogLineArray = [regex]::Split($PSItem, '\$\$<')
 
                             # Strip the log message out of our first array index
                             $Message = $LogLineArray[0]
 
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = $LogLineArray[1].Split("><", [System.StringSplitOptions]::RemoveEmptyEntries)
+                            $LogLineSubArray = $LogLineArray[1].Split('><', [System.StringSplitOptions]::RemoveEmptyEntries)
 
                             switch -regex ($Message) {
                                 '^\s*$' {
@@ -208,16 +221,16 @@ Function Get-CCMLogFile {
                                     $LogLine['Message'] = $Message
                                     $LogLine['Type'] = [Severity]0
                                     $LogLine['Component'] = $LogLineSubArray[0].Trim()
-                                    $LogLine['Thread'] = ($LogLineSubArray[2].Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
-                                    $DateTimeString = $LogLineSubArray[1]
-                                    $DateTimeStringArray = $DateTimeString.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
-                                    $DateString = $DateTimeStringArray[0].ToString()
-                                    $TimeString = $DateTimeStringArray[1].ToString().Split("+|-", [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)  
+                                    $LogLine['Thread'] = ($LogLineSubArray[2].Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
 
                                     switch ($PSCmdlet.ParameterSetName) {
-                                        'CustomFilter' {
+                                        CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
+                                                    $DateTimeString = $LogLineSubArray[1]
+                                                    $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                                    $DateString = $DateTimeStringArray[0].ToString()
+                                                    $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -227,6 +240,10 @@ Function Get-CCMLogFile {
                                             }
                                         }
                                         default {
+                                            $DateTimeString = $LogLineSubArray[1]
+                                            $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                            $DateString = $DateTimeStringArray[0].ToString()
+                                            $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
@@ -236,7 +253,7 @@ Function Get-CCMLogFile {
                         }
                     }
                 }
-                #endregion parse a 'simple' SCCM log, usually found on site systems
+                #endregion parse a 'simple' MEMCM log, usually found on site systems
             }
             #endregion perform a regex match to determine the 'type' of log we are working with and parse appropriately
         }

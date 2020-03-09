@@ -1,27 +1,37 @@
 function Get-CCMSoftwareUpdateGroup {
     <#
-    .SYNOPSIS
-        Get information for the Software Update Groups deployed to a computer, including compliance
-    .DESCRIPTION
-        Uses CIM to find information for the Software Update Groups deployed to a computer. This includes checking the currently
-        reported 'compliance' for a software update group using the CCM_AssignmentCompliance CIM class
-    .PARAMETER AssignmentName
-        Provide an array of Software Update Group names to query for
-    .PARAMETER AssignmentID
-        Provide an array of Software Update Group assignemnt ID to query for
-    .PARAMETER CimSession
-        Computer CimSession(s) which you want to get information for the Software Update Groups
-    .PARAMETER ComputerName
-        Computer name(s) which you want to get information for the Software Update Groups
-    .EXAMPLE
-        PS C:\> Get-CCMSoftwareUpdateGroup -Computer Testing123
-            Will return all info available for the Software Update Groups deployed to Testing123
-    .NOTES
-        FileName:    Get-CCMSoftwareUpdateGroup.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-21
-        Updated:     2020-01-21
+        .SYNOPSIS
+            Get information for the Software Update Groups deployed to a computer, including compliance
+        .DESCRIPTION
+            Uses CIM to find information for the Software Update Groups deployed to a computer. This includes checking the currently
+            reported 'compliance' for a software update group using the CCM_AssignmentCompliance CIM class
+        .PARAMETER AssignmentName
+            Provide an array of Software Update Group names to query for
+        .PARAMETER AssignmentID
+            Provide an array of Software Update Group assignemnt ID to query for
+        .PARAMETER CimSession
+            Computer CimSession(s) which you want to get information for the Software Update Groups
+        .PARAMETER ComputerName
+            Computer name(s) which you want to get information for the Software Update Groups
+        .PARAMETER PSSession
+            PSSessions which you want to get information for the Software Update Groups
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            PS C:\> Get-CCMSoftwareUpdateGroup -Computer Testing123
+                Will return all info available for the Software Update Groups deployed to Testing123
+        .NOTES
+            FileName:    Get-CCMSoftwareUpdateGroup.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-21
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMSUG')]
@@ -34,10 +44,15 @@ function Get-CCMSoftwareUpdateGroup {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
-        $ConnectionSplat = @{ }
         $getSUGSplat = @{
             Namespace = 'root\CCM\Policy\Machine\ActualConfig'
         }
@@ -54,36 +69,18 @@ function Get-CCMSoftwareUpdateGroup {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $ConnectionSplat.Remove('ComputerName')
-                                $ConnectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $ConnectionSplat.Remove('CimSession')
-                                $ConnectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $ConnectionSplat.Remove('CimSession')
-                            $ConnectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $ConnectionSplat.Remove('ComputerName')
-                    $ConnectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
@@ -106,14 +103,29 @@ function Get-CCMSoftwareUpdateGroup {
                 }
                 $getSUGSplat['Query'] = [string]::Format('SELECT * FROM CCM_UpdateCIAssignment{0}', $Filter)
 
-                [ciminstance[]]$DeployedSUG = Get-CimInstance @getSUGSplat @ConnectionSplat
+                [ciminstance[]]$DeployedSUG = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getSUGSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getSUGSplat @connectionSplat
+                    }
+                }
                 if ($DeployedSUG -is [Object] -and $DeployedSUG.Count -gt 0) {
                     foreach ($SUG in $DeployedSUG) {
                         $Result['AssignmentName'] = $SUG.AssignmentName
 
                         #region Query CCM_AssignmentCompliance to return SUG compliance
                         $getSUGComplianceSplat['Query'] = [string]::Format('SELECT IsCompliant FROM CCM_AssignmentCompliance WHERE AssignmentID = "{0}"', $SUG.AssignmentID)
-                        $Result['AssignmentCompliance'] = (Get-CimInstance @getSUGComplianceSplat @ConnectionSplat).IsCompliant
+                        $AssignmentCompliance = switch ($Computer -eq $env:ComputerName) {
+                            $true {
+                                Get-CimInstance @getSUGComplianceSplat @connectionSplat
+                            }
+                            $false {
+                                Get-CCMCimInstance @getSUGComplianceSplat @connectionSplat
+                            }
+                        }
+                        $Result['AssignmentCompliance'] = $AssignmentCompliance.IsCompliant
                         #endregion Query CCM_AssignmentCompliance to return SUG compliance
 
                         $Result['StartTime'] = $SUG.StartTime

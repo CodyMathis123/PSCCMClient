@@ -1,4 +1,41 @@
 ﻿function Invoke-CIMPowerShell {
+	<#
+		.SYNOPSIS
+			Invoke PowerShell scriptblocks over CIM
+		.DESCRIPTION
+			This function uses the 'Create' method of the Win32_Process class in order to remotely invoke PowerShell
+			scriptblocks. In order to return the object from the remote machine, Named Pipes are used, which requires
+			Port 445 to be open. 
+		.PARAMETER PipeName
+			The name of the 'NamedPipe' that will be used. By default this is a randomly generated GUID. 
+		.PARAMETER ScriptBlock
+			The scriptblock in which you want to invoke over CIM
+		.PARAMETER FunctionsToLoad
+			An array of 'Functions' you want to load into the remote command. For example, you might have a custom written
+			function to interact with a COM object that you want to load into the remote command. Instead of having an entire
+			scriptblock that recreates the function, you can simply specify the function in this parameter.
+		.PARAMETER Timeout
+			The timeout value before the connection will fail to return data over the NamedPipe
+		.PARAMETER CimSession
+			CimSession to invoke the remote code on
+		.PARAMETER ComputerName
+			Computer name to invoke the remote code on
+		.EXAMPLE
+			C:\PS> Invoke-CimPowerShell -Scriptblock { 
+				$Client = New-Object -ComObject Microsoft.SMS.Client
+				$Client.GetDNSSuffix()
+			 } -ComputerName Workstation123
+			 	Return the current DNS Suffix for the MEMCM on Workstation123 using the ComObject and a scriptblock
+		.EXAMPLE
+			C:\PS> Invoke-CimPowerShell -Scriptblock { Get-CCMDNSSuffix } -ComputerName Workstation123 -FunctionsToLoad Get-CCMDNSSuffix
+			 	Return the current DNS Suffix for the MEMCM on Workstation123 by loading our existing function that does this work
+        .NOTES
+            FileName:    Invoke-CIMPowerShell.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-07
+            Updated:     2020-02-12
+	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
 	(
@@ -18,7 +55,7 @@
 		[string[]]$ComputerName = $env:ComputerName
 	)
 	begin {
-		$invokeCIMPowerShellSplat = @{
+		$invokeCommandSplat = @{
 			ClassName  = 'Win32_Process'
 			MethodName = 'Create'
 		}
@@ -54,42 +91,18 @@
 	}
 	process {
 		foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly -Scope Local)) {
-			$Computer = switch ($PSCmdlet.ParameterSetName) {
-				'ComputerName' {
-					Write-Output -InputObject $Connection
-					switch ($Connection -eq $env:ComputerName) {
-						$false {
-							if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-								Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-								$invokeCIMPowerShellSplat.Remove('ComputerName')
-								$invokeCIMPowerShellSplat['CimSession'] = $ExistingCimSession
-							}
-							else {
-								Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-								$invokeCIMPowerShellSplat.Remove('CimSession')
-								$invokeCIMPowerShellSplat['ComputerName'] = $Connection
-							}
-						}
-						$true {
-							$invokeCIMPowerShellSplat.Remove('CimSession')
-							$invokeCIMPowerShellSplat.Remove('ComputerName')
-							Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-						}
-					}
-				}
-				'CimSession' {
-					Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-					Write-Output -InputObject $Connection.ComputerName
-					$invokeCIMPowerShellSplat.Remove('ComputerName')
-					$invokeCIMPowerShellSplat['CimSession'] = $Connection
-				}
+			$getConnectionInfoSplat = @{
+				$PSCmdlet.ParameterSetName = $Connection
 			}
+			$ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+			$Computer = $ConnectionInfo.ComputerName
+			$connectionSplat = $ConnectionInfo.connectionSplat
 
-			$invokeCIMPowerShellSplat['Arguments'] = @{
+			$invokeCommandSplat['Arguments'] = @{
 				CommandLine = [string]::Format("powershell.exe (invoke-command ([scriptblock]::Create([system.text.encoding]::UTF8.GetString([System.convert]::FromBase64string('{0}')))))", $encodedScriptBlock)
 			}
 
-			$null = Invoke-CimMethod @invokeCIMPowerShellSplat
+			$null = Invoke-CimMethod @invokeCommandSplat @connectionSplat
 
 			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $Computer, "$($PipeName)", "In"
 			$namedPipe.Connect($timeout)

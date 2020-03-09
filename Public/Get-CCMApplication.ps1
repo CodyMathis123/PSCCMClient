@@ -1,36 +1,46 @@
 function Get-CCMApplication {
     <#
-    .SYNOPSIS
-        Return deployed applications from a computer
-    .DESCRIPTION
-        Pulls a list of deployed applications from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
-        to Invoke-CCMApplication if desired.
+        .SYNOPSIS
+            Return deployed applications from a computer
+        .DESCRIPTION
+            Pulls a list of deployed applications from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
+            to Invoke-CCMApplication if desired.
 
-        Note that the parameters for filter are all joined together with OR.
-    .PARAMETER ApplicationName
-        An array of ApplicationName to filter on
-    .PARAMETER ApplicationID
-        An array of application ID to filter on
-    .PARAMETER IncludeIcon
-        Switch that determines if the Icon property will be included in the output. As this can be a sizeable field, it is excluded by
-        default to minimize the time it takes for this to run, and the amount of memory that will be consumed.
-    .PARAMETER CimSession
-        Provides CimSession to gather deployed application info from
-    .PARAMETER ComputerName
-        Provides computer names to gather deployed application info from
-    .EXAMPLE
-        PS> Get-CCMApplication
-            Returns all deployed applications listed in WMI on the local computer
-    .EXAMPLE
-        PS> Get-CCMApplication -ApplicationID ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e -ApplicationName 'Software Install - Silent'
-            Returns all deployed applications listed in WMI on the local computer which have either a application name of 'Software Install' or
-            a ID of 'ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e'
-    .NOTES
-        FileName:    Get-CCMApplication.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-21
-        Updated:     2020-01-24
+            Note that the parameters for filter are all joined together with OR.
+        .PARAMETER ApplicationName
+            An array of ApplicationName to filter on
+        .PARAMETER ApplicationID
+            An array of application ID to filter on
+        .PARAMETER IncludeIcon
+            Switch that determines if the Icon property will be included in the output. As this can be a sizeable field, it is excluded by
+            default to minimize the time it takes for this to run, and the amount of memory that will be consumed.
+        .PARAMETER CimSession
+            Provides CimSession to gather deployed application info from
+        .PARAMETER ComputerName
+            Provides computer names to gather deployed application info from
+        .PARAMETER PSSession
+           Provides PSSessions to gather deployed application info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to. 
+        .EXAMPLE
+            PS> Get-CCMApplication
+                Returns all deployed applications listed in WMI on the local computer
+        .EXAMPLE
+            PS> Get-CCMApplication -ApplicationID ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e -ApplicationName 'Software Install - Silent'
+                Returns all deployed applications listed in WMI on the local computer which have either a application name of 'Software Install' or
+                a ID of 'ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e'
+        .NOTES
+            FileName:    Get-CCMApplication.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-21
+            Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -44,10 +54,15 @@ function Get-CCMApplication {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]      
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
-        $connectionSplat = @{ }
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $getapplicationsplat = @{
             NameSpace = 'root\CCM\ClientSDK'
@@ -91,36 +106,18 @@ function Get-CCMApplication {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $connectionSplat.Remove('ComputerName')
-                                $connectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $connectionSplat.Remove('CimSession')
-                                $connectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $connectionSplat.Remove('CimSession')
-                            $connectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $connectionSplat.Remove('ComputerName')
-                    $connectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Return = [ordered]@{ }
             $Return['ComputerName'] = $Computer
 
@@ -133,7 +130,14 @@ function Get-CCMApplication {
                         [string]::Format('$AppFound.ID -eq "{0}"', [string]::Join('" -or $AppFound.ID -eq "', $ApplicationID))
                     }
                 }
-                [ciminstance[]]$applications = Get-CimInstance @getapplicationsplat @connectionSplat
+                [ciminstance[]]$applications = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getapplicationsplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getapplicationsplat @connectionSplat
+                    }
+                }
                 if ($applications -is [Object] -and $applications.Count -gt 0) {
                     #region Filterering is not possible on the CCM_Application class, so instead we loop and compare properties to filter
                     $Condition = switch ($null -ne $FilterParts) {
@@ -144,7 +148,7 @@ function Get-CCMApplication {
                     foreach ($AppFound in $applications) {
                         $AppToReturn = switch ($null -ne $Condition) {
                             $true {
-                                switch (. $Condition) {
+                                switch ($Condition.Invoke()) {
                                     $true {
                                         $AppFound
                                     }

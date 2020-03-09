@@ -1,31 +1,41 @@
 function Invoke-CCMResetPolicy {
     <#
-    .SYNOPSIS
-        Invokes a ResetPolicy for the MEMCM client
-    .DESCRIPTION
-        This function will force a complete policy reset on a client for multiple computers using CIM queries.
-        You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
-    .PARAMETER ResetType
-        Determins the policy reset type.
+        .SYNOPSIS
+            Invokes a ResetPolicy for the MEMCM client
+        .DESCRIPTION
+            This function will force a complete policy reset on a client for multiple computers using CIM queries.
+            You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
+        .PARAMETER ResetType
+            Determins the policy reset type.
 
-        'Purge' will wipe all policy from the machine, forcing a complete redownload, and rebuilt.
+            'Purge' will wipe all policy from the machine, forcing a complete redownload, and rebuilt.
 
-        'ForceFull' will simply force the next policy refresh to be a full instead of a delta.
+            'ForceFull' will simply force the next policy refresh to be a full instead of a delta.
 
-        https://docs.microsoft.com/en-us/previous-versions/system-center/developer/cc143785%28v%3dmsdn.10%29
-    .PARAMETER CimSession
-        Provides CimSession to perform a policy reset on
-    .PARAMETER ComputerName
-        Provides computer names to perform a policy reset on
-    .EXAMPLE
-        C:\PS> Invoke-CCMResetPolicy
-            Reset the policy on the local machine and restarts CCMExec
-    .NOTES
-        FileName:    Invoke-CCMResetPolicy.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2019-10-30
-        Updated:     2020-01-11
+            https://docs.microsoft.com/en-us/previous-versions/system-center/developer/cc143785%28v%3dmsdn.10%29
+        .PARAMETER CimSession
+            Provides CimSession to perform a policy reset on
+        .PARAMETER ComputerName
+            Provides computer names to perform a policy reset on
+        .PARAMETER PSSession
+            Provides PSSession to perform a policy reset on
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Invoke-CCMResetPolicy
+                Reset the policy on the local machine and restarts CCMExec
+        .NOTES
+            FileName:    Invoke-CCMResetPolicy.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2019-10-30
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -36,7 +46,13 @@ function Invoke-CCMResetPolicy {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $uFlags = switch ($ResetType) {
@@ -55,43 +71,21 @@ function Invoke-CCMResetPolicy {
                 uFlags = [uint32]$uFlags
             }
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Invoke-CCMResetPolicy'
-        }
-        $ConnectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $ConnectionSplat.Remove('ComputerName')
-                                $ConnectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $ConnectionSplat.Remove('CimSession')
-                                $ConnectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $ConnectionSplat.Remove('CimSession')
-                            $ConnectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $ConnectionSplat.Remove('ComputerName')
-                    $ConnectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['PolicyReset'] = $false
@@ -102,8 +96,14 @@ function Invoke-CCMResetPolicy {
                             Invoke-CimMethod @policyResetSplat
                         }
                         $false {
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create([string]::Format('Invoke-CCMResetPolicy -ResetType {0}', $ResetType))
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                            $invokeCommandSplat = @{
+                                ArgumentList = $policyResetSplat
+                                ScriptBlock  = {
+                                    param($policyResetSplat)
+                                    Invoke-CimMethod @policyResetSplat
+                                }
+                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                     if ($Invocation) {

@@ -1,39 +1,44 @@
-function Get-CCMCurrentManagementPoint {
+function Set-CCMClientAlwaysOnInternet {
     <#
         .SYNOPSIS
-            Returns the current assigned MP from a client
+            Set the ClientAlwaysOnInternet registry key on a computer
         .DESCRIPTION
-            This function will return the current assigned MP for the client using CIM. 
+            This function leverages the Set-CCMRegistryProperty function in order to configure
+            the ClientAlwaysOnInternet property for the MEMCM Client.
+        .PARAMETER Status
+            Determines if the setting should be Enabled or Disabled
         .PARAMETER CimSession
-            Provides CimSessions to gather the current assigned MP from
+            Provides CimSessions to set the ClientAlwaysOnInternet setting for
         .PARAMETER ComputerName
-            Provides computer names to gather the current assigned MP from
+            Provides computer names to set the ClientAlwaysOnInternet setting for
         .PARAMETER PSSession
-            Provides PSSessions to gather the current assigned MP from
+            Provides PSSessions to set the ClientAlwaysOnInternet setting for
         .PARAMETER ConnectionPreference
             Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
             is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
             pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
             falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to. 
+            the ComputerName parameter is passed to.
         .EXAMPLE
-            C:\PS> Get-CCMCurrentManagementPoint
-                Returns the current assigned MP from local computer
+            C:\PS> Set-CCMClientAlwaysOnInternet -Status Enabled
+                Sets ClientAlwaysOnInternet to Enabled for the local computer
         .EXAMPLE
-            C:\PS> Get-CCMCurrentManagementPoint -ComputerName 'Workstation1234','Workstation4321'
-                Returns the current assigned MP from Workstation1234, and Workstation4321
+            C:\PS> Set-CCMClientAlwaysOnInternet -ComputerName 'Workstation1234','Workstation4321' -Status Disabled
+                Sets ClientAlwaysOnInternet to Disabled for 'Workstation1234', and 'Workstation4321'
         .NOTES
-            FileName:    Get-CCMCurrentManagementPoint.ps1
+            FileName:    Set-CCMClientAlwaysOnInternet.ps1
             Author:      Cody Mathis
             Contact:     @CodyMathis123
-            Created:     2020-01-16
+            Created:     2020-02-13
             Updated:     2020-02-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
-    [Alias('Get-CCMCurrentMP', 'Get-CCMMP')]
-    param (
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Enabled', 'Disabled')]
+        [string]$Status,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -47,9 +52,21 @@ function Get-CCMCurrentManagementPoint {
         [string]$ConnectionPreference
     )
     begin {
-        $getCurrentMPSplat = @{
-            Namespace = 'root\CCM'
-            Query     = 'SELECT CurrentManagementPoint FROM SMS_Authority'
+        $Enablement = switch ($Status) {
+            'Enabled' {
+                1
+            }
+            'Disabled' {
+                0
+            }
+        }
+        $SetAlwaysOnInternetSplat = @{
+            Force        = $true
+            PropertyType = 'DWORD'
+            Property     = 'ClientAlwaysOnInternet'
+            Value        = $Enablement
+            Key          = 'SOFTWARE\Microsoft\CCM\Security'
+            RegRoot      = 'HKEY_LOCAL_MACHINE'
         }
     }
     process {
@@ -65,31 +82,12 @@ function Get-CCMCurrentManagementPoint {
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
-            $Result = [ordered]@{ }
-            $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentMP = switch ($Computer -eq $env:ComputerName) {
-                    $true {
-                        Get-CimInstance @getCurrentMPSplat @connectionSplat
-                    }
-                    $false {
-                        Get-CCMCimInstance @getCurrentMPSplat @connectionSplat
-                    }
-                }
-                if ($CurrentMP -is [Object] -and $CurrentMP.Count -gt 0) {
-                    foreach ($MP in $CurrentMP) {
-                        $Result['CurrentManagementPoint'] = $MP.CurrentManagementPoint
-                        [PSCustomObject]$Result
-                    }
-                }
-                else {
-                    Write-Warning "No Management Point infomration found for $Computer"
-                }
+                Set-CCMRegistryProperty @SetAlwaysOnInternetSplat @connectionSplat
             }
             catch {
-                $ErrorMessage = $_.Exception.Message
-                Write-Error $ErrorMessage
+                Write-Error "Failure to set MEMCM ClientAlwaysOnInternet to $Enablement for $Computer - $($_.Exception.Message)"
             }
         }
     }

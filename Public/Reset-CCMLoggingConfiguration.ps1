@@ -1,25 +1,35 @@
 function Reset-CCMLoggingConfiguration {
     <#
-    .SYNOPSIS
-        Reset ConfigMgr client log configuration for computers via CIM
-    .DESCRIPTION
-        This function will allow you to reset the ConfigMgr client log configuration for multiple computers using CIM queries.
-        You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
+        .SYNOPSIS
+            Reset ConfigMgr client log configuration for computers via CIM
+        .DESCRIPTION
+            This function will allow you to reset the ConfigMgr client log configuration for multiple computers using CIM queries.
+            You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
 
-        The reset will set the log director to <client install directory\logs, max log size to 250000 byes, log level to 1, and max log history to 1
-    .PARAMETER CimSession
-        Provides CimSession to reset log configuration for
-    .PARAMETER ComputerName
-        Provides computer names to reset log configuration for
-    .EXAMPLE
-        C:\PS> Reset-CCMLoggingConfiguration
-            Resets local computer client logging configuration
-    .NOTES
-        FileName:    Reset-CCMLoggingConfiguration.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-11
-        Updated:     2020-01-18
+            The reset will set the log director to <client install directory\logs, max log size to 250000 byes, log level to 1, and max log history to 1
+        .PARAMETER CimSession
+            Provides CimSession to reset log configuration for
+        .PARAMETER ComputerName
+            Provides computer names to reset log configuration for
+        .PARAMETER PSSession
+            Provides PSSession to reset log configuration for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            C:\PS> Reset-CCMLoggingConfiguration
+                Resets local computer client logging configuration
+        .NOTES
+            FileName:    Reset-CCMLoggingConfiguration.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-11
+            Updated:     2020-03-02
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
@@ -27,7 +37,13 @@ function Reset-CCMLoggingConfiguration {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $resetLogConfigSplat = @{
@@ -36,43 +52,21 @@ function Reset-CCMLoggingConfiguration {
             MethodName  = 'ResetGlobalLoggingConfiguration'
             ErrorAction = 'Stop'
         }
-        $invokeCIMPowerShellSplat = @{
-            FunctionsToLoad = 'Reset-CCMLoggingConfiguration'
-        }
-        $ConnectionSplat = @{ }
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $ConnectionSplat.Remove('ComputerName')
-                                $ConnectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $ConnectionSplat.Remove('CimSession')
-                                $ConnectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $ConnectionSplat.Remove('CimSession')
-                            $ConnectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $ConnectionSplat.Remove('ComputerName')
-                    $ConnectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
             $Result['LogConfigChanged'] = $false
@@ -83,9 +77,14 @@ function Reset-CCMLoggingConfiguration {
                             Invoke-CimMethod @resetLogConfigSplat
                         }
                         $false {
-
-                            $invokeCIMPowerShellSplat['ScriptBlock'] = [scriptblock]::Create('Reset-CCMLoggingConfiguration')
-                            Invoke-CIMPowerShell @invokeCIMPowerShellSplat @ConnectionSplat
+                            $invokeCommandSplat = @{
+                                ScriptBlock = {
+                                    param($resetLogConfigSplat)
+                                    Invoke-CimMethod @resetLogConfigSplat
+                                }
+                                ArgumentList = $resetLogConfigSplat
+                            }
+                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
                     if ($Invocation) {

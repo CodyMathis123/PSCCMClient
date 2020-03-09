@@ -1,26 +1,37 @@
-function Get-CCMUpdate {
+function Get-CCMSoftwareUpdate {
     <#
-    .SYNOPSIS
-        Get pending SCCM patches for a machine
-    .DESCRIPTION
-        Uses CIM to find SCCM patches that are currently available on a machine.
-    .PARAMETER IncludeDefs
-        A switch that will determine if you want to include AV Definitions in your query
-    .PARAMETER CimSession
-        Computer CimSession(s) which you want to get pending SCCM patches for
-    .PARAMETER ComputerName
-        Computer name(s) which you want to get pending SCCM patches for
-    .EXAMPLE
-        PS C:\> Get-CCMUpdate -Computer Testing123
-        will return all non-AV Dev patches for computer Testing123
-    .NOTES
-        FileName:    Get-CCMUpdate.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-01-15
-        Updated:     2020-01-17
+        .SYNOPSIS
+            Get pending MEMCM patches for a machine
+        .DESCRIPTION
+            Uses CIM to find MEMCM patches that are currently available on a machine.
+        .PARAMETER IncludeDefs
+            A switch that will determine if you want to include AV Definitions in your query
+        .PARAMETER CimSession
+            Computer CimSession(s) which you want to get pending MEMCM patches for
+        .PARAMETER ComputerName
+            Computer name(s) which you want to get pending MEMCM patches for
+        .PARAMETER PSSesison
+            PSSesisons which you want to get pending MEMCM patches for
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
+        .EXAMPLE
+            PS C:\> Get-CCMSoftwareUpdate -Computer Testing123
+            will return all non-AV Dev patches for computer Testing123
+        .NOTES
+            FileName:    Get-CCMSoftwareUpdate.ps1
+            Author:      Cody Mathis
+            Contact:     @CodyMathis123
+            Created:     2020-01-15
+            Updated:     2020-03-01
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
+    [Alias('Get-CCMUpdate')]
     param(
         [Parameter(Mandatory = $false)]
         [switch]$IncludeDefs,
@@ -28,7 +39,13 @@ function Get-CCMUpdate {
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-        [string[]]$ComputerName = $env:ComputerName
+        [string[]]$ComputerName = $env:ComputerName,
+        [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
+        [Alias('Session')]
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $EvaluationStateMap = @{
@@ -79,7 +96,6 @@ function Get-CCMUpdate {
             }
         }
 
-        $ConnectionSplat = @{ }
         $getUpdateSplat = @{
             Filter    = $Filter
             Namespace = 'root\CCM\ClientSDK'
@@ -88,41 +104,30 @@ function Get-CCMUpdate {
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
-            $Computer = switch ($PSCmdlet.ParameterSetName) {
-                'ComputerName' {
-                    Write-Output -InputObject $Connection
-                    switch ($Connection -eq $env:ComputerName) {
-                        $false {
-                            if ($ExistingCimSession = Get-CimSession -ComputerName $Connection -ErrorAction Ignore) {
-                                Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                                $ConnectionSplat.Remove('ComputerName')
-                                $ConnectionSplat['CimSession'] = $ExistingCimSession
-                            }
-                            else {
-                                Write-Verbose "No active CimSession found for $Connection - falling back to -ComputerName parameter for CIM cmdlets"
-                                $ConnectionSplat.Remove('CimSession')
-                                $ConnectionSplat['ComputerName'] = $Connection
-                            }
-                        }
-                        $true {
-                            $ConnectionSplat.Remove('CimSession')
-                            $ConnectionSplat.Remove('ComputerName')
-                            Write-Verbose 'Local computer is being queried - skipping computername, and cimsession parameter'
-                        }
-                    }
-                }
-                'CimSession' {
-                    Write-Verbose "Active CimSession found for $Connection - Passing CimSession to CIM cmdlets"
-                    Write-Output -InputObject $Connection.ComputerName
-                    $ConnectionSplat.Remove('ComputerName')
-                    $ConnectionSplat['CimSession'] = $Connection
+            $getConnectionInfoSplat = @{
+                $PSCmdlet.ParameterSetName = $Connection
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
                 }
             }
+            $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
+            $Computer = $ConnectionInfo.ComputerName
+            $connectionSplat = $ConnectionInfo.connectionSplat
+
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$MissingUpdates = Get-CimInstance @getUpdateSplat @ConnectionSplat
+                [ciminstance[]]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
+                    $true {
+                        Get-CimInstance @getUpdateSplat @connectionSplat
+                    }
+                    $false {
+                        Get-CCMCimInstance @getUpdateSplat @connectionSplat
+                    }
+                }
                 if ($MissingUpdates -is [Object] -and $MissingUpdates.Count -gt 0) {
                     foreach ($Update in $MissingUpdates) {
                         $Result['ArticleID'] = $Update.ArticleID
