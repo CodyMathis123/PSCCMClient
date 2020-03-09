@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.3.0'
+    ModuleVersion     = '0.3.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -185,6 +185,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.3.1
+* Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
