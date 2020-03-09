@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.2.4'
+    ModuleVersion     = '0.3.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -185,7 +185,7 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-v0.2.4
+v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
             This function is used internally to return connection info, whether it is a CimSession, PSSession, or just computername
