@@ -12,7 +12,7 @@ Function Get-CCMLogFile {
     .PARAMETER Filter
         A custom regex filter to use when reading in log lines
     .PARAMETER Severity
-        A filter to return only messages of a particular severity. By default, all severities are returned. 
+        A filter to return only messages of a particular severity. By default, all severities are returned.
     .EXAMPLE
         PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
             Returns the CCMExec.log as a PSCustomObject
@@ -137,13 +137,14 @@ Function Get-CCMLogFile {
                             $LogLine = [ordered]@{ }
                             # Rebuild the LogLine into a hash table
                             $LogLine['Message'] = $Message
-                            $LogLine['Type'] = [Severity]$LogLineSubArray[9]
+                            $Type = [Severity]$LogLineSubArray[9]
+                            $LogLine['Type'] = $Type
                             $LogLine['Component'] = $LogLineSubArray[5]
                             $LogLine['Thread'] = $LogLineSubArray[11]
 
                             # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
                             switch ($Severity) {
-                                ([Severity]$LogLineSubArray[9]) {
+                                ($Type) {
                                     switch ($PSCmdlet.ParameterSetName) {
                                         ParseSMSTS {
                                             switch -regex ($Message) {
