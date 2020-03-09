@@ -1,6 +1,6 @@
 # PSCCMClient PowerShell Module
 
-PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below example, as well as an array of Computer Names or CimSessions.
+PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below example, as well as an array of Computer Names, CimSessions, or PSSessions.
 
 ```Powershell
 Get-CCMUpdate | Invoke-CCMUpdate
