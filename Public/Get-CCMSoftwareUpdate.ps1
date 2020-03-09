@@ -28,7 +28,7 @@ function Get-CCMSoftwareUpdate {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-15
-            Updated:     2020-03-01
+            Updated:     2020-03-09
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMUpdate')]
@@ -92,7 +92,7 @@ function Get-CCMSoftwareUpdate {
                 "ComplianceState=0"
             }
             Default {
-                "NOT Name LIKE '%Definition%' and ComplianceState=0"
+                "NOT (Name LIKE '%Definition%' OR Name Like 'Security Intelligence Update%') and ComplianceState=0"
             }
         }
 
