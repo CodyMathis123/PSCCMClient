@@ -187,7 +187,6 @@
             ReleaseNotes = @'
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
-* Add new *ArgList based parameters to the New-LoopAction function
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
