@@ -8,7 +8,7 @@ function Get-CCMSoftwareUpdateGroup {
         .PARAMETER AssignmentName
             Provide an array of Software Update Group names to query for
         .PARAMETER AssignmentID
-            Provide an array of Software Update Group assignemnt ID to query for
+            Provide an array of Software Update Group assignment ID to query for
         .PARAMETER CimSession
             Computer CimSession(s) which you want to get information for the Software Update Groups
         .PARAMETER ComputerName
@@ -31,7 +31,7 @@ function Get-CCMSoftwareUpdateGroup {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-21
-            Updated:     2020-02-27
+            Updated:     2020-03-17
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMSUG')]
