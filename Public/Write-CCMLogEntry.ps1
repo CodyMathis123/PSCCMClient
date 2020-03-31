@@ -10,7 +10,7 @@ Function Write-CCMLogEntry {
         .PARAMETER Severity
             Severity for the log entry. 1 for Informational, 2 for Warning, and 3 for Error.
         .PARAMETER Component
-            Stage that the log entry is occuring in, log refers to as 'component.'
+            Stage that the log entry is occurring in, log refers to as 'component.'
         .PARAMETER FileName
             Name of the log file that the entry will written to - note this should not be the full path.
         .PARAMETER Folder
