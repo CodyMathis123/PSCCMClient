@@ -17,7 +17,7 @@ Function Write-CCMLogEntry {
             Path to the folder where the log will be stored.
         .PARAMETER Bias
             Set timezone Bias to ensure timestamps are accurate. This defaults to the local machines bias, but one can be provided. It can be
-            helperful to gather the bias once, and store it in a variable that is passed to this parameter as part of a splat, or $PSDefaultParameterValues
+            helpful to gather the bias once, and store it in a variable that is passed to this parameter as part of a splat, or $PSDefaultParameterValues
         .PARAMETER MaxLogFileSize
             Maximum size of log file before it rolls over. Set to 0 to disable log rotation. Defaults to 5MB
         .PARAMETER LogsToKeep
