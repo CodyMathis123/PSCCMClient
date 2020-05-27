@@ -30,7 +30,7 @@ function Get-CCMClientInfo {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-24
-            Updated:     2020-03-03
+            Updated:     2020-05-27
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (

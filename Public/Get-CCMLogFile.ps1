@@ -39,7 +39,7 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-09-19
-            Updated:  2020-03-06
+            Updated:  2020-05-27
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     param (
@@ -116,10 +116,14 @@ Function Get-CCMLogFile {
                 (([Regex]::Match($LogFileRaw, 'LOG\[(.*?)\]LOG(.*?)time(.*?)date')).Success) {
                     # split on what we know is a line beginning
                     switch -regex ([regex]::Split($LogFileRaw, '<!\[LOG\[')) {
+                        #region ignore empty lines in file
                         '^\s*$' {
                             # ignore empty lines
                             continue
                         }
+                        #endregion ignore empty lines in file
+
+                        #region process non-empty lines from file
                         default {
                             <#
                                 split Log line into an array on what we know is the end of the message section
@@ -142,10 +146,11 @@ Function Get-CCMLogFile {
                             $LogLine['Component'] = $LogLineSubArray[5]
                             $LogLine['Thread'] = $LogLineSubArray[11]
 
-                            # if we are Parsing SMSTS then we will only pull out messages that match 'win32 code 0|failed to run the action'
+                            #region prase log based on severity, which defaults to any severity if the parameter is not specified
                             switch ($Severity) {
                                 ($Type) {
                                     switch ($PSCmdlet.ParameterSetName) {
+                                        #region if ParseSMSTS specified, check message for known string for SMS step success / failure
                                         ParseSMSTS {
                                             switch -regex ($Message) {
                                                 'win32 code 0|failed to run the action' {
@@ -159,6 +164,9 @@ Function Get-CCMLogFile {
                                                 }
                                             }
                                         }
+                                        #endregion if ParseSMSTS specified, check message for known string for SMS step success / failure
+
+                                        #region if CustomerFilter is specified, check message against the string as a regex match
                                         CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
@@ -172,19 +180,25 @@ Function Get-CCMLogFile {
                                                 }
                                             }
                                         }
+                                        #endregion if CustomerFilter is specified, check message against the string as a regex match
+
+                                        #region if no filtering is provided then the we return all messages
                                         default {
                                             $DateString = $LogLineSubArray[3]
                                             $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
+                                        #endregion if no filtering is provided then the we return all messages
                                     }
                                 }
                                 default {
                                     continue
                                 }
                             }
+                            #endregion prase log based on severity, which defaults to any severity if the parameter is not specified
                         }
+                        #endregion process non-empty lines from file
                     }
                 }
                 #endregion parse a 'typical' MEMCM log
@@ -192,10 +206,14 @@ Function Get-CCMLogFile {
                 #region parse a 'simple' MEMCM log, usually found on site systems
                 (([Regex]::Match($LogFileRaw, '\$\$\<(.*?)\>\<thread=')).Success) {
                     switch -regex ($LogFileRaw -split [System.Environment]::NewLine) {
+                        #region ignore empty lines in file
                         '^\s*$' {
                             # ignore empty lines
                             continue
                         }
+                        #endregion ignore empty lines in file
+
+                        #region process non-empty lines from file
                         default {
                             <#
                                 split Log line into an array
@@ -211,10 +229,14 @@ Function Get-CCMLogFile {
                             $LogLineSubArray = $LogLineArray[1].Split('><', [System.StringSplitOptions]::RemoveEmptyEntries)
 
                             switch -regex ($Message) {
+                                #region ignore empty message lines
                                 '^\s*$' {
                                     # ignore empty messages
                                     continue
                                 }
+                                #endregion ignore empty message lines
+
+                                #region process non-empty message lines
                                 default {
                                     $LogLine = [ordered]@{ }
                                     # Rebuild the LogLine into a hash table
@@ -223,7 +245,9 @@ Function Get-CCMLogFile {
                                     $LogLine['Component'] = $LogLineSubArray[0].Trim()
                                     $LogLine['Thread'] = ($LogLineSubArray[2].Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
 
+                                    #region parse the log based on our Parameter Set Name
                                     switch ($PSCmdlet.ParameterSetName) {
+                                        #region if CustomerFilter is specified, check message against the string as a regex match
                                         CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
@@ -239,6 +263,9 @@ Function Get-CCMLogFile {
                                                 }
                                             }
                                         }
+                                        #endregion if CustomerFilter is specified, check message against the string as a regex match
+
+                                        #region if no filtering is provided then the we return all messages
                                         default {
                                             $DateTimeString = $LogLineSubArray[1]
                                             $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
@@ -247,10 +274,14 @@ Function Get-CCMLogFile {
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
+                                        #endregion if no filtering is provided then the we return all messages
                                     }
+                                    #endregion parse the log based on our Parameter Set Name
                                 }
+                                #region process non-empty message lines
                             }
                         }
+                        #endregion process non-empty lines from file
                     }
                 }
                 #endregion parse a 'simple' MEMCM log, usually found on site systems
