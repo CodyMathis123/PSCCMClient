@@ -185,7 +185,7 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-v0.3.!
+v0.3.1
 * Improve the region documentation in Get-CCMLogFile
 * Fix function reference in Get-CCMClientInfo
 v0.3.0
