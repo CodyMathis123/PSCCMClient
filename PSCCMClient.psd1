@@ -185,6 +185,9 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.3.!
+* Improve the region documentation in Get-CCMLogFile
+* Fix function reference in Get-CCMClientInfo
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
