@@ -39,7 +39,7 @@ Function Get-CCMLogFile {
             Author:   Cody Mathis
             Contact:  @CodyMathis123
             Created:  2019-09-19
-            Updated:  2020-05-27
+            Updated:  2020-07-06
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     param (
@@ -155,7 +155,7 @@ Function Get-CCMLogFile {
                                             switch -regex ($Message) {
                                                 'win32 code 0|failed to run the action' {
                                                     $DateString = $LogLineSubArray[3]
-                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                                    $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -171,7 +171,7 @@ Function Get-CCMLogFile {
                                             switch -regex ($Message) {
                                                 $Filter {
                                                     $DateString = $LogLineSubArray[3]
-                                                    $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                                    $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -185,7 +185,7 @@ Function Get-CCMLogFile {
                                         #region if no filtering is provided then the we return all messages
                                         default {
                                             $DateString = $LogLineSubArray[3]
-                                            $TimeString = ([regex]::Split($LogLineSubArray[1], '\+|-'))[0].Substring(0, 12)
+                                            $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
@@ -253,8 +253,8 @@ Function Get-CCMLogFile {
                                                 $Filter {
                                                     $DateTimeString = $LogLineSubArray[1]
                                                     $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
-                                                    $DateString = $DateTimeStringArray[0].ToString()
-                                                    $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
+                                                    $DateString = $DateTimeStringArray[0]
+                                                    $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                                     [pscustomobject]$LogLine
                                                 }
@@ -269,8 +269,8 @@ Function Get-CCMLogFile {
                                         default {
                                             $DateTimeString = $LogLineSubArray[1]
                                             $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
-                                            $DateString = $DateTimeStringArray[0].ToString()
-                                            $TimeString = $DateTimeStringArray[1].ToString().Split('+|-', [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToString().Substring(0, 12)
+                                            $DateString = $DateTimeStringArray[0]
+                                            $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
                                             [pscustomobject]$LogLine
                                         }
