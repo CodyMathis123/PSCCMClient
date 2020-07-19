@@ -30,7 +30,7 @@ function Get-CCMClientInfo {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-24
-            Updated:     2020-03-03
+            Updated:     2020-05-26
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -104,7 +104,7 @@ function Get-CCMClientInfo {
             #endregion MEMCM Client Version
 
             #region Last Heartbeat Cycle
-            $LastHeartbeat = Get-CCMLastSoftwareInventory @connectionSplat
+            $LastHeartbeat = Get-CCMLastHeartbeat @connectionSplat
             $Result['DDR-LastCycleStartedDate'] = $LastHeartbeat.LastCycleStartedDate
             $Result['DDR-LastReportDate'] = $LastHeartbeat.LastReportDate
             $Result['DDR-LastMajorReportVersion'] = $LastHeartbeat.LastMajorReportVersion
