@@ -8629,8 +8629,8 @@ Function Test-CCMStaleLog {
             this function uses the CIM_DataFile so that SMB is NOT needed. Get-CimInstance is able to query for
             file information.
         .PARAMETER LogFileName
-            Name of the log file under the CCM\Logs directory to check. Not, online the log name is required. The path for the MEMCM logs
-            will be automatically identified. The .log extension is optional
+            Name of the log file under the CCM\Logs directory to check. The full path for the MEMCM logs
+            will be automatically identified. The .log extension is optional.
         .PARAMETER DaysStale
             Number of days of inactivity that you would consider the specified log stale.
         .PARAMETER HoursStale
@@ -8644,7 +8644,7 @@ Function Test-CCMStaleLog {
             When the CCMSetup file has activity within the last 24 hours, then we assume that, even though our desired
             log file was not found, it isn't stale because the MEMCM client is recently installed or repaired.
             If the CCMSetup is found, and has no activity, or is just not found, then we assume the desired
-            log is 'stale.' This additional chack can be disabled with this switch parameter.
+            log is 'stale.' This additional check can be disabled with this switch parameter.
         .PARAMETER CimSession
             CimSessions to check the stale log on.
         .PARAMETER ComputerName
