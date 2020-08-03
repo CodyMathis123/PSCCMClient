@@ -31,6 +31,9 @@ Function Get-CCMLogFile {
         .EXAMPLE
             PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
                 Return all log entires from the CAS.Log which pertain creating download requests for updates
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
+                Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
         .OUTPUTS
             [pscustomobject]
         .NOTES
