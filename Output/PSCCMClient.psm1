@@ -2988,48 +2988,58 @@ function Get-CCMLastSoftwareInventory {
 #Region '.\Public\Get-CCMLogFile.ps1' 0
 Function Get-CCMLogFile {
     <#
-    .SYNOPSIS
-        Parse Configuration Manager format logs
-    .DESCRIPTION
-        This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
-        searched and manipulated easily with PowerShell
-    .PARAMETER Path
-        Path to the log file(s) you would like to parse.
-    .PARAMETER ParseSMSTS
-        Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
-    .PARAMETER Filter
-        A custom regex filter to use when reading in log lines
-    .PARAMETER Severity
-        A filter to return only messages of a particular severity. By default, all severities are returned.
-    .EXAMPLE
-        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
-            Returns the CCMExec.log as a PSCustomObject
-    .EXAMPLE
-        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log'
-            Returns the AppEnforce.log and the AppDiscovery.log as a PSCustomObject
-    .EXAMPLE
-        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
-            Returns all the actions that ran according to the SMSTSLog provided
-    .EXAMPLE
-        PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
-            Return all log entires from the CAS.Log which pertain creating download requests for updates
-    .OUTPUTS
-        [pscustomobject]
-    .NOTES
-        I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
-        variance. I had to also balance speed and parsing.
+        .SYNOPSIS
+            Parse Configuration Manager format logs
+        .DESCRIPTION
+            This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
+            searched and manipulated easily with PowerShell
+        .PARAMETER Path
+            Path to the log file(s) you would like to parse.
+        .PARAMETER ParseSMSTS
+            Only pulls out the TS actions. This is for parsing an SMSTSLog specifically
+        .PARAMETER Filter
+            A custom regex filter to use when reading in log lines
+        .PARAMETER Severity
+            A filter to return only messages of a particular severity. By default, all severities are returned.
+        .PARAMETER TimestampGreaterThan
+            A [datetime] object that will filter the returned log lines. They will only be returned if they are greater than or 
+            equal to the provided [datetime]
+        .PARAMETER TimestampLessThan
+            A [datetime] object that will filter the returned log lines. They will only be returned if they are less than or 
+            equal to the provided [datetime]
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
+                Returns the CCMExec.log as a PSCustomObject
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log' | Sort-Object -Property Timestamp
+                Returns the AppEnforce.log and AppDiscovery.log as a PSCustomObject sorted by Timestamp
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
+                Returns all the actions that ran according to the SMSTSLog provided
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
+                Return all log entires from the CAS.Log which pertain creating download requests for updates
+        .EXAMPLE
+            PS C:\> Get-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
+                Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
+        .OUTPUTS
+            [pscustomobject[]]
+        .NOTES
+            I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
+            variance. I had to also balance speed and parsing.
 
-        With that said, it can still parse a typical MEMCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
-        Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of
-        flexibility and speed as well.
+            With that said, it can still parse a typical MEMCM log VERY quickly. Smaller logs are parsed in milliseconds in my testing.
+            Rolled over logs that are 5mb can be parsed in a couple seconds or less. The -Filter option provides a great deal of
+            flexibility and speed as well.
 
-            FileName: Get-CCMLogFile.ps1
-            Author:   Cody Mathis
-            Contact:  @CodyMathis123
-            Created:  2019-09-19
-            Updated:  2020-07-06
+                FileName: Get-CCMLogFile.ps1
+                Author:   Cody Mathis
+                Contact:  @CodyMathis123
+                Created:  2019-09-19
+                Updated:  2020-08-02
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
+    [OutputType([pscustomobject[]]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname', 'LogFilePath')]
@@ -3040,24 +3050,19 @@ Function Get-CCMLogFile {
         [string]$Filter,
         [Parameter(Mandatory = $false)]
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
-        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error')
+        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error'),
+        [Parameter(Mandatory = $false)]
+        [datetime]$TimestampGreaterThan,
+        [Parameter(Mandatory = $false)]
+        [datetime]$TimestampLessThan
     )
     begin {
-        try {
-            Add-Type -ErrorAction SilentlyContinue -TypeDefinition @"
-            public enum Severity
-            {
-                None,
-                Informational,
-                Warning,
-                Error
-            }
-"@
+        enum Severity {
+            None
+            Informational
+            Warning
+            Error
         }
-        catch {
-            Write-Verbose "Type Severity already exists"
-        }
-
         function Get-TimeStampFromLogLine {
             <#
             .SYNOPSIS
@@ -3078,7 +3083,7 @@ Function Get-CCMLogFile {
                 [Parameter(Mandatory = $true)]
                 [string]$TimeString
             )
-            $DateStringArray = [regex]::Split($DateString, '-')
+            $DateStringArray = $DateString.Split([char]45)
 
             $MonthParser = $DateStringArray[0] -replace '\d', 'M'
             $DayParser = $DateStringArray[1] -replace '\d', 'd'
@@ -3087,9 +3092,66 @@ Function Get-CCMLogFile {
             $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
             [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
         }
+
+        function Test-TimestampFilter {
+            <#
+                .SYNOPSIS
+                    Returns boolean based on timestamp meeting ge/le conditons
+                .DESCRIPTION
+                    This function is used to determine if a particular time stamp is less than or equal to, and/or greater than
+                    or equal to the specified timestamps
+                .PARAMETER TimeStamp
+                    The timestamp to compare as a [datetime] object
+                .PARAMETER GreaterThanDateTime
+                    A [datetime] object used to ensure the $Timestmap is greater than or equal to
+                .PARAMETER LessThanDateTime
+                    A [datetime] object used to ensure the $Timestmap is less than or equal to
+                .EXAMPLE
+                    C:\PS> Test-TimestampFilter -TimeStamp (get-date) -GreaterThanDateTime (get-date).AddDays(-1) -LessThanDateTime (get-date).AddDays(1)
+                        This will return a result of $True as we test if the current date is greater than 1 day ago, and less than 1 day from now
+                .OUTPUTS
+                    [bool]
+            #>
+            param(
+                [parameter(Mandatory = $true)]
+                [datetime]$TimeStamp,
+                [parameter(Mandatory = $false)]
+                [datetime]$TimestampGreaterThan,
+                [parameter(Mandatory = $false)]
+                [datetime]$TimestampLessThan
+            )
+            [array]$Result = switch ($PSBoundParameters.Keys) {
+                TimestampGreaterThan {
+                    $TimeStamp -ge $TimestampGreaterThan
+                }
+                TimestampLessThan {
+                    $TimeStamp -le $TimestampLessThan
+                }
+                default {
+                    $true
+                }
+            }
+
+            $Result.Contains($true) -and !$Result.Contains($false)
+        }
+
+        #region setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
+        $CheckTimestampFilter = $false
+        $TestTimestampSplat = @{}
+        switch ($PSBoundParameters.Keys) {
+            TimestampGreaterThan {
+                $CheckTimestampFilter = $true
+                $TestTimestampSplat.Add($PSItem, $TimestampGreaterThan)
+            }
+            TimestampLessThan {
+                $CheckTimestampFilter = $true
+                $TestTimestampSplat.Add($PSItem, $TimestampLessThan)
+            }
+        }
+        #endregion setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
     }
     process {
-        Foreach ($LogFile in $Path) {
+        foreach ($LogFile in $Path) {
             #region ingest log file with StreamReader. Quick, and prevents locks
             $File = [System.IO.File]::Open($LogFile, 'Open', 'Read', 'ReadWrite')
             $StreamReader = New-Object System.IO.StreamReader($File)
@@ -3099,9 +3161,9 @@ Function Get-CCMLogFile {
             #endregion ingest log file with StreamReader. Quick, and prevents locks
 
             #region perform a regex match to determine the 'type' of log we are working with and parse appropriately
-            switch ($true) {
+            switch -regex ($LogFileRaw) {
                 #region parse a 'typical' MEMCM log
-                (([Regex]::Match($LogFileRaw, 'LOG\[(.*?)\]LOG(.*?)time(.*?)date')).Success) {
+                'LOG\[(.*?)\]LOG(.*?)time(.*?)date' {
                     # split on what we know is a line beginning
                     switch -regex ([regex]::Split($LogFileRaw, '<!\[LOG\[')) {
                         #region ignore empty lines in file
@@ -3124,7 +3186,7 @@ Function Get-CCMLogFile {
                             $Message = $LogLineArray[0]
 
                             # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = [regex]::Split($LogLineArray[1], '"')
+                            $LogLineSubArray = $LogLineArray[1].Split([char]34)
 
                             $LogLine = [ordered]@{ }
                             # Rebuild the LogLine into a hash table
@@ -3144,8 +3206,19 @@ Function Get-CCMLogFile {
                                                 'win32 code 0|failed to run the action' {
                                                     $DateString = $LogLineSubArray[3]
                                                     $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    [pscustomobject]$LogLine
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    switch ($CheckTimestampFilter) {
+                                                        $true {
+                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                                $true {
+                                                                    [pscustomobject]$LogLine
+                                                                }
+                                                            }
+                                                        }
+                                                        $false {
+                                                            [pscustomobject]$LogLine
+                                                        }
+                                                    }
                                                 }
                                                 default {
                                                     continue
@@ -3160,8 +3233,19 @@ Function Get-CCMLogFile {
                                                 $Filter {
                                                     $DateString = $LogLineSubArray[3]
                                                     $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    [pscustomobject]$LogLine
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    switch ($CheckTimestampFilter) {
+                                                        $true {
+                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                                $true {
+                                                                    [pscustomobject]$LogLine
+                                                                }
+                                                            }
+                                                        }
+                                                        $false {
+                                                            [pscustomobject]$LogLine
+                                                        }
+                                                    }
                                                 }
                                                 default {
                                                     continue
@@ -3175,7 +3259,18 @@ Function Get-CCMLogFile {
                                             $DateString = $LogLineSubArray[3]
                                             $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            [pscustomobject]$LogLine
+                                            switch ($CheckTimestampFilter) {
+                                                $true {
+                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                        $true {
+                                                            [pscustomobject]$LogLine
+                                                        }
+                                                    }
+                                                }
+                                                $false {
+                                                    [pscustomobject]$LogLine
+                                                }
+                                            }
                                         }
                                         #endregion if no filtering is provided then the we return all messages
                                     }
@@ -3192,7 +3287,7 @@ Function Get-CCMLogFile {
                 #endregion parse a 'typical' MEMCM log
 
                 #region parse a 'simple' MEMCM log, usually found on site systems
-                (([Regex]::Match($LogFileRaw, '\$\$\<(.*?)\>\<thread=')).Success) {
+                '\$\$\<(.*?)\>\<thread=' {
                     switch -regex ($LogFileRaw -split [System.Environment]::NewLine) {
                         #region ignore empty lines in file
                         '^\s*$' {
@@ -3231,7 +3326,7 @@ Function Get-CCMLogFile {
                                     $LogLine['Message'] = $Message
                                     $LogLine['Type'] = [Severity]0
                                     $LogLine['Component'] = $LogLineSubArray[0].Trim()
-                                    $LogLine['Thread'] = ($LogLineSubArray[2].Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
+                                    $LogLine['Thread'] = ($LogLineSubArray[2].Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries))[0].Substring(7)
 
                                     #region parse the log based on our Parameter Set Name
                                     switch ($PSCmdlet.ParameterSetName) {
@@ -3240,11 +3335,22 @@ Function Get-CCMLogFile {
                                             switch -regex ($Message) {
                                                 $Filter {
                                                     $DateTimeString = $LogLineSubArray[1]
-                                                    $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                                    $DateTimeStringArray = $DateTimeString.Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries)
                                                     $DateString = $DateTimeStringArray[0]
                                                     $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine.TimeStamp = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    [pscustomobject]$LogLine
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    switch ($CheckTimestampFilter) {
+                                                        $true {
+                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                                $true {
+                                                                    [pscustomobject]$LogLine
+                                                                }
+                                                            }
+                                                        }
+                                                        $false {
+                                                            [pscustomobject]$LogLine
+                                                        }
+                                                    }
                                                 }
                                                 default {
                                                     continue
@@ -3256,11 +3362,22 @@ Function Get-CCMLogFile {
                                         #region if no filtering is provided then the we return all messages
                                         default {
                                             $DateTimeString = $LogLineSubArray[1]
-                                            $DateTimeStringArray = $DateTimeString.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+                                            $DateTimeStringArray = $DateTimeString.Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries)
                                             $DateString = $DateTimeStringArray[0]
                                             $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            [pscustomobject]$LogLine
+                                            switch ($CheckTimestampFilter) {
+                                                $true {
+                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                        $true {
+                                                            [pscustomobject]$LogLine
+                                                        }
+                                                    }
+                                                }
+                                                $false {
+                                                    [pscustomobject]$LogLine
+                                                }
+                                            }
                                         }
                                         #endregion if no filtering is provided then the we return all messages
                                     }
@@ -3278,7 +3395,7 @@ Function Get-CCMLogFile {
         }
     }
 }
-#EndRegion '.\Public\Get-CCMLogFile.ps1' 292
+#EndRegion '.\Public\Get-CCMLogFile.ps1' 409
 #Region '.\Public\Get-CCMLoggingConfiguration.ps1' 0
 function Get-CCMLoggingConfiguration {
     <#
@@ -6393,135 +6510,11 @@ function Invoke-CCMTriggerSchedule {
     }
 }
 #EndRegion '.\Public\Invoke-CCMTriggerSchedule.ps1' 121
-#Region '.\Public\Invoke-CIMPowerShell.ps1' 0
-function Invoke-CIMPowerShell {
-	<#
-		.SYNOPSIS
-			Invoke PowerShell scriptblocks over CIM
-		.DESCRIPTION
-			This function uses the 'Create' method of the Win32_Process class in order to remotely invoke PowerShell
-			scriptblocks. In order to return the object from the remote machine, Named Pipes are used, which requires
-			Port 445 to be open. 
-		.PARAMETER PipeName
-			The name of the 'NamedPipe' that will be used. By default this is a randomly generated GUID. 
-		.PARAMETER ScriptBlock
-			The scriptblock in which you want to invoke over CIM
-		.PARAMETER FunctionsToLoad
-			An array of 'Functions' you want to load into the remote command. For example, you might have a custom written
-			function to interact with a COM object that you want to load into the remote command. Instead of having an entire
-			scriptblock that recreates the function, you can simply specify the function in this parameter.
-		.PARAMETER Timeout
-			The timeout value before the connection will fail to return data over the NamedPipe
-		.PARAMETER CimSession
-			CimSession to invoke the remote code on
-		.PARAMETER ComputerName
-			Computer name to invoke the remote code on
-		.EXAMPLE
-			C:\PS> Invoke-CimPowerShell -Scriptblock { 
-				$Client = New-Object -ComObject Microsoft.SMS.Client
-				$Client.GetDNSSuffix()
-			 } -ComputerName Workstation123
-			 	Return the current DNS Suffix for the MEMCM on Workstation123 using the ComObject and a scriptblock
-		.EXAMPLE
-			C:\PS> Invoke-CimPowerShell -Scriptblock { Get-CCMDNSSuffix } -ComputerName Workstation123 -FunctionsToLoad Get-CCMDNSSuffix
-			 	Return the current DNS Suffix for the MEMCM on Workstation123 by loading our existing function that does this work
-        .NOTES
-            FileName:    Invoke-CIMPowerShell.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-07
-            Updated:     2020-02-12
-	#>
-	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
-	param
-	(
-		[Parameter(Mandatory = $false)]
-		$PipeName = ([guid]::NewGuid()).Guid.ToString(),
-		[Parameter(Mandatory = $true)]
-		[scriptblock]$ScriptBlock,
-		[Parameter(Mandatory = $false)]
-		[string[]]$FunctionsToLoad,
-		[Parameter(Mandatory = $false)]
-		[ValidateRange(1000, 900000)]
-		[int32]$Timeout = 120000,
-		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
-		[Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
-		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
-		[Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
-		[string[]]$ComputerName = $env:ComputerName
-	)
-	begin {
-		$invokeCommandSplat = @{
-			ClassName  = 'Win32_Process'
-			MethodName = 'Create'
-		}
-
-		$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CliXml', 'ConvertTo-Base64StringFromObject'
-		$HelperFunctions = switch ($PSBoundParameters.ContainsKey('FunctionsToLoad')) {
-			$true {
-				Convert-FunctionToString -FunctionToConvert $FunctionsToLoad
-			}
-		}
-
-		$ScriptBlockString = [string]::Format(@'
-		{0}
-
-		$namedPipe = New-Object System.IO.Pipes.NamedPipeServerStream "{1}", "Out"
-		$namedPipe.WaitForConnection()
-		$streamWriter = New-Object System.IO.StreamWriter $namedPipe
-		$streamWriter.AutoFlush = $true
-		$TempResultPreConversion = & {{
-			{2}
-
-			{3}
-		}}
-		$results = ConvertTo-Base64StringFromObject -inputObject $TempResultPreConversion
-		$streamWriter.WriteLine("$($results)")
-		$streamWriter.dispose()
-		$namedPipe.dispose()
-'@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock)
-
-		$scriptBlockPreEncoded = [scriptblock]::Create($ScriptBlockString)
-		$byteCommand = [System.Text.encoding]::UTF8.GetBytes($scriptBlockPreEncoded)
-		$encodedScriptBlock = [convert]::ToBase64string($byteCommand)
-	}
-	process {
-		foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly -Scope Local)) {
-			$getConnectionInfoSplat = @{
-				$PSCmdlet.ParameterSetName = $Connection
-			}
-			$ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
-			$Computer = $ConnectionInfo.ComputerName
-			$connectionSplat = $ConnectionInfo.connectionSplat
-
-			$invokeCommandSplat['Arguments'] = @{
-				CommandLine = [string]::Format("powershell.exe (invoke-command ([scriptblock]::Create([system.text.encoding]::UTF8.GetString([System.convert]::FromBase64string('{0}')))))", $encodedScriptBlock)
-			}
-
-			$null = Invoke-CimMethod @invokeCommandSplat @connectionSplat
-
-			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $Computer, "$($PipeName)", "In"
-			$namedPipe.Connect($timeout)
-			$streamReader = New-Object System.IO.StreamReader $namedPipe
-
-			while ($null -ne ($data = $streamReader.ReadLine())) {
-				$tempData = $data
-			}
-
-			$streamReader.dispose()
-			$namedPipe.dispose()
-
-			if (-not [string]::IsNullOrWhiteSpace($tempData)) {
-				ConvertFrom-Base64ToObject -inputString $tempData
-			}
-		}
-	}
-}
-#EndRegion '.\Public\Invoke-CIMPowerShell.ps1' 123
-#Region '.\Public\New-CCMCimSession.ps1' 0
+#Region '.\Public\New-CCMConnection.ps1' 0
 # TODO - Write Function
-# TODO - Support parallel
-#EndRegion '.\Public\New-CCMCimSession.ps1' 2
+# TODO - Support 
+# TODO - Create both a CimSession and a PSSession so that we can seamlessly move between functions that support one or the other
+#EndRegion '.\Public\New-CCMConnection.ps1' 3
 #Region '.\Public\New-LoopAction.ps1' 0
 function New-LoopAction {
     <#
