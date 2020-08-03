@@ -51,7 +51,7 @@ Function Get-CCMLogFile {
                 Updated:  2020-08-02
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
-    [OutputType([pscustomobject[]]
+    [OutputType([pscustomobject[]])]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname', 'LogFilePath')]
