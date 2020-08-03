@@ -147,7 +147,7 @@ Function Get-CCMLogFile {
             $Result.Contains($true) -and !$Result.Contains($false)
         }
 
-        #region setup the TestTimeStampSplat, if either param is specefied we will validate the timestamp
+        #region setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
         $CheckTimestampFilter = $false
         $TestTimestampSplat = @{}
         switch ($PSBoundParameters.Keys) {
@@ -160,7 +160,7 @@ Function Get-CCMLogFile {
                 $TestTimestampSplat.Add($PSItem, $TimestampLessThan)
             }
         }
-        #endregion setup the TestTimeStampSplat, if either param is specefied we will validate the timestamp
+        #endregion setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
     }
     process {
         foreach ($LogFile in $Path) {
