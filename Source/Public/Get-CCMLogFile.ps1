@@ -35,7 +35,7 @@ Function Get-CCMLogFile {
             PS C:\> Get-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
                 Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
         .OUTPUTS
-            [pscustomobject]
+            [pscustomobject[]]
         .NOTES
             I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
             variance. I had to also balance speed and parsing.
@@ -51,6 +51,7 @@ Function Get-CCMLogFile {
                 Updated:  2020-08-02
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
+    [OutputType([pscustomobject[]]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname', 'LogFilePath')]
