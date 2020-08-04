@@ -13,12 +13,6 @@ Function Get-CCMLogFile {
             A custom regex filter to use when reading in log lines
         .PARAMETER Severity
             A filter to return only messages of a particular severity. By default, all severities are returned.
-        .PARAMETER TimestampGreaterThan
-            A [datetime] object that will filter the returned log lines. They will only be returned if they are greater than or 
-            equal to the provided [datetime]
-        .PARAMETER TimestampLessThan
-            A [datetime] object that will filter the returned log lines. They will only be returned if they are less than or 
-            equal to the provided [datetime]
         .EXAMPLE
             PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
                 Returns the CCMExec.log as a PSCustomObject
@@ -31,9 +25,6 @@ Function Get-CCMLogFile {
         .EXAMPLE
             PS C:\> Get-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
                 Return all log entires from the CAS.Log which pertain creating download requests for updates
-        .EXAMPLE
-            PS C:\> Get-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
-                Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
         .OUTPUTS
             [pscustomobject[]]
         .NOTES
@@ -48,7 +39,7 @@ Function Get-CCMLogFile {
                 Author:   Cody Mathis
                 Contact:  @CodyMathis123
                 Created:  2019-09-19
-                Updated:  2020-08-02
+                Updated:  2020-08-04
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([pscustomobject[]])]
@@ -62,11 +53,7 @@ Function Get-CCMLogFile {
         [string]$Filter,
         [Parameter(Mandatory = $false)]
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
-        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error'),
-        [Parameter(Mandatory = $false)]
-        [datetime]$TimestampGreaterThan,
-        [Parameter(Mandatory = $false)]
-        [datetime]$TimestampLessThan
+        [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error')
     )
     begin {
         enum Severity {
@@ -104,63 +91,6 @@ Function Get-CCMLogFile {
             $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
             [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
         }
-
-        function Test-TimestampFilter {
-            <#
-                .SYNOPSIS
-                    Returns boolean based on timestamp meeting ge/le conditons
-                .DESCRIPTION
-                    This function is used to determine if a particular time stamp is less than or equal to, and/or greater than
-                    or equal to the specified timestamps
-                .PARAMETER TimeStamp
-                    The timestamp to compare as a [datetime] object
-                .PARAMETER GreaterThanDateTime
-                    A [datetime] object used to ensure the $Timestmap is greater than or equal to
-                .PARAMETER LessThanDateTime
-                    A [datetime] object used to ensure the $Timestmap is less than or equal to
-                .EXAMPLE
-                    C:\PS> Test-TimestampFilter -TimeStamp (get-date) -GreaterThanDateTime (get-date).AddDays(-1) -LessThanDateTime (get-date).AddDays(1)
-                        This will return a result of $True as we test if the current date is greater than 1 day ago, and less than 1 day from now
-                .OUTPUTS
-                    [bool]
-            #>
-            param(
-                [parameter(Mandatory = $true)]
-                [datetime]$TimeStamp,
-                [parameter(Mandatory = $false)]
-                [datetime]$TimestampGreaterThan,
-                [parameter(Mandatory = $false)]
-                [datetime]$TimestampLessThan
-            )
-            [array]$Result = switch ($PSBoundParameters.Keys) {
-                TimestampGreaterThan {
-                    $TimeStamp -ge $TimestampGreaterThan
-                }
-                TimestampLessThan {
-                    $TimeStamp -le $TimestampLessThan
-                }
-                default {
-                    $true
-                }
-            }
-
-            $Result.Contains($true) -and !$Result.Contains($false)
-        }
-
-        #region setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
-        $CheckTimestampFilter = $false
-        $TestTimestampSplat = @{}
-        switch ($PSBoundParameters.Keys) {
-            TimestampGreaterThan {
-                $CheckTimestampFilter = $true
-                $TestTimestampSplat.Add($PSItem, $TimestampGreaterThan)
-            }
-            TimestampLessThan {
-                $CheckTimestampFilter = $true
-                $TestTimestampSplat.Add($PSItem, $TimestampLessThan)
-            }
-        }
-        #endregion setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
     }
     process {
         foreach ($LogFile in $Path) {
@@ -219,18 +149,7 @@ Function Get-CCMLogFile {
                                                     $DateString = $LogLineSubArray[3]
                                                     $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    switch ($CheckTimestampFilter) {
-                                                        $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
-                                                                $true {
-                                                                    [pscustomobject]$LogLine
-                                                                }
-                                                            }
-                                                        }
-                                                        $false {
-                                                            [pscustomobject]$LogLine
-                                                        }
-                                                    }
+                                                    [pscustomobject]$LogLine
                                                 }
                                                 default {
                                                     continue
@@ -246,18 +165,7 @@ Function Get-CCMLogFile {
                                                     $DateString = $LogLineSubArray[3]
                                                     $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    switch ($CheckTimestampFilter) {
-                                                        $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
-                                                                $true {
-                                                                    [pscustomobject]$LogLine
-                                                                }
-                                                            }
-                                                        }
-                                                        $false {
-                                                            [pscustomobject]$LogLine
-                                                        }
-                                                    }
+                                                    [pscustomobject]$LogLine
                                                 }
                                                 default {
                                                     continue
@@ -271,18 +179,7 @@ Function Get-CCMLogFile {
                                             $DateString = $LogLineSubArray[3]
                                             $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            switch ($CheckTimestampFilter) {
-                                                $true {
-                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
-                                                        $true {
-                                                            [pscustomobject]$LogLine
-                                                        }
-                                                    }
-                                                }
-                                                $false {
-                                                    [pscustomobject]$LogLine
-                                                }
-                                            }
+                                            [pscustomobject]$LogLine
                                         }
                                         #endregion if no filtering is provided then the we return all messages
                                     }
@@ -351,18 +248,7 @@ Function Get-CCMLogFile {
                                                     $DateString = $DateTimeStringArray[0]
                                                     $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                                     $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                                    switch ($CheckTimestampFilter) {
-                                                        $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
-                                                                $true {
-                                                                    [pscustomobject]$LogLine
-                                                                }
-                                                            }
-                                                        }
-                                                        $false {
-                                                            [pscustomobject]$LogLine
-                                                        }
-                                                    }
+                                                    [pscustomobject]$LogLine
                                                 }
                                                 default {
                                                     continue
@@ -378,18 +264,7 @@ Function Get-CCMLogFile {
                                             $DateString = $DateTimeStringArray[0]
                                             $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
                                             $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
-                                            switch ($CheckTimestampFilter) {
-                                                $true {
-                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
-                                                        $true {
-                                                            [pscustomobject]$LogLine
-                                                        }
-                                                    }
-                                                }
-                                                $false {
-                                                    [pscustomobject]$LogLine
-                                                }
-                                            }
+                                            [pscustomobject]$LogLine
                                         }
                                         #endregion if no filtering is provided then the we return all messages
                                     }
