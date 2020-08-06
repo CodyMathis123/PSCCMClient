@@ -114,6 +114,7 @@ v0.3.1
 * Improve the region documentation in Get-CCMLogFile
 * Fix function reference in Get-CCMClientInfo	
 * Improve splitting performance in Get-CCMLogFile
+* Add timestamp filtering to Get-CCMLogFile
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
