@@ -48,7 +48,7 @@ Function Get-CCMLogFile {
                 Author:   Cody Mathis
                 Contact:  @CodyMathis123
                 Created:  2019-09-19
-                Updated:  2020-08-02
+                Updated:  2020-08-06
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([pscustomobject[]])]
@@ -78,23 +78,49 @@ Function Get-CCMLogFile {
         function Get-TimeStampFromLogLine {
             <#
             .SYNOPSIS
-                Parses a datetime object from an MEMCM log line
+                Parses a datetime object from a MEMCM log line
             .DESCRIPTION
                 This will return a datetime object if it is passed the part of an MEMCM log line that contains the date and time
-            .PARAMETER DateString
-                The Date String component from a MEMCM log line. For example, '01-31-2020'
-            .PARAMETER TimeString
-                 The Time String component from a MEMCM log line. For example, '14:20:41.461'
+            .PARAMETER LogLineSubArray
+                An array that represents the log line which we can pull date and time strings from
+            .PARAMETER Type
+                 The type of CM log we are parsing. This is either a FullCMTrace log or a SimpleCMTrace log
+
+                 Full is the typical format which most CM Logs are in, and the Simple one is found on site systems in some cases
             .EXAMPLE
-                PS C:\> Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray
-                return datetime object from the log line that was split into a subarray
+                PS C:\> Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type FullCMTrace
+                return datetime object from the log line that was split into a subarray which is in FullCMTrace format
             #>
             param (
                 [Parameter(Mandatory = $true)]
-                [string]$DateString,
+                [array]$LogLineSubArray,
                 [Parameter(Mandatory = $true)]
-                [string]$TimeString
+                [ValidateSet('FullCMTrace', 'SimpleCMTrace')]
+                [string]$Type
             )
+            try {
+                switch ($Type) {
+                    FullCMTrace {
+                        $DateString = $LogLineSubArray[3]
+                        $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
+                    }
+                    SimpleCMTrace {
+                        $DateTimeString = $LogLineSubArray[1]
+                        $DateTimeStringArray = $DateTimeString.Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries)
+                        $DateString = $DateTimeStringArray[0]
+                        $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
+                    }
+                }
+            }
+            catch {
+                if ($null -eq $DateString) {
+                    Write-Warning "Failed to split DateString [LogLineSubArray: $LogLineSubArray]"
+                }
+                elseif ($null -eq $TimeString) {
+                    Write-Warning "Failed to split TimeString [LogLineSubArray: $LogLineSubArray]"
+                }
+            }
+
             $DateStringArray = $DateString.Split([char]45)
 
             $MonthParser = $DateStringArray[0] -replace '\d', 'M'
@@ -102,7 +128,12 @@ Function Get-CCMLogFile {
 
             $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fff', $MonthParser, $DayParser)
             $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
-            [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
+            try {
+                [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
+            }
+            catch {
+                Write-Warning "Failed to parse [DateString: $DateString] [TimeString: $TimeString] with [Parser: $DateTimeFormat]"
+            }
         }
 
         function Test-TimestampFilter {
@@ -216,9 +247,7 @@ Function Get-CCMLogFile {
                                         ParseSMSTS {
                                             switch -regex ($Message) {
                                                 'win32 code 0|failed to run the action' {
-                                                    $DateString = $LogLineSubArray[3]
-                                                    $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type FullCMTrace
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
                                                             switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
@@ -243,9 +272,7 @@ Function Get-CCMLogFile {
                                         CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
-                                                    $DateString = $LogLineSubArray[3]
-                                                    $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type FullCMTrace
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
                                                             switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
@@ -268,9 +295,7 @@ Function Get-CCMLogFile {
 
                                         #region if no filtering is provided then the we return all messages
                                         default {
-                                            $DateString = $LogLineSubArray[3]
-                                            $TimeString = $LogLineSubArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type FullCMTrace
                                             switch ($CheckTimestampFilter) {
                                                 $true {
                                                     switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
@@ -346,11 +371,7 @@ Function Get-CCMLogFile {
                                         CustomFilter {
                                             switch -regex ($Message) {
                                                 $Filter {
-                                                    $DateTimeString = $LogLineSubArray[1]
-                                                    $DateTimeStringArray = $DateTimeString.Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries)
-                                                    $DateString = $DateTimeStringArray[0]
-                                                    $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                                    $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type SimpleCMTrace
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
                                                             switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
@@ -373,11 +394,7 @@ Function Get-CCMLogFile {
 
                                         #region if no filtering is provided then the we return all messages
                                         default {
-                                            $DateTimeString = $LogLineSubArray[1]
-                                            $DateTimeStringArray = $DateTimeString.Split([char]32, [System.StringSplitOptions]::RemoveEmptyEntries)
-                                            $DateString = $DateTimeStringArray[0]
-                                            $TimeString = $DateTimeStringArray[1].Split([char]43, [char]45, [System.StringSplitOptions]::RemoveEmptyEntries)[0].Substring(0, 12)
-                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -DateString $DateString -TimeString $TimeString
+                                            $LogLine['TimeStamp'] = Get-TimeStampFromLogLine -LogLineSubArray $LogLineSubArray -Type SimpleCMTrace
                                             switch ($CheckTimestampFilter) {
                                                 $true {
                                                     switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
