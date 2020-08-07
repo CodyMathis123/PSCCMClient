@@ -1,4 +1,3 @@
-# ENHANCE - Rework the 'prefer' option?
 function Get-CCMConnection {
     <#
     .SYNOPSIS

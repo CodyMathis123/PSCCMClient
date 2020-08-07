@@ -1,0 +1,4 @@
+enum CMLogType {
+    FullCMTrace
+    SimpleCMTrace
+}

@@ -69,7 +69,7 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('ConvertFrom-CCMSchedule','Get-CCMApplication','Get-CCMBaseline','Get-CCMCacheContent','Get-CCMCacheInfo','Get-CCMCimInstance','Get-CCMClientDirectory','Get-CCMClientInfo','Get-CCMClientVersion','Get-CCMCurrentManagementPoint','Get-CCMCurrentSoftwareUpdatePoint','Get-CCMCurrentWindowAvailableTime','Get-CCMDNSSuffix','Get-CCMExecStartupTime','Get-CCMGUID','Get-CCMLastHardwareInventory','Get-CCMLastHeartbeat','Get-CCMLastScheduleTrigger','Get-CCMLastSoftwareInventory','Get-CCMLogFile','Get-CCMLoggingConfiguration','Get-CCMMaintenanceWindow','Get-CCMPackage','Get-CCMPrimaryUser','Get-CCMProvisioningMode','Get-CCMRegistryProperty','Get-CCMServiceWindow','Get-CCMSite','Get-CCMSoftwareUpdate','Get-CCMSoftwareUpdateGroup','Get-CCMSoftwareUpdateSettings','Get-CCMTaskSequence','Invoke-CCMApplication','Invoke-CCMBaseline','Invoke-CCMClientAction','Invoke-CCMCommand','Invoke-CCMPackage','Invoke-CCMResetPolicy','Invoke-CCMSoftwareUpdate','Invoke-CCMTaskSequence','Invoke-CCMTriggerSchedule','New-CCMConnection','New-LoopAction','Remove-CCMCacheContent','Repair-CCMCacheLocation','Reset-CCMGUID','Reset-CCMLoggingConfiguration','Set-CCMCacheLocation','Set-CCMCacheSize','Set-CCMClientAlwaysOnInternet','Set-CCMDNSSuffix','Set-CCMLoggingConfiguration','Set-CCMManagementPoint','Set-CCMProvisioningMode','Set-CCMRegistryProperty','Set-CCMSite','Test-CCMIsClientAlwaysOnInternet','Test-CCMIsClientOnInternet','Test-CCMIsWindowAvailableNow','Test-CCMStaleLog','Write-CCMLogEntry')
+    FunctionsToExport = @('ConvertFrom-CCMLogFile','ConvertFrom-CCMSchedule','Get-CCMApplication','Get-CCMBaseline','Get-CCMCacheContent','Get-CCMCacheInfo','Get-CCMCimInstance','Get-CCMClientDirectory','Get-CCMClientInfo','Get-CCMClientVersion','Get-CCMCurrentManagementPoint','Get-CCMCurrentSoftwareUpdatePoint','Get-CCMCurrentWindowAvailableTime','Get-CCMDNSSuffix','Get-CCMExecStartupTime','Get-CCMGUID','Get-CCMLastHardwareInventory','Get-CCMLastHeartbeat','Get-CCMLastScheduleTrigger','Get-CCMLastSoftwareInventory','Get-CCMLoggingConfiguration','Get-CCMMaintenanceWindow','Get-CCMPackage','Get-CCMPrimaryUser','Get-CCMProvisioningMode','Get-CCMRegistryProperty','Get-CCMServiceWindow','Get-CCMSite','Get-CCMSoftwareUpdate','Get-CCMSoftwareUpdateGroup','Get-CCMSoftwareUpdateSettings','Get-CCMTaskSequence','Invoke-CCMApplication','Invoke-CCMBaseline','Invoke-CCMClientAction','Invoke-CCMCommand','Invoke-CCMPackage','Invoke-CCMResetPolicy','Invoke-CCMSoftwareUpdate','Invoke-CCMTaskSequence','Invoke-CCMTriggerSchedule','New-CCMConnection','New-LoopAction','Remove-CCMCacheContent','Repair-CCMCacheLocation','Reset-CCMGUID','Reset-CCMLoggingConfiguration','Set-CCMCacheLocation','Set-CCMCacheSize','Set-CCMClientAlwaysOnInternet','Set-CCMDNSSuffix','Set-CCMLoggingConfiguration','Set-CCMManagementPoint','Set-CCMProvisioningMode','Set-CCMRegistryProperty','Set-CCMSite','Test-CCMIsClientAlwaysOnInternet','Test-CCMIsClientOnInternet','Test-CCMIsWindowAvailableNow','Test-CCMStaleLog','Write-CCMLogEntry')
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport   = @()
@@ -78,7 +78,7 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMCB','Get-CCMCurrentMP','Get-CCMMP','Get-CCMCurrentSUP','Get-CCMSUP','Get-CCMLastHINV','Get-CCMLastDDR','Get-CCMLastSINV','Get-CCMMW','Get-CIMRegistryProperty','Get-CCMUpdate','Get-CCMSUG','Invoke-CCMUpdate','Set-CCMMP','Set-CIMRegistryProperty')
+    AliasesToExport   = @('Get-CCMLogEntry','Get-CCMCB','Get-CCMCurrentMP','Get-CCMMP','Get-CCMCurrentSUP','Get-CCMSUP','Get-CCMLastHINV','Get-CCMLastDDR','Get-CCMLastSINV','Get-CCMMW','Get-CIMRegistryProperty','Get-CCMUpdate','Get-CCMSUG','Invoke-CCMUpdate','Set-CCMMP','Set-CIMRegistryProperty')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -203,6 +203,5 @@ v0.1.0
     # DefaultCommandPrefix = ''
 
 }
-
 
 
