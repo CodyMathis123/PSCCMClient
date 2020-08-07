@@ -3,7 +3,7 @@ Function ConvertFrom-CCMLogFile {
         .SYNOPSIS
             Parse Configuration Manager format logs
         .DESCRIPTION
-            This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
+            This function is used to take Configuration Manager formatted logs and turn them into a CMLogEntry so that it can be
             searched and manipulated easily with PowerShell
         .PARAMETER Path
             Path to the log file(s) you would like to parse.
@@ -21,10 +21,10 @@ Function ConvertFrom-CCMLogFile {
             equal to the provided [datetime]
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
-                Returns the CCMExec.log as a PSCustomObject
+                Returns the CCMExec.log as a CMLogEntry
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log' | Sort-Object -Property Timestamp
-                Returns the AppEnforce.log and AppDiscovery.log as a PSCustomObject sorted by Timestamp
+                Returns the AppEnforce.log and AppDiscovery.log as a CMLogEntry sorted by Timestamp
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
                 Returns all the actions that ran according to the SMSTSLog provided
@@ -35,7 +35,7 @@ Function ConvertFrom-CCMLogFile {
             PS C:\> ConvertFrom-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
                 Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
         .OUTPUTS
-            [pscustomobject[]]
+            [CMLogEntry[]]
         .NOTES
             I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
             variance. I had to also balance speed and parsing.
