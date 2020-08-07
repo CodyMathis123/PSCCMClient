@@ -52,7 +52,7 @@ Function ConvertFrom-CCMLogFile {
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([CMLogEntry[]])]
-    [Alias('Get-CCMLogEntry')]
+    [Alias('Get-CCMLogFile')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname', 'LogFilePath')]
@@ -63,6 +63,7 @@ Function ConvertFrom-CCMLogFile {
         [string]$Filter,
         [Parameter(Mandatory = $false)]
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
+        [Alias('Type')]
         [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error'),
         [Parameter(Mandatory = $false)]
         [datetime]$TimestampGreaterThan = [datetime]::MinValue,
@@ -119,7 +120,7 @@ Function ConvertFrom-CCMLogFile {
                                 , $LogLineSubArray[5]
                                 , $LogLineSubArray[11])
 
-                            #region prase log based on severity, which defaults to any severity if the parameter is not specified
+                            #region parse log based on severity, which defaults to any severity if the parameter is not specified
                             switch ($Severity) {
                                 ($Type) {
                                     switch ($PSCmdlet.ParameterSetName) {
@@ -196,7 +197,7 @@ Function ConvertFrom-CCMLogFile {
                                     continue
                                 }
                             }
-                            #endregion prase log based on severity, which defaults to any severity if the parameter is not specified
+                            #endregion parse log based on severity, which defaults to any severity if the parameter is not specified
                         }
                         #endregion process non-empty lines from file
                     }
