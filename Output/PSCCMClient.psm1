@@ -75,14 +75,14 @@ class CMLogEntry {
         return $this.Timestamp -ge $TimestampGreaterThan -and $this.Timestamp -le $TimestampLessThan 
     }
 
-    [string]ConvertToCMLogLine(){
+    [string]ConvertToCMLogLine() {
         return [string]::Format('<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="" type="{4}" thread="{5}" file="">'
-        , $this.Message
-        , $this.Timestamp.ToString('HH:mm:ss.ff')
-        , $this.Timestamp.ToString('MM-dd-yyyy')
-        , $this.Component
-        , [int]$this.Type
-        , $this.Thread)
+            , $this.Message
+            , $this.Timestamp.ToString('HH:mm:ss.fff')
+            , $this.Timestamp.ToString('MM-dd-yyyy')
+            , $this.Component
+            , [int]$this.Type
+            , $this.Thread)
     }
 }
 #EndRegion '.\Classes\CMLogEntry.ps1' 72
@@ -1068,6 +1068,19 @@ Function ConvertFrom-CCMSchedule {
     }
 }
 #EndRegion '.\Public\ConvertFrom-CCMSchedule.ps1' 222
+#Region '.\Public\ConvertTo-CCMLogFile.ps1' 0
+function ConvertTo-CCMLogFile {
+    param(
+        [CMLogEntry[]]$CMLogEntries,
+        [string]$LogPath
+    )
+    $LogContent = foreach ($Entry in $CMLogEntries) {
+        $Entry.ConvertToCMLogLine()
+    }
+
+    Set-Content -Path $LogPath -Value ($LogContent | Sort-Object -Property Timestamp) -Force
+}
+#EndRegion '.\Public\ConvertTo-CCMLogFile.ps1' 11
 #Region '.\Public\Get-CCMApplication.ps1' 0
 function Get-CCMApplication {
     <#
