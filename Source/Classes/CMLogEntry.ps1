@@ -55,4 +55,8 @@ class CMLogEntry {
             Write-Warning "Failed to parse [DateString: $DateString] [TimeString: $TimeString] with [Parser: $DateTimeFormat] [Error: $($_.Exception.Message)]"
         }
     }
+
+    [bool]TestTimestampFilter([datetime]$TimestampGreaterThan, [datetime]$TimestampLessThan) {
+        return $this.Timestamp -ge $TimestampGreaterThan -and $this.Timestamp -le $TimestampLessThan 
+    }
 }

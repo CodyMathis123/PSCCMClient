@@ -70,8 +70,12 @@ class CMLogEntry {
             Write-Warning "Failed to parse [DateString: $DateString] [TimeString: $TimeString] with [Parser: $DateTimeFormat] [Error: $($_.Exception.Message)]"
         }
     }
+
+    [bool]TestTimestampFilter([datetime]$TimestampGreaterThan, [datetime]$TimestampLessThan) {
+        return $this.Timestamp -ge $TimestampGreaterThan -and $this.Timestamp -le $TimestampLessThan 
+    }
 }
-#EndRegion '.\Classes\CMLogEntry.ps1' 58
+#EndRegion '.\Classes\CMLogEntry.ps1' 62
 #Region '.\Private\Convert-FunctionToString.ps1' 0
 function Convert-FunctionToString {
     <#
@@ -115,7 +119,6 @@ function Convert-FunctionToString {
 }
 #EndRegion '.\Private\Convert-FunctionToString.ps1' 40
 #Region '.\Private\Get-CCMConnection.ps1' 0
-# ENHANCE - Rework the 'prefer' option?
 function Get-CCMConnection {
     <#
     .SYNOPSIS
@@ -229,7 +232,7 @@ function Get-CCMConnection {
 
     Write-Output $return
 }
-#EndRegion '.\Private\Get-CCMConnection.ps1' 114
+#EndRegion '.\Private\Get-CCMConnection.ps1' 113
 #Region '.\Private\Get-StringFromTimespan.ps1' 0
 function Get-StringFromTimespan {
     <#
@@ -531,7 +534,7 @@ Function ConvertFrom-CCMLogFile {
         .SYNOPSIS
             Parse Configuration Manager format logs
         .DESCRIPTION
-            This function is used to take Configuration Manager formatted logs and turn them into a PSCustomObject so that it can be
+            This function is used to take Configuration Manager formatted logs and turn them into a CMLogEntry so that it can be
             searched and manipulated easily with PowerShell
         .PARAMETER Path
             Path to the log file(s) you would like to parse.
@@ -549,10 +552,10 @@ Function ConvertFrom-CCMLogFile {
             equal to the provided [datetime]
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
-                Returns the CCMExec.log as a PSCustomObject
+                Returns the CCMExec.log as a CMLogEntry
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log' | Sort-Object -Property Timestamp
-                Returns the AppEnforce.log and AppDiscovery.log as a PSCustomObject sorted by Timestamp
+                Returns the AppEnforce.log and AppDiscovery.log as a CMLogEntry sorted by Timestamp
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
                 Returns all the actions that ran according to the SMSTSLog provided
@@ -563,7 +566,7 @@ Function ConvertFrom-CCMLogFile {
             PS C:\> ConvertFrom-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
                 Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
         .OUTPUTS
-            [pscustomobject[]]
+            [CMLogEntry[]]
         .NOTES
             I've done my best to test this against various MEMCM log files. They are all generally 'formatted' the same, but do have some
             variance. I had to also balance speed and parsing.
@@ -593,67 +596,14 @@ Function ConvertFrom-CCMLogFile {
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
         [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error'),
         [Parameter(Mandatory = $false)]
-        [datetime]$TimestampGreaterThan,
+        [datetime]$TimestampGreaterThan = [datetime]::MinValue,
         [Parameter(Mandatory = $false)]
-        [datetime]$TimestampLessThan
+        [datetime]$TimestampLessThan = [datetime]::MaxValue
     )
     begin {
-        function Test-TimestampFilter {
-            <#
-                .SYNOPSIS
-                    Returns boolean based on timestamp meeting ge/le conditons
-                .DESCRIPTION
-                    This function is used to determine if a particular time stamp is less than or equal to, and/or greater than
-                    or equal to the specified timestamps
-                .PARAMETER TimeStamp
-                    The timestamp to compare as a [datetime] object
-                .PARAMETER GreaterThanDateTime
-                    A [datetime] object used to ensure the $Timestmap is greater than or equal to
-                .PARAMETER LessThanDateTime
-                    A [datetime] object used to ensure the $Timestmap is less than or equal to
-                .EXAMPLE
-                    C:\PS> Test-TimestampFilter -TimeStamp (get-date) -GreaterThanDateTime (get-date).AddDays(-1) -LessThanDateTime (get-date).AddDays(1)
-                        This will return a result of $True as we test if the current date is greater than 1 day ago, and less than 1 day from now
-                .OUTPUTS
-                    [bool]
-            #>
-            param(
-                [parameter(Mandatory = $true)]
-                [datetime]$TimeStamp,
-                [parameter(Mandatory = $false)]
-                [datetime]$TimestampGreaterThan,
-                [parameter(Mandatory = $false)]
-                [datetime]$TimestampLessThan
-            )
-            [array]$Result = switch ($PSBoundParameters.Keys) {
-                TimestampGreaterThan {
-                    $TimeStamp -ge $TimestampGreaterThan
-                }
-                TimestampLessThan {
-                    $TimeStamp -le $TimestampLessThan
-                }
-                default {
-                    $true
-                }
-            }
-
-            $Result.Contains($true) -and !$Result.Contains($false)
-        }
-
-        #region setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
-        $CheckTimestampFilter = $false
-        $TestTimestampSplat = @{}
-        switch ($PSBoundParameters.Keys) {
-            TimestampGreaterThan {
-                $CheckTimestampFilter = $true
-                $TestTimestampSplat.Add($PSItem, $TimestampGreaterThan)
-            }
-            TimestampLessThan {
-                $CheckTimestampFilter = $true
-                $TestTimestampSplat.Add($PSItem, $TimestampLessThan)
-            }
-        }
-        #endregion setup the TestTimeStampSplat, if either parameter is specified we will validate the timestamp
+        #region If either timestamp filter parameter is specified we will validate the timestamp
+        $CheckTimestampFilter = $PSBoundParameters.ContainsKey('TimestampGreaterThan') -or $PSBoundParameters.ContainsKey('TimestampLessThan')
+        #endregion If either timestamp filter parameter is specified we will validate the timestamp
     }
     process {
         foreach ($LogFile in $Path) {
@@ -711,7 +661,7 @@ Function ConvertFrom-CCMLogFile {
                                                     $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                            switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
                                                                 $true {
                                                                     $LogLine
                                                                 }
@@ -736,7 +686,7 @@ Function ConvertFrom-CCMLogFile {
                                                     $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                            switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
                                                                 $true {
                                                                     $LogLine
                                                                 }
@@ -759,7 +709,7 @@ Function ConvertFrom-CCMLogFile {
                                             $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
                                             switch ($CheckTimestampFilter) {
                                                 $true {
-                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                    switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
                                                         $true {
                                                             $LogLine
                                                         }
@@ -833,7 +783,7 @@ Function ConvertFrom-CCMLogFile {
                                                     $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::SimpleCMTrace)
                                                     switch ($CheckTimestampFilter) {
                                                         $true {
-                                                            switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                            switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
                                                                 $true {
                                                                     $LogLine
                                                                 }
@@ -856,7 +806,7 @@ Function ConvertFrom-CCMLogFile {
                                             $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::SimpleCMTrace)
                                             switch ($CheckTimestampFilter) {
                                                 $true {
-                                                    switch (Test-TimestampFilter -TimeStamp $LogLine.TimeStamp @TestTimestampSplat) {
+                                                    switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
                                                         $true {
                                                             $LogLine
                                                         }
@@ -883,7 +833,7 @@ Function ConvertFrom-CCMLogFile {
         }
     }
 }
-#EndRegion '.\Public\ConvertFrom-CCMLogFile.ps1' 357
+#EndRegion '.\Public\ConvertFrom-CCMLogFile.ps1' 304
 #Region '.\Public\ConvertFrom-CCMSchedule.ps1' 0
 Function ConvertFrom-CCMSchedule {
     <#
