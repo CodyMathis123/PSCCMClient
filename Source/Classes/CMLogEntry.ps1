@@ -59,4 +59,14 @@ class CMLogEntry {
     [bool]TestTimestampFilter([datetime]$TimestampGreaterThan, [datetime]$TimestampLessThan) {
         return $this.Timestamp -ge $TimestampGreaterThan -and $this.Timestamp -le $TimestampLessThan 
     }
+
+    [string]ConvertToCMLogLine() {
+        return [string]::Format('<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="" type="{4}" thread="{5}" file="">'
+            , $this.Message
+            , $this.Timestamp.ToString('HH:mm:ss.ff')
+            , $this.Timestamp.ToString('MM-dd-yyyy')
+            , $this.Component
+            , [int]$this.Type
+            , $this.Thread)
+    }
 }
