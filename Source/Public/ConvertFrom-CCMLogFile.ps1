@@ -48,7 +48,7 @@ Function ConvertFrom-CCMLogFile {
                 Author:   Cody Mathis
                 Contact:  @CodyMathis123
                 Created:  2019-09-19
-                Updated:  2020-08-06
+                Updated:  2020-08-07
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([CMLogEntry[]])]
