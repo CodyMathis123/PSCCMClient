@@ -555,10 +555,10 @@ Function ConvertFrom-CCMLogFile {
         .PARAMETER Severity
             A filter to return only messages of a particular severity. By default, all severities are returned.
         .PARAMETER TimestampGreaterThan
-            A [datetime] object that will filter the returned log lines. They will only be returned if they are greater than or 
+            A [datetime] object that will filter the returned log lines. They will only be returned if they are greater than or
             equal to the provided [datetime]
         .PARAMETER TimestampLessThan
-            A [datetime] object that will filter the returned log lines. They will only be returned if they are less than or 
+            A [datetime] object that will filter the returned log lines. They will only be returned if they are less than or
             equal to the provided [datetime]
         .EXAMPLE
             PS C:\> ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
@@ -589,11 +589,11 @@ Function ConvertFrom-CCMLogFile {
                 Author:   Cody Mathis
                 Contact:  @CodyMathis123
                 Created:  2019-09-19
-                Updated:  2020-08-06
+                Updated:  2020-08-07
     #>
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([CMLogEntry[]])]
-    [Alias('Get-CCMLogEntry')]
+    [Alias('Get-CCMLogFile')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias('Fullname', 'LogFilePath')]
@@ -604,6 +604,7 @@ Function ConvertFrom-CCMLogFile {
         [string]$Filter,
         [Parameter(Mandatory = $false)]
         [ValidateSet('None', 'Informational', 'Warning', 'Error')]
+        [Alias('Type')]
         [string[]]$Severity = @('None', 'Informational', 'Warning', 'Error'),
         [Parameter(Mandatory = $false)]
         [datetime]$TimestampGreaterThan = [datetime]::MinValue,
@@ -642,80 +643,64 @@ Function ConvertFrom-CCMLogFile {
 
                         #region process non-empty lines from file
                         default {
-                            <#
-                                split Log line into an array on what we know is the end of the message section
-                                first item contains the message which can be parsed
-                                second item contains all the information about the message/line (ie. type, component, datetime, thread) which can be parsed
-                            #>
-                            $LogLineArray = [regex]::Split($PSItem, ']LOG]!><')
-
-                            # Strip the log message out of our first array index
-                            $Message = $LogLineArray[0]
-
-                            # Split LogLineArray into a a sub array based on double quotes to pull log line information
-                            $LogLineSubArray = $LogLineArray[1].Split([char]34)
-
-                            $LogLine = [CMLogEntry]::New($Message
-                                , ($Type = [Severity]$LogLineSubArray[9])
-                                , $LogLineSubArray[5]
-                                , $LogLineSubArray[11])
-
-                            #region prase log based on severity, which defaults to any severity if the parameter is not specified
-                            switch ($Severity) {
-                                ($Type) {
-                                    switch ($PSCmdlet.ParameterSetName) {
-                                        #region if ParseSMSTS specified, check message for known string for SMS step success / failure
-                                        ParseSMSTS {
-                                            switch -regex ($Message) {
-                                                'win32 code 0|failed to run the action' {
-                                                    $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
-                                                    switch ($CheckTimestampFilter) {
-                                                        $true {
-                                                            switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
-                                                                $true {
-                                                                    $LogLine
-                                                                }
-                                                            }
-                                                        }
-                                                        $false {
-                                                            $LogLine
-                                                        }
-                                                    }
-                                                }
-                                                default {
-                                                    continue
-                                                }
-                                            }
+                            $UnparsedLogLine = $PSItem
+                            $Parse = switch ($PSCmdlet.ParameterSetName) {
+                                #region if ParseSMSTS specified, check logline for known string for SMS step success / failure
+                                ParseSMSTS {
+                                    switch -regex ($UnparsedLogLine) {
+                                        'win32 code 0|failed to run the action' {
+                                            $true
                                         }
-                                        #endregion if ParseSMSTS specified, check message for known string for SMS step success / failure
-
-                                        #region if CustomerFilter is specified, check message against the string as a regex match
-                                        CustomFilter {
-                                            switch -regex ($Message) {
-                                                $Filter {
-                                                    $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
-                                                    switch ($CheckTimestampFilter) {
-                                                        $true {
-                                                            switch ($LogLine.TestTimestampFilter($TimestampGreaterThan, $TimestampLessThan)) {
-                                                                $true {
-                                                                    $LogLine
-                                                                }
-                                                            }
-                                                        }
-                                                        $false {
-                                                            $LogLine
-                                                        }
-                                                    }
-                                                }
-                                                default {
-                                                    continue
-                                                }
-                                            }
-                                        }
-                                        #endregion if CustomerFilter is specified, check message against the string as a regex match
-
-                                        #region if no filtering is provided then the we return all messages
                                         default {
+                                            $false
+                                        }
+                                    }
+                                }
+                                #endregion if ParseSMSTS specified, check logline for known string for SMS step success / failure
+
+                                #region if CustomerFilter is specified, check logline against the string as a regex match
+                                CustomFilter {
+                                    switch -regex ($UnparsedLogLine) {
+                                        $Filter {
+                                            $true
+                                        }
+                                        default {
+                                            $false
+                                        }
+                                    }
+                                }
+                                #endregion if CustomerFilter is specified, check logline against the string as a regex match
+
+                                #region if no filtering is provided then the we parse all loglines
+                                default {
+                                    $true
+                                }
+                                #endregion if no filtering is provided then the we parse all loglines
+                            }
+
+                            switch ($Parse) {
+                                $true {
+                                    <#
+                                        split Log line into an array on what we know is the end of the message section
+                                        first item contains the message which can be parsed
+                                        second item contains all the information about the message/line (ie. type, component, datetime, thread) which can be parsed
+                                    #>
+                                    $LogLineArray = [regex]::Split($UnparsedLogLine, ']LOG]!><')
+
+                                    # Strip the log message out of our first array index
+                                    $Message = $LogLineArray[0]
+
+                                    # Split LogLineArray into a a sub array based on double quotes to pull log line information
+                                    $LogLineSubArray = $LogLineArray[1].Split([char]34)
+
+                                    $LogLine = [CMLogEntry]::New($Message
+                                        , ($Type = [Severity]$LogLineSubArray[9])
+                                        , $LogLineSubArray[5]
+                                        , $LogLineSubArray[11])
+
+                                    #region parse log based on severity, which defaults to any severity if the parameter is not specified
+                                    switch ($Severity) {
+                                        ($Type) {
                                             $LogLine.ResolveTimestamp($LogLineSubArray, [CMLogType]::FullCMTrace)
                                             switch ($CheckTimestampFilter) {
                                                 $true {
@@ -730,14 +715,13 @@ Function ConvertFrom-CCMLogFile {
                                                 }
                                             }
                                         }
-                                        #endregion if no filtering is provided then the we return all messages
+                                        default {
+                                            continue
+                                        }
                                     }
-                                }
-                                default {
-                                    continue
+                                    #endregion parse log based on severity, which defaults to any severity if the parameter is not specified
                                 }
                             }
-                            #endregion prase log based on severity, which defaults to any severity if the parameter is not specified
                         }
                         #endregion process non-empty lines from file
                     }
@@ -843,7 +827,7 @@ Function ConvertFrom-CCMLogFile {
         }
     }
 }
-#EndRegion '.\Public\ConvertFrom-CCMLogFile.ps1' 304
+#EndRegion '.\Public\ConvertFrom-CCMLogFile.ps1' 288
 #Region '.\Public\ConvertFrom-CCMSchedule.ps1' 0
 Function ConvertFrom-CCMSchedule {
     <#

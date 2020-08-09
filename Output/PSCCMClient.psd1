@@ -78,7 +78,7 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Get-CCMLogEntry','Get-CCMCB','Get-CCMCurrentMP','Get-CCMMP','Get-CCMCurrentSUP','Get-CCMSUP','Get-CCMLastHINV','Get-CCMLastDDR','Get-CCMLastSINV','Get-CCMMW','Get-CIMRegistryProperty','Get-CCMUpdate','Get-CCMSUG','Invoke-CCMUpdate','Set-CCMMP','Set-CIMRegistryProperty')
+    AliasesToExport   = @('Get-CCMLogFile','Get-CCMCB','Get-CCMCurrentMP','Get-CCMMP','Get-CCMCurrentSUP','Get-CCMSUP','Get-CCMLastHINV','Get-CCMLastDDR','Get-CCMLastSINV','Get-CCMMW','Get-CIMRegistryProperty','Get-CCMUpdate','Get-CCMSUG','Invoke-CCMUpdate','Set-CCMMP','Set-CIMRegistryProperty')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
