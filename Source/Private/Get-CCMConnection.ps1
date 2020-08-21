@@ -23,10 +23,10 @@ function Get-CCMConnection {
             Return a Session if found, otherwise return Computer Name
     .EXAMPLE
         C:\PS> Get-CCMConnection -ComputerName Test123
-            Check for a CimSession, and return if one is found, otherwise return ComputerName
+            Check for a CimSession, falling back to PSSession, and return if one is found, otherwise return ComputerName
     .EXAMPLE
         C:\PS> Get-CCMConnection -ComputerName Test123 -Prefer PSSession
-            Check for a PSSession, and return if one is found, otherwise return ComputerName
+            Check for a PSSession, falling back to CimSession, and return if one is found, otherwise return ComputerName
     .EXAMPLE
         C:\PS> Get-CCMConnection -PSSession $PSS
             Process the PSSession passed in, and return in appropriate format for consumption in module functions
@@ -35,7 +35,7 @@ function Get-CCMConnection {
         Author:      Cody Mathis
         Contact:     @CodyMathis123
         Created:     2020-02-06
-        Updated:     2020-08-01
+        Updated:     2020-02-13
     #>
     [CmdletBinding()]
     param (
@@ -85,8 +85,13 @@ function Get-CCMConnection {
                                 $return['connectionSplat'] = @{ CimSession = $ExistingCimSession }
                                 $return['ConnectionType'] = 'CimSession'
                             }
+                            elseif ($ExistingSession = (Get-PSSession -ErrorAction Ignore).Where({$_.ComputerName -eq $ComputerName -and $_.State -eq 'Opened'})) {
+                                Write-Verbose "Fallback active PSSession found for $ComputerName - Passing Session out"
+                                $return['connectionSplat'] = @{ Session = $ExistingSession }
+                                $return['ConnectionType'] = 'PSSession'
+                            }
                             else {
-                                Write-Verbose "No active CimSession (preferred) found for $Connection - falling back to -ComputerName"
+                                Write-Verbose "No active CimSession (preferred), or PSSession found for $Connection - falling back to -ComputerName"
                                 $return['connectionSplat'] = @{ ComputerName = $Connection }
                                 $return['ConnectionType'] = 'CimSession'
                             }
@@ -97,8 +102,13 @@ function Get-CCMConnection {
                                 $return['connectionSplat'] = @{ Session = $ExistingSession }
                                 $return['ConnectionType'] = 'PSSession'
                             }
+                            elseif ($ExistingCimSession = Get-CimSession -ComputerName $ComputerName -ErrorAction Ignore) {
+                                Write-Verbose "Fallback active CimSession found for $ComputerName - Passing CimSession out"
+                                $return['connectionSplat'] = @{ CimSession = $ExistingCimSession }
+                                $return['ConnectionType'] = 'CimSession'
+                            }
                             else {
-                                Write-Verbose "No active PSSession (preferred) found for $ComputerName - falling back to -ComputerName"
+                                Write-Verbose "No active PSSession (preferred), or CimSession found for $ComputerName - falling back to -ComputerName"
                                 $return['connectionSplat'] = @{ ComputerName = $ComputerName }
                                 $return['ConnectionType'] = 'PSSession'
                             }

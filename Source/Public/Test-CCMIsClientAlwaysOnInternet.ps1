@@ -5,10 +5,20 @@ function Test-CCMIsClientAlwaysOnInternet {
         .DESCRIPTION
             This function will invoke the IsClientAlwaysOnInternet of the MEMCM Client.
              This is done using the Microsoft.SMS.Client COM Object.
+        .PARAMETER CimSession
+            Provides CimSessions to return AlwaysOnInternet setting info from
         .PARAMETER ComputerName
             Provides computer names to return AlwaysOnInternet setting info from
         .PARAMETER PSSession
             Provides PSSession to return AlwaysOnInternet setting info from
+        .PARAMETER ConnectionPreference
+            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
+            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
+            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
+            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
+            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
+            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
+            the ComputerName parameter is passed to.
         .EXAMPLE
             C:\PS> Test-CCMIsClientAlwaysOnInternet
                 Returns the status of the local computer having IsAlwaysOnInternet set
@@ -20,16 +30,21 @@ function Test-CCMIsClientAlwaysOnInternet {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-08-01
+            Updated:     2020-03-01
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param(
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
+        [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
         [Alias('Session')]
-        [System.Management.Automation.Runspaces.PSSession[]]$PSSession
+        [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
+        [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
+        [ValidateSet('CimSession', 'PSSession')]
+        [string]$ConnectionPreference
     )
     begin {
         $IsClientAlwaysOnInternetScriptBlock = {
@@ -44,7 +59,11 @@ function Test-CCMIsClientAlwaysOnInternet {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
             $getConnectionInfoSplat = @{
                 $PSCmdlet.ParameterSetName = $Connection
-                Prefer                     = 'PSSession'
+            }
+            switch ($PSBoundParameters.ContainsKey('ConnectionPreference')) {
+                $true {
+                    $getConnectionInfoSplat['Prefer'] = $ConnectionPreference
+                }
             }
             $ConnectionInfo = Get-CCMConnection @getConnectionInfoSplat
             $Computer = $ConnectionInfo.ComputerName

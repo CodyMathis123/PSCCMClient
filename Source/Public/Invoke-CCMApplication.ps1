@@ -5,7 +5,7 @@ Function Invoke-CCMApplication {
         .DESCRIPTION
             Uses the Install, or Uninstall method of the CCM_Application CIMClass to perform actions on applications.
 
-            Note that you cannot inherently invoke these methods on every single application. It will have to adhere
+            Not that you cannot inherently invoke these methods on every single application. It will have to adhere
             to the same logic that any application must follow for installation. This includes meeting application 
             requirements, being 'Applicable' in the sense of trying to 'Install' an application that is not currently
             detected as installed, or trying to 'Uninstall' an application that is currently detected as installed, 
