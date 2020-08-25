@@ -10,12 +10,12 @@
 		[Alias('object', 'data', 'input')]
 		[psobject]$inputObject
 	)
-	$tempString = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes([management.automation.psserializer]::Serialize($inputObject)))
-	$memoryStream = New-Object System.IO.MemoryStream
-	$compressionStream = New-Object System.IO.Compression.GZipStream($memoryStream, [System.io.compression.compressionmode]::Compress)
-	$streamWriter = New-Object System.IO.streamwriter($compressionStream)
-	$streamWriter.write($tempString)
-	$streamWriter.close()
-	$compressedData = [System.convert]::ToBase64String($memoryStream.ToArray())
-	return $compressedData
+	$tempString = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes([Management.Automation.PsSerializer]::Serialize($inputObject)))
+	$MemoryStream = [System.IO.MemoryStream]::new()
+	$CompressionStream = [System.IO.Compression.GZipStream]::new($MemoryStream, [System.IO.Compression.CompressionMode]::Compress)
+	$StreamWriter = [System.IO.StreamWriter]::new($CompressionStream)
+	$StreamWriter.Write($tempString)
+	$StreamWriter.Close()
+	$CompressedData = [System.Convert]::ToBase64String($MemoryStream.ToArray())
+	return $CompressedData
 }

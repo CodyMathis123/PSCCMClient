@@ -13,21 +13,21 @@
 		$xmlString += $InputObject
 	}
 	end {
-		$type = [PSObject].Assembly.GetType('System.Management.Automation.Deserializer')
-		$ctor = $type.GetConstructor('instance,nonpublic', $null, @([xml.xmlreader]), $null)
-		$sr = New-Object System.IO.StringReader $xmlString
-		$xr = New-Object System.Xml.XmlTextReader $sr
-		$deserializer = $ctor.Invoke($xr)
-		$done = $type.GetMethod('Done', [System.Reflection.BindingFlags]'nonpublic,instance')
-		while (!$type.InvokeMember("Done", "InvokeMethod,NonPublic,Instance", $null, $deserializer, @())) {
+		$Type = [PSObject].Assembly.GetType('System.Management.Automation.Deserializer')
+		$ctor = $Type.GetConstructor('instance,nonpublic', $null, @([xml.xmlreader]), $null)
+		$StringReader = [System.IO.StringReader]::new($xmlString)
+		$XmlReader = [System.Xml.XmlTextReader]::new($StringReader)
+		$Deserializer = $ctor.Invoke($XmlReader)
+		$null = $Type.GetMethod('Done', [System.Reflection.BindingFlags]'nonpublic,instance')
+		while (!$Type.InvokeMember("Done", "InvokeMethod,NonPublic,Instance", $null, $Deserializer, @())) {
 			try {
-				$type.InvokeMember("Deserialize", "InvokeMethod,NonPublic,Instance", $null, $deserializer, @())
+				$Type.InvokeMember("Deserialize", "InvokeMethod,NonPublic,Instance", $null, $Deserializer, @())
 			}
 			catch {
 				Write-Warning "Could not deserialize ${string}: $_"
 			}
 		}
-		$xr.Close()
-		$sr.Dispose()
+		$XmlReader.Close()
+		$StringReader.Dispose()
 	}
 }
