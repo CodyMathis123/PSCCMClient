@@ -46,7 +46,7 @@ function Test-CCMIsWindowAvailableNow {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-29
-            Updated:     2020-02-27
+            Updated:     2020-09-29
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -197,7 +197,7 @@ function Test-CCMIsWindowAvailableNow {
                                 $Result['CanProgramRunNow'] = $CanProgramRunNow.CanProgramRunNow
                                 $Result['FallbackToAllProgramsWindow'] = $MWFallback
                                 $Result['MaxRunTime'] = $MaxRuntime
-                                $Result['WindowAvailableTime'] = [string]::Format('{0} day(s) {1} hour(s) {2} minute(s) {3} second(s)', $TimeLeftTimeSpan.Days, $TimeLeftTimeSpan.Hours, $TimeLeftTimeSpan.Minutes, $TimeLeftTimeSpan.Seconds)
+                                $Result['WindowAvailableTime'] = Get-StringFromTimespan -Timespan $TimeLeftTimeSpan
                                 [pscustomobject]$Result
                             }
                         }
