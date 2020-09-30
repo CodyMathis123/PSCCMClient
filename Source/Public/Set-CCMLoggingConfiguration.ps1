@@ -1,20 +1,16 @@
 function Set-CCMLoggingConfiguration {
     <#
         .SYNOPSIS
-            Set ConfigMgr client log configuration from computers via CIM
+            Set ConfigMgr client log configuration from computers via registry edits
         .DESCRIPTION
-            This function will allow you to set the ConfigMgr client log configuration for multiple computers using CIM queries.
-            You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
-        .PARAMETER LogLocation
-            The location of MEMCM log files. Setting this will not take complete affect until the CCMExec service is restarted.
+            This function will allow you to set the ConfigMgr client log configuration for multiple computers using registry edit.
+            You can provide an array of computer names, PSSessions, or cimsessions, or you can pass them through the pipeline.
         .PARAMETER LogLevel
             Preferred logging level, either Default, or Verbose
         .PARAMETER LogMaxSize
             Maximum log size in Bytes
         .PARAMETER LogMaxHistory
             Max number of logs to retain
-        .PARAMETER DebugLogging
-            Set debug logging to on, or off
         .PARAMETER CimSession
             Provides CimSession to set log configuration for
         .PARAMETER ComputerName
@@ -40,13 +36,10 @@ function Set-CCMLoggingConfiguration {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-11
-            Updated:     2020-03-03
+            Updated:     2020-08-26
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'ComputerName')]
     param (
-        [Parameter(Mandatory = $false)]
-        [ValidateScript( { Test-Path -Path $_ -PathType Container -ErrorAction Stop } )]
-        [string]$LogLocation,
         [Parameter(Mandatory = $false)]
         [ValidateSet('Default', 'Verbose', 'None')]
         [string]$LogLevel,
@@ -54,8 +47,6 @@ function Set-CCMLoggingConfiguration {
         [int]$LogMaxSize,
         [Parameter(Mandatory = $false)]
         [int]$LogMaxHistory,
-        [Parameter(Mandatory = $false)]
-        [bool]$DebugLogging,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -69,57 +60,33 @@ function Set-CCMLoggingConfiguration {
         [string]$ConnectionPreference
     )
     begin {
-        $setLogConfigSplat = @{
-            Namespace   = 'root\ccm'
-            ClassName   = 'SMS_Client'
-            MethodName  = 'SetGlobalLoggingConfiguration'
-            ErrorAction = 'Stop'
+        $BaseLogConfigSplat = @{
+            Force        = $true
+            PropertyType = 'String'
+            Key          = 'SOFTWARE\Microsoft\CCM\Logging\@Global'
+            RegRoot      = 'HKEY_LOCAL_MACHINE'
         }
 
-        $LogLevelInt = switch ($LogLevel) {
-            'None' {
-                2
-            }
-            'Default' {
-                1
-            }
-            'Verbose' {
-                0
-            }
-        }
-
-        $LogConfigArgs = @{ }
-        $WhatIfLog = [System.Collections.Generic.List[string]]::new()
+        #region Format some parameters if provided
         switch ($PSBoundParameters.Keys) {
-            'LogLevel' {
-                $LogConfigArgs['LogLevel'] = [uint32]$LogLevelInt
-                $WhatIfLog.Add([string]::Format("[{0} = '{1}']", $PSItem, (Get-Variable -Name $PSItem -ValueOnly -Scope Local)))
+            '^LogDirectory$' {
+                $LogDirectory = $LogDirectory.TrimEnd('\')
             }
-            'LogMaxSize' {
-                $LogConfigArgs['LogMaxSize'] = [uint32]$LogMaxSize
-                $WhatIfLog.Add([string]::Format("[{0} = '{1}']", $PSItem, (Get-Variable -Name $PSItem -ValueOnly -Scope Local)))
-            }
-            'LogMaxHistory' {
-                $LogConfigArgs['LogMaxHistory'] = [uint32]$LogMaxHistory
-                $WhatIfLog.Add([string]::Format("[{0} = '{1}']", $PSItem, (Get-Variable -Name $PSItem -ValueOnly -Scope Local)))
-            }
-            'DebugLogging' {
-                $LogConfigArgs['DebugLogging'] = [bool]$DebugLogging
-                $WhatIfLog.Add([string]::Format("[{0} = '{1}']", $PSItem, (Get-Variable -Name $PSItem -ValueOnly -Scope Local)))
-            }
-            'LogLocation' {
-                $SetLogLocationSplat = @{
-                    Force        = $true
-                    PropertyType = 'String'
-                    Property     = 'LogDirectory'
-                    Value        = $LogLocation.TrimEnd('\')
-                    Key          = 'SOFTWARE\Microsoft\CCM\Logging\@Global'
-                    RegRoot      = 'HKEY_LOCAL_MACHINE'
+            '^LogLevel$' {
+                $LogLevel = switch ($LogLevel) {
+                    'None' {
+                        2
+                    }
+                    'Default' {
+                        1
+                    }
+                    'Verbose' {
+                        0
+                    }
                 }
-                $WhatIfLog.Add([string]::Format("[{0} = '{1}']", $PSItem, (Get-Variable -Name $PSItem -ValueOnly -Scope Local)))
             }
         }
-        $setLogConfigSplat['Arguments'] = $LogConfigArgs
+        #endregion Format some parameters if provided
     }
     process {
         foreach ($Connection in (Get-Variable -Name $PSCmdlet.ParameterSetName -ValueOnly)) {
@@ -135,51 +102,28 @@ function Set-CCMLoggingConfiguration {
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
 
-            $WhatIfLog.Insert(0, "[ComputerName = '$Computer']")
-            if ($PSCmdlet.ShouldProcess([string]::Join(' ', $WhatIfLog), "Set-CCMLoggingConfiguration")) {
+            if ($PSCmdlet.ShouldProcess([string]::Join(' ', $PSBoundParameters.Keys), "Set-CCMLoggingConfiguration")) {
                 $Result = [ordered]@{ }
                 $Result['ComputerName'] = $Computer
                 $Result['LogConfigChanged'] = $false
 
                 try {
                     switch -regex ($PSBoundParameters.Keys) {
-                        '^LogLevel$|^LogMaxSize$|^LogMaxHistory$|^DebugLogging$' {
-                            $LogConfigChanged = switch ($Computer -eq $env:ComputerName) {
-                                $true {
-                                    Invoke-CimMethod @setLogConfigSplat
-                                }
-                                $false {
-                                    $invokeCommandSplat = @{
-                                        ArgumentList = $setLogConfigSplat
-                                        ScriptBlock  = {
-                                            param($setLogConfigSplat)
-                                            Invoke-CimMethod @setLogConfigSplat
-                                        }
-                                    }
-                                    Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                                }
-                            }
-                            if ($LogConfigChanged) {
-                                Write-Verbose "Successfully configured log options on $Computer via the 'SetGlobalLoggingConfiguration' CIM method"
-                                $Result['LogConfigChanged'] = $true
-                            }
-                            break
+                        "^LogDirectory$|^LogLevel$|^LogMaxSize$|^LogMaxHistory$" { 
+                            $BaseLogConfigSplat['Property'] = $PSItem
+                            $BaseLogConfigSplat['Value'] = Get-Variable -Name $PSItem -ValueOnly -Scope Local
+                            Set-CCMRegistryProperty @BaseLogConfigSplat @connectionSplat
                         }
                     }
-                    switch ($PSBoundParameters.ContainsKey('LogLocation')) {
-                        $true {
-                            $LogLocationChanged = Set-CCMRegistryProperty @SetLogLocationSplat @connectionSplat
-                            Write-Warning "The CCMExec service needs restarted for log location changes to take full affect."
-                            $Result['LogLocationChanged'] = $LogLocationChanged[$Computer]
-                        }
-                    }
-
-                    [pscustomobject]$Result
+                    Write-Warning "The CCMExec service needs restarted for log location changes to take full affect."
+                    $Result['LogConfigChanged'] = $true
                 }
                 catch {
                     $ErrorMessage = $_.Exception.Message
                     Write-Error $ErrorMessage
+                    [pscustomobject]$Result
                 }
+                [pscustomobject]$Result
             }
         }
     }
