@@ -1,4 +1,4 @@
-﻿function ConvertFrom-Base64ToObject {
+﻿function ConvertFrom-CCMCodeStringToObject {
 	# TODO - Add help
 	[CmdletBinding()]
 	param

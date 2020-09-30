@@ -112,9 +112,13 @@ v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels
 * Improve the region documentation in Get-CCMLogFile
-* Fix function reference in Get-CCMClientInfo	
+* Get-CCMLogFile now outputs a object of custom class CMLogEntry which has a 'ConvertToCMLogLine' method
 * Improve splitting performance in Get-CCMLogFile
 * Add timestamp filtering to Get-CCMLogFile
+* Fix function reference in Get-CCMClientInfo	
+* Remove Reset-CCMLoggingConfiguration function
+* Changing Set-CCMLoggingConfiguration to set registry values due to inconsistencies with the cim method
+* Rename some private functions to reduce the chance of false positive AV detection
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder

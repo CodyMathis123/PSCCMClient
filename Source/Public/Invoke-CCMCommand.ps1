@@ -49,7 +49,7 @@
 			Author:      Cody Mathis
 			Contact:     @CodyMathis123
 			Created:     2020-02-12
-			Updated:     2020-03-02
+			Updated:     2020-09-29
 	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
@@ -98,12 +98,12 @@
 				$PipeName = [guid]::NewGuid().Guid
 				$ArgList = switch ($PSBoundParameters.ContainsKey('ArgumentList')) {
 					$true {
-						$SupportFunctionsToConvert = 'ConvertTo-Base64StringFromObject', 'ConvertFrom-CliXml', 'ConvertFrom-Base64ToObject'
+						$SupportFunctionsToConvert = 'ConvertTo-CCMCodeStringFromObject', 'ConvertFrom-CliXml', 'ConvertFrom-CCMCodeStringToObject'
 						$PassArgList = $true
-						ConvertTo-Base64StringFromObject -inputObject $ArgumentList
+						ConvertTo-CCMCodeStringFromObject -inputObject $ArgumentList
 					}
 					$false {
-						$SupportFunctionsToConvert = 'ConvertTo-Base64StringFromObject'
+						$SupportFunctionsToConvert = 'ConvertTo-CCMCodeStringFromObject'
 						$PassArgList = $false
 						[string]::Empty
 					}
@@ -123,13 +123,13 @@
 		}}
 		$TempResultPreConversion = switch([bool]${4}) {{
 			$true {{
-				$ScriptBlock.Invoke((ConvertFrom-Base64ToObject -inputString {5}))
+				$ScriptBlock.Invoke((ConvertFrom-CCMCodeStringToObject -inputString {5}))
 			}}
 			$false {{
 				$ScriptBlock.Invoke()
 			}}
 		}}
-		$results = ConvertTo-Base64StringFromObject -inputObject $TempResultPreConversion
+		$results = ConvertTo-CCMCodeStringFromObject -inputObject $TempResultPreConversion
 		$streamWriter.WriteLine("$($results)")
 		$streamWriter.dispose()
 		$namedPipe.dispose()
@@ -186,7 +186,7 @@
 					$namedPipe.dispose()
 		
 					if (-not [string]::IsNullOrWhiteSpace($tempData)) {
-						ConvertFrom-Base64ToObject -inputString $tempData
+						ConvertFrom-CCMCodeStringToObject -inputString $tempData
 					}
 				}
 				'PSSession' {

@@ -34,7 +34,7 @@
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-07
-            Updated:     2020-02-12
+            Updated:     2020-09-29
 	#>
 	[CmdletBinding(DefaultParameterSetName = 'ComputerName')]
 	param
@@ -60,7 +60,7 @@
 			MethodName = 'Create'
 		}
 
-		$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CliXml', 'ConvertTo-Base64StringFromObject'
+		$SupportFunctions = Convert-FunctionToString -FunctionToConvert 'ConvertTo-CCMCodeStringFromObject'
 		$HelperFunctions = switch ($PSBoundParameters.ContainsKey('FunctionsToLoad')) {
 			$true {
 				Convert-FunctionToString -FunctionToConvert $FunctionsToLoad
@@ -79,7 +79,7 @@
 
 			{3}
 		}}
-		$results = ConvertTo-Base64StringFromObject -inputObject $TempResultPreConversion
+		$results = ConvertTo-CCMCodeStringFromObject -inputObject $TempResultPreConversion
 		$streamWriter.WriteLine("$($results)")
 		$streamWriter.dispose()
 		$namedPipe.dispose()
@@ -116,7 +116,7 @@
 			$namedPipe.dispose()
 
 			if (-not [string]::IsNullOrWhiteSpace($tempData)) {
-				ConvertFrom-Base64ToObject -inputString $tempData
+				ConvertFrom-CCMCodeStringToObject -inputString $tempData
 			}
 		}
 	}
