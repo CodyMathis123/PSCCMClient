@@ -12,7 +12,7 @@ Get-CCMApplication -ApplicationName '7-Zip' -ComputerName Workstation1 | Invoke-
 
 Largely this is leveraging CIM to gather info, and act upon it. This is why there are custom functions to make registry edits, and gather registry info via CIM. By consistently using CIM, we can ensure that a CimSession can be used for efficiency. A PSSession parameter is also available on all functions for an alternative remote connection. In some cases, a CIMSession parameter is not available because some CIM methods for the MEMCM client do not work well remotely over CIM. This can be seen with the methods on SMS_CLIENT in the root\CCM Namespace and by trying to invoke updates remotely with CIM. In previous iterations of this module, I was executing arbitrary code via the Win32_Process:CreateProcess method. In order to do this, code was being converted to, and from Base64. This was commonly a red flag for enterprise AV. I have since removed the code that does Base64 conversion, but I am open to creative ideas!
 
-I encourage anyone that wants to contribute to start picking away! I'm currently using VSCode to develop this module, and as part of that I'm using the 'TODO Tree' extension to make brief notes regarding future work that needs done. 
+I encourage anyone that wants to contribute to start picking away! I'm currently using VSCode to develop this module, and as part of that I'm using the 'TODO Tree' extension to make brief notes regarding future work that needs done.
 
 Current list of functions:
 
@@ -60,7 +60,6 @@ Current list of functions:
 * New-LoopAction
 * Remove-CCMCacheContent
 * Repair-CCMCacheLocation
-* Reset-CCMLoggingConfiguration
 * Set-CCMCacheLocation
 * Set-CCMCacheSize
 * Set-CCMClientAlwaysOnInternet
