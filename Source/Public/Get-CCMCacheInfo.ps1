@@ -1,37 +1,4 @@
 function Get-CCMCacheInfo {
-    <#
-        .SYNOPSIS
-            Get ConfigMgr client cache directory info from computers via CIM
-        .DESCRIPTION
-            This function will allow you to gather the ConfigMgr client cache directory info from multiple computers using CIM queries.
-            You can provide an array of computer names, or cimsessions, or you can pass them through the pipeline.
-        .PARAMETER CimSession
-            Provides CimSession to gather cache info from.
-        .PARAMETER ComputerName
-            Provides computer names to gather cache info from.
-        .PARAMETER PSSession
-            Provides PSSessions to gather cache info from.
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to. 
-        .EXAMPLE
-            C:\PS> Get-CCMCacheInfo
-                Return ConfigMgr client cache directory info for the local computer
-        .EXAMPLE
-            C:\PS> Get-CCMCacheInfo -ComputerName 'Workstation1234','Workstation4321'
-                Return ConfigMgr client cache directory info for Workstation1234, and Workstation4321
-        .NOTES
-            FileName:    Get-CCMCacheInfo.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2019-11-06
-            Updated:     2020-02-27
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]

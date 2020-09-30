@@ -1,46 +1,4 @@
 function Get-CCMRegistryProperty {
-    <#
-        .SYNOPSIS
-            Return registry properties using the CIM StdRegProv, or Invoke-CCMCommand
-        .DESCRIPTION
-            Relies on remote CIM and StdRegProv to allow for returning Registry Properties under a key. If a PSSession, or ConnectionPreference
-            is used, then Invoke-CCMCommand is used instead.
-        .PARAMETER RegRoot
-            The root key you want to search under
-            ('HKEY_LOCAL_MACHINE', 'HKEY_USERS', 'HKEY_CURRENT_CONFIG', 'HKEY_DYN_DATA', 'HKEY_CLASSES_ROOT', 'HKEY_CURRENT_USER')
-        .PARAMETER Key
-            The key you want to return properties of. (ie. SOFTWARE\Microsoft\SMS\Client\Configuration\Client Properties)
-        .PARAMETER Property
-            The property name(s) you want to return the value of. This is an optional string array [string[]] and if it is not provided, all properties
-            under the key will be returned
-        .PARAMETER CimSession
-            Provides CimSessions to get registry properties from
-        .PARAMETER ComputerName
-            Provides computer names to get registry properties from
-        .PARAMETER PSSession
-            Provides PSSessions to get registry properties from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to. 
-        .EXAMPLE
-            PS> Get-CCMRegistryProperty -RegRoot HKEY_LOCAL_MACHINE -Key 'SOFTWARE\Microsoft\SMS\Client\Client Components\Remote Control' -Property "Allow Remote Control of an unattended computer"
-            Name                           Value
-            ----                           -----
-            Computer123                 @{Allow Remote Control of an unattended computer=1}
-        .OUTPUTS
-            [System.Collections.Hashtable]
-        .NOTES
-            FileName:    Get-CCMRegistryProperty.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2019-11-07
-            Updated:     2020-02-24
-#>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CIMRegistryProperty')]
     param (

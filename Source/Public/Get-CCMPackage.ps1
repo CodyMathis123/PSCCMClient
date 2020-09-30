@@ -1,46 +1,4 @@
 function Get-CCMPackage {
-    <#
-        .SYNOPSIS
-            Return deployed packages from a computer
-        .DESCRIPTION
-            Pulls a list of deployed packages from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
-            to Invoke-CCMPackage if desired.
-
-            Note that the parameters for filter are all joined together with OR.
-        .PARAMETER PackageID
-            An array of PackageID to filter on
-        .PARAMETER PackageName
-            An array of package names to filter on
-        .PARAMETER ProgramName
-            An array of program names to filter on
-        .PARAMETER CimSession
-            Provides CimSession to gather deployed package info from
-        .PARAMETER ComputerName
-            Provides computer names to gather deployed package info from
-        .PARAMETER PSSession
-            Provides PSSessions to gather deployed package info from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to.
-        .EXAMPLE
-            PS> Get-CCMPackage
-                Returns all deployed packages listed in WMI on the local computer
-        .EXAMPLE
-            PS> Get-CCMPackage -PackageName 'Software Install' -ProgramName 'Software Install - Silent'
-                Returns all deployed packages listed in WMI on the local computer which have either a package name of 'Software Install' or
-                a Program Name of 'Software Install - Silent'
-        .NOTES
-            FileName:    Get-CCMPackage.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-12
-            Updated:     2020-02-27
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false)]

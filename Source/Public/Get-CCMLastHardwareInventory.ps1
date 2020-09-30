@@ -1,37 +1,4 @@
 function Get-CCMLastHardwareInventory {
-    <#
-        .SYNOPSIS
-            Returns info about the last time Hardware Inventory ran
-        .DESCRIPTION
-            This function will return info about the last time Hardware Inventory was ran. This is pulled from the InventoryActionStatus WMI Class.
-            The hardware inventory major, and minor version is included. This can be helpful in troubleshooting hardware inventory issues.
-        .PARAMETER CimSession
-            Provides CimSession to gather hardware inventory last run info from
-        .PARAMETER ComputerName
-            Provides computer names to gather hardware inventory last run info from
-        .PARAMETER PSSession
-            Provides PSSessions to gather hardware inventory last run info from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to.
-        .EXAMPLE
-            C:\PS> Get-CCMLastHardwareInventory
-                Returns info regarding the last hardware inventory cycle for the local computer
-        .EXAMPLE
-            C:\PS> Get-CCMLastHardwareInventory -ComputerName 'Workstation1234','Workstation4321'
-                Returns info regarding the last hardware inventory cycle for Workstation1234, and Workstation4321
-        .NOTES
-            FileName:    Get-CCMLastHardwareInventory.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-01
-            Updated:     2020-02-27
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMLastHINV')]
     param (

@@ -1,28 +1,4 @@
 Function ConvertFrom-CCMSchedule {
-    <#
-    .SYNOPSIS
-        Convert Configuration Manager Schedule Strings
-    .DESCRIPTION
-        This function will take a Configuration Manager Schedule String and convert it into a readable object, including
-        the calculated description of the schedule
-    .PARAMETER ScheduleString
-        Accepts an array of strings. This should be a schedule string in the MEMCM format
-    .EXAMPLE
-        PS C:\> ConvertFrom-CCMSchedule -ScheduleString 1033BC7B10100010
-        SmsProviderObjectPath : SMS_ST_RecurInterval
-        DayDuration           : 0
-        DaySpan               : 2
-        HourDuration          : 2
-        HourSpan              : 0
-        IsGMT                 : False
-        MinuteDuration        : 59
-        MinuteSpan            : 0
-        StartTime             : 11/19/2019 1:04:00 AM
-        Description           : Occurs every 2 days effective 11/19/2019 1:04:00 AM
-    .NOTES
-        This function was created to allow for converting MEMCM schedule strings without relying on the SDK / Site Server
-        It also happens to be a TON faster than the Convert-CMSchedule cmdlet and the CIM method on the site server
-    #>
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('Schedules')]

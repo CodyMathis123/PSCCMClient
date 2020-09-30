@@ -1,4 +1,7 @@
 @{ 
     Path = "PSCCMClient.psd1" 
-    OutputDirectory = '..\Output'
+    OutputDirectory = '..\Output' 
+    CopyDirectories = @(
+        'en-US'
+    )
 }

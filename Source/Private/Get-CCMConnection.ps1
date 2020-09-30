@@ -1,42 +1,4 @@
 function Get-CCMConnection {
-    <#
-    .SYNOPSIS
-        Determine, and return the preferred connection type
-    .DESCRIPTION
-        The purpose of this function is to determine the best possible connection type to be used for the functions
-        in the PSCCMClient PowerShell Module. Optinally, a 'preference' can be specified with the Prefer parameter.
-        By default the preference is a CimSession, falling back to ComputerName if one is not found. In some cases
-        it can be beneficial to return a PSSession for the connection type. This can be helpful as an alternative to
-        using the Invoke-CIMPowerShell function. The Invoke-CIMPowerShell function executes code remotely by converting
-        scriptblocks to base64 and execting them throuth the 'Create' method of the Win32_Process CIM Class.
-    .PARAMETER Prefer
-        The preferred remoting type, either CimSession, or PSSession which is used in fallback scenarios where ComputerName
-        is passed to the function.
-    .PARAMETER CimSession
-        CimSession that will be passed back out after formatting
-    .PARAMETER PSSession
-        PSSession that will be passed back out after formatting
-    .PARAMETER ComputerName
-        The computer name that will be used to determine, and return the connection type
-    .EXAMPLE
-        C:\PS> Get-CCMConnection -ComputerName Test123 -Prefer Session
-            Return a Session if found, otherwise return Computer Name
-    .EXAMPLE
-        C:\PS> Get-CCMConnection -ComputerName Test123
-            Check for a CimSession, falling back to PSSession, and return if one is found, otherwise return ComputerName
-    .EXAMPLE
-        C:\PS> Get-CCMConnection -ComputerName Test123 -Prefer PSSession
-            Check for a PSSession, falling back to CimSession, and return if one is found, otherwise return ComputerName
-    .EXAMPLE
-        C:\PS> Get-CCMConnection -PSSession $PSS
-            Process the PSSession passed in, and return in appropriate format for consumption in module functions
-    .NOTES
-        FileName:    Get-CCMConnection.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2020-02-06
-        Updated:     2020-09-30
-    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]

@@ -1,21 +1,4 @@
 function Convert-FunctionToString {
-    <#
-        .SYNOPSIS
-            Convert function to string
-        .DESCRIPTION
-            This function is used to take a function, and convert it to a string. This allows it to be
-            moved around more easily
-        .PARAMETER FunctionToConvert
-            The name of the function(s) you wish to convert to a string. You can provide multiple
-        .EXAMPLE
-            PS C:\> Convert-FunctionTostring -FunctionToConvert 'Get-CMClientMaintenanceWindow'
-        .NOTES
-            FileName:    Convert-FunctionTostring.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-07
-            Updated:     2020-01-07
-#>
     param(
         [Parameter(Mandatory = $True)]
         [string[]]$FunctionToConvert

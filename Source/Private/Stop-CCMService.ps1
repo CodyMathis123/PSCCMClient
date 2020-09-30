@@ -1,32 +1,4 @@
 function Stop-CCMService {
-    <#
-    .SYNOPSIS
-        Stops a service for the specified computers using WMI
-    .DESCRIPTION
-        This function will stop a service on the specified computers, including a 'timeout' value where the
-        process for the service will be forcefully stopped, unless it can't be stopped due to access, dependenct services, etc.
-        You can provide computer names, and credentials. Providing a timeout implies you want to monitor the service being stopped.
-        Otherwise, the command is simply invoked and you receive the output
-    .PARAMETER Name
-        The name of the service(s) you would like to stop
-    .PARAMETER Timeout
-        The timeout in minutes, after which the PID for the service will be forcefully stopped, unless it can't be stopped due to access, dependenct services, etc.
-    .PARAMETER Force
-        Will attempt to stop dependent services as well as the requested service
-    .PARAMETER ComputerName
-        Provides computer names to stop the service on
-    .PARAMETER Credential
-        Provides optional credentials to use for the WMI cmdlets.
-    .EXAMPLE
-        C:\PS> Stop-CCMService -Name ccmexec -Timeout 2
-            Stops the ccmexec service on the local computer, giving 2 minutes before the equivalent process is force stopped
-    .NOTES
-        FileName:    Stop-CCMService.ps1
-        Author:      Cody Mathis
-        Contact:     @CodyMathis123
-        Created:     2019-11-8
-        Updated:     2019-12-9
-    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]

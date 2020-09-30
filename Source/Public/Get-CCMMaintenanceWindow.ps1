@@ -1,46 +1,4 @@
 function Get-CCMMaintenanceWindow {
-    <#
-        .SYNOPSIS
-            Get ConfigMgr Maintenance Window information from computers via CIM
-        .DESCRIPTION
-            This function will allow you to gather maintenance window information from multiple computers using CIM queries. You can provide an array of computer names, or cimsessions,
-            or you can pass them through the pipeline. You are also able to specify the Maintenance Window Type (MWType) you wish to query for.
-        .PARAMETER MWType
-            Specifies the types of MW you want information for. Valid options are below
-                'All Deployment Service Window',
-                'Program Service Window',
-                'Reboot Required Service Window',
-                'Software Update Service Window',
-                'Task Sequences Service Window',
-                'Corresponds to non-working hours'
-        .PARAMETER CimSession
-            Provides CimSession to gather Maintenance Window information info from
-        .PARAMETER ComputerName
-            Provides computer names to gather Maintenance Window information info from
-        .PARAMETER PSSession
-            Provides PSSessions to gather Maintenance Window information info from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to.
-        .EXAMPLE
-            C:\PS> Get-CCMMaintenanceWindow
-                Return all the 'All Deployment Service Window', 'Software Update Service Window' Maintenance Windows for the local computer. These are the two default MW types
-                that the function looks for
-        .EXAMPLE
-            C:\PS> Get-CCMMaintenanceWindow -ComputerName 'Workstation1234','Workstation4321' -MWType 'Software Update Service Window'
-                Return all the 'Software Update Service Window' Maintenance Windows for Workstation1234, and Workstation4321
-        .NOTES
-            FileName:    Get-CCMMaintenanceWindow.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2019-08-14
-            Updated:     2020-02-27
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     [Alias('Get-CCMMW')]
     param (

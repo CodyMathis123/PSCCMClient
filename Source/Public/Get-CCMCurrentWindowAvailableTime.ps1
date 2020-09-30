@@ -1,49 +1,4 @@
 function Get-CCMCurrentWindowAvailableTime {
-    <#
-        .SYNOPSIS
-            Return the time left in the current window based on input.
-        .DESCRIPTION
-            This function uses the GetCurrentWindowAvailableTime method of the CCM_ServiceWindowManager CIM class. It will allow you to
-            return the time left in the current window based on your input parameters.
-
-            It also will determine your client settings for software updates to appropriately fall back to an 'All Deployment Service Window'
-            according to both your settings, and whether a 'Software Update Service Window' is available
-        .PARAMETER MWType
-            Specifies the types of MW you want information for. Defaults to 'Software Update Service Window'. Valid options are below
-                'All Deployment Service Window',
-                'Program Service Window',
-                'Reboot Required Service Window',
-                'Software Update Service Window',
-                'Task Sequences Service Window',
-                'Corresponds to non-working hours'
-        .PARAMETER CimSession
-            Provides CimSession to gather Maintenance Window information info from
-        .PARAMETER ComputerName
-            Provides computer names to gather Maintenance Window information info from
-        .PARAMETER PSSession
-            Provides a PSSession to gather Maintenance Window information info from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to.
-        .EXAMPLE
-            C:\PS> Get-CCMCurrentWindowAvailableTime
-                Return the available time fro the default MWType of 'Software Update Service Window' with fallback
-                based on client settings and 'Software Update Service Window' availability.
-        .EXAMPLE
-            C:\PS> Get-CCMCurrentWindowAvailableTime -ComputerName 'Workstation1234','Workstation4321' -MWType 'Task Sequences Service Window'
-                Return the available time left in a current 'Task Sequences Service Window' for 'Workstation1234','Workstation4321'
-        .NOTES
-            FileName:    Get-CCMCurrentWindowAvailableTime.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-02-01
-            Updated:     2020-02-27
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [parameter(Mandatory = $false)]

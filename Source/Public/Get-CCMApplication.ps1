@@ -1,47 +1,4 @@
 function Get-CCMApplication {
-    <#
-        .SYNOPSIS
-            Return deployed applications from a computer
-        .DESCRIPTION
-            Pulls a list of deployed applications from the specified computer(s) or CIMSession(s) with optional filters, and can be passed on
-            to Invoke-CCMApplication if desired.
-
-            Note that the parameters for filter are all joined together with OR.
-        .PARAMETER ApplicationName
-            An array of ApplicationName to filter on
-        .PARAMETER ApplicationID
-            An array of application ID to filter on
-        .PARAMETER IncludeIcon
-            Switch that determines if the Icon property will be included in the output. As this can be a sizeable field, it is excluded by
-            default to minimize the time it takes for this to run, and the amount of memory that will be consumed.
-        .PARAMETER CimSession
-            Provides CimSession to gather deployed application info from
-        .PARAMETER ComputerName
-            Provides computer names to gather deployed application info from
-        .PARAMETER PSSession
-           Provides PSSessions to gather deployed application info from
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the 
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then 
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to. 
-        .EXAMPLE
-            PS> Get-CCMApplication
-                Returns all deployed applications listed in WMI on the local computer
-        .EXAMPLE
-            PS> Get-CCMApplication -ApplicationID ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e -ApplicationName 'Software Install - Silent'
-                Returns all deployed applications listed in WMI on the local computer which have either a application name of 'Software Install' or
-                a ID of 'ScopeId_BE389CA5-D6CC-42AF-B8F5-A059F9C9AD91/Application_0607d288-fc0b-42b7-9a61-76abedf0673e'
-        .NOTES
-            FileName:    Get-CCMApplication.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2020-01-21
-            Updated:     2020-09-29
-    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
         [Parameter(Mandatory = $false)]

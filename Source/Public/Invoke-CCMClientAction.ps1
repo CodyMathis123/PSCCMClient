@@ -1,35 +1,4 @@
 function Invoke-CCMClientAction {
-    <#
-        .SYNOPSIS
-            Invokes MEMCM Client actions on local or remote machines
-        .DESCRIPTION
-            This script will allow you to invoke a set of MEMCM Client actions on a machine, providing a list of the actions
-        .PARAMETER Schedule
-            Define the schedules to run on the machine - 'HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'SourceUpdateMessage', 'SendUnsentStateMessage'
-        .PARAMETER CimSession
-            Provides CimSessions to invoke actions on
-        .PARAMETER ComputerName
-            Provides computer names to invoke actions on
-        .PARAMETER PSSession
-            Provides PSSession to invoke actions on
-        .PARAMETER ConnectionPreference
-            Determines if the 'Get-CCMConnection' function should check for a PSSession, or a CIMSession first when a ComputerName
-            is passed to the function. This is ultimately going to result in the function running faster. The typical use case is
-            when you are using the pipeline. In the pipeline scenario, the 'ComputerName' parameter is what is passed along the
-            pipeline. The 'Get-CCMConnection' function is used to find the available connections, falling back from the preference
-            specified in this parameter, to the the alternative (eg. you specify, PSSession, it falls back to CIMSession), and then
-            falling back to ComputerName. Keep in mind that the 'ConnectionPreference' also determines what type of connection / command
-            the ComputerName parameter is passed to.
-        .EXAMPLE
-            C:\PS> Invoke-CCMClientAction -Schedule MachinePol,HardwareInv
-                Start a machine policy eval and a hardware inventory cycle
-        .NOTES
-            FileName:    Invoke-CCMClientAction.ps1
-            Author:      Cody Mathis
-            Contact:     @CodyMathis123
-            Created:     2018-11-20
-            Updated:     2020-03-02
-    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ComputerName')]
     param
     (

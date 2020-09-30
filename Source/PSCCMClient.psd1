@@ -122,6 +122,7 @@ v0.3.1
 * Get-CCMConnection now select the 0 index CimSession, or PSSession found. 
             This address Issue #48
             https://github.com/CodyMathis123/PSCCMClient/issues/48
+* Move the help to external help, and have markdown version available on repo
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
