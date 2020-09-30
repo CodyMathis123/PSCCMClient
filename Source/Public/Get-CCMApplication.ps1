@@ -62,6 +62,7 @@ function Get-CCMApplication {
         [ValidateSet('CimSession', 'PSSession')]
         [string]$ConnectionPreference
     )
+    # ENHANCE - Support lazy loading properties
     begin {
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $getapplicationsplat = @{
