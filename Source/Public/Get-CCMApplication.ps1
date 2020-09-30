@@ -40,7 +40,7 @@ function Get-CCMApplication {
             Author:      Cody Mathis
             Contact:     @CodyMathis123
             Created:     2020-01-21
-            Updated:     2020-02-27
+            Updated:     2020-09-29
     #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName')]
     param (
@@ -161,44 +161,18 @@ function Get-CCMApplication {
                         }
                         switch ($null -ne $AppToReturn) {
                             $true {
-                                $Return['Name'] = $AppToReturn.Name
-                                $Return['FullName'] = $AppToReturn.FullName
-                                $Return['SoftwareVersion'] = $AppToReturn.SoftwareVersion
-                                $Return['Publisher'] = $AppToReturn.Publisher
-                                $Return['Description'] = $AppToReturn.Description
-                                $Return['Id'] = $AppToReturn.Id
-                                $Return['Revision'] = $AppToReturn.Revision
-                                $Return['EvaluationState'] = $evaluationStateMap[[int]$AppToReturn.EvaluationState]
-                                $Return['ErrorCode'] = $AppToReturn.ErrorCode
-                                $Return['AllowedActions'] = $AppToReturn.AllowedActions
-                                $Return['ResolvedState'] = $AppToReturn.ResolvedState
-                                $Return['InstallState'] = $AppToReturn.InstallState
-                                $Return['ApplicabilityState'] = $AppToReturn.ApplicabilityState
-                                $Return['ConfigureState'] = $AppToReturn.ConfigureState
-                                $Return['LastEvalTime'] = $AppToReturn.LastEvalTime
-                                $Return['LastInstallTime'] = $AppToReturn.LastInstallTime
-                                $Return['StartTime'] = $AppToReturn.StartTime
-                                $Return['Deadline'] = $AppToReturn.Deadline
-                                $Return['NextUserScheduledTime'] = $AppToReturn.NextUserScheduledTime
-                                $Return['IsMachineTarget'] = $AppToReturn.IsMachineTarget
-                                $Return['IsPreflightOnly'] = $AppToReturn.IsPreflightOnly
-                                $Return['NotifyUser'] = $AppToReturn.NotifyUser
-                                $Return['UserUIExperience'] = $AppToReturn.UserUIExperience
-                                $Return['OverrideServiceWindow'] = $AppToReturn.OverrideServiceWindow
-                                $Return['RebootOutsideServiceWindow'] = $AppToReturn.RebootOutsideServiceWindow
-                                $Return['AppDTs'] = $AppToReturn.AppDTs
-                                $Return['ContentSize'] = $AppToReturn.ContentSize
-                                $Return['DeploymentReport'] = $AppToReturn.DeploymentReport
-                                $Return['EnforcePreference'] = $AppToReturn.EnforcePreference
-                                $Return['EstimatedInstallTime'] = $AppToReturn.EstimatedInstallTime
-                                $Return['FileTypes'] = $AppToReturn.FileTypes
-                                $Return['HighImpactDeployment'] = $AppToReturn.HighImpactDeployment
-                                $Return['InformativeUrl'] = $AppToReturn.InformativeUrl
-                                $Return['InProgressActions'] = $AppToReturn.InProgressActions
-                                $Return['PercentComplete'] = $AppToReturn.PercentComplete
-                                $Return['ReleaseDate'] = $AppToReturn.ReleaseDate
-                                $Return['SupersessionState'] = $AppToReturn.SupersessionState
-                                $Return['Type'] = $AppToReturn.Type
+                                $PropsToShow = 'Name', 'FullName', 'SoftwareVersion', 'Publisher', 'Description',
+                                'Id', 'Revision', 'EvaluationState', 'ErrorCode', 'AllowedActions', 'ResolvedState',
+                                'InstallState', 'ApplicabilityState', 'ConfigureState', 'LastEvalTime', 'LastInstallTime',
+                                'StartTime', 'Deadline', 'NextUserScheduledTime', 'IsMachineTarget', 'IsPreflightOnly',
+                                'NotifyUser', 'UserUIExperience', 'OverrideServiceWindow', 'RebootOutsideServiceWindow',
+                                'AppDTs', 'ContentSize', 'DeploymentReport', 'EnforcePreference', 'EstimatedInstallTime',
+                                'FileTypes', 'HighImpactDeployment', 'InformativeUrl', 'InProgressActions', 'PercentComplete',
+                                'ReleaseDate', 'SupersessionState', 'Type'
+                                foreach ($PropertyName in $PropsToShow) {
+                                    $Return[$PropertyName] = $AppToReturn.$PropertyName
+                                }
+
                                 switch ($IncludeIcon.IsPresent) {
                                     $true {
                                         $Return['Icon'] = $AppToReturn.Icon
