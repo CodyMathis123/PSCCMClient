@@ -119,8 +119,8 @@ v0.3.1
 * Remove Reset-CCMLoggingConfiguration function
 * Changing Set-CCMLoggingConfiguration to set registry values due to inconsistencies with the cim method in new CCM client versions
 * Rename some private functions to reduce the chance of false positive AV detection
-* Get-CCMConnection now select the 0 index CimSession, or PSSession found
-            This address Issue #48
+* Get-CCMConnection now selects the 0 index CimSession, or PSSession found
+            This addresses Issue #48
             https://github.com/CodyMathis123/PSCCMClient/issues/48
 * Move the help to external help, and have markdown version available on repo
 * Fixed a bug where Remove-CCMCacheContent -Clear would throw a null reference exception
