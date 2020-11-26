@@ -43,7 +43,7 @@ function Remove-CCMCacheContent {
             $Computer = $ConnectionInfo.ComputerName
             $connectionSplat = $ConnectionInfo.connectionSplat
 
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer'] [ContentID = '$([string]::Join('; ', $ContentID))]'", "Remove-CCMCacheContent")) {
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Remove-CCMCacheContent")) {
                 $removeCacheContentArgs = switch ($PSBoundParameters.Keys) {
                     'ContentID' {
                         [string]::Format('-ContentID "{0}"', [string]::Join('", "', $ContentID))
