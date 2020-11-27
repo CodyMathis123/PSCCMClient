@@ -57,7 +57,7 @@ Invoke-CCMSoftwareUpdate -ComputerName TestingPC1
 ## PARAMETERS
 
 ### -ArticleID
-{{ Fill ArticleID Description }}
+An array of Article ID to invoke.
 
 ```yaml
 Type: String[]

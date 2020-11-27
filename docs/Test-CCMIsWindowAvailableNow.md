@@ -99,7 +99,9 @@ Accept wildcard characters: False
 ```
 
 ### -FallbackToAllProgramsWindow
-{{ Fill FallbackToAllProgramsWindow Description }}
+Determines if the function should fallback to the 'All Programs' MW. This is typically
+controlled by client settings. A warning will be thrown if the requested fallback setting
+does not match the current client settings.
 
 ```yaml
 Type: Boolean

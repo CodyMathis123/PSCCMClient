@@ -87,7 +87,7 @@ Accept wildcard characters: False
 ```
 
 ### -PSSession
-{{ Fill PSSession Description }}
+Provides PSSession(s) which you want to get pending MEMCM patches for
 
 ```yaml
 Type: PSSession[]

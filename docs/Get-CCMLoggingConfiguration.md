@@ -78,7 +78,7 @@ Accept wildcard characters: False
 ```
 
 ### -PSSession
-{{ Fill PSSession Description }}
+Provides PSSession to gather the logging configuration from
 
 ```yaml
 Type: PSSession[]
