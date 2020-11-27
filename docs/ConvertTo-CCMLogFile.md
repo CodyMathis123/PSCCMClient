@@ -8,7 +8,7 @@ schema: 2.0.0
 # ConvertTo-CCMLogFile
 
 ## SYNOPSIS
-{{ Fill in the Synopsis }}
+Convert from a CMLogEntry object to a file in CM log format.
 
 ## SYNTAX
 
@@ -17,21 +17,23 @@ ConvertTo-CCMLogFile [[-CMLogEntries] <CMLogEntry[]>] [[-LogPath] <String>] [<Co
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+This function takes an array of CMLogEntry objects and will turn them back into a log file. This can be useful
+for aggregating or filtering multiple log files, and returning them back into one log file. CMLogEntry objects
+can be obtained using the ConvertFrom-CCMLogFile function.
 
 ## EXAMPLES
 
 ### Example 1
 ```powershell
-PS C:\> {{ Add example code here }}
+PS C:\> ConvertTo-CCMLogFile -CMLogEntries $LogEntries -LogPath C:\temp\Output.log
 ```
 
-{{ Add example description here }}
+Convert the $LogEntry object (an array of CMLogEntry) into a CM log formatted file c:\temp\Output.log
 
 ## PARAMETERS
 
 ### -CMLogEntries
-{{ Fill CMLogEntries Description }}
+An array of CMLogEntry retrieved using ConvertFrom-CCMLogFile
 
 ```yaml
 Type: CMLogEntry[]
@@ -46,7 +48,7 @@ Accept wildcard characters: False
 ```
 
 ### -LogPath
-{{ Fill LogPath Description }}
+The output log file path
 
 ```yaml
 Type: String
@@ -71,5 +73,11 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Object
 ## NOTES
+
+**FileName**:    ConvertTo-CCMLogFile.ps1  
+**Author**:      Cody Mathis  
+**Contact**:     @CodyMathis123  
+**Created**:     2020-08-06  
+**Updated**:     2020-11-26  
 
 ## RELATED LINKS
