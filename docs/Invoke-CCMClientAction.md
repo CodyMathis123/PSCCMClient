@@ -44,7 +44,7 @@ Invoke-CCMClientAction -Schedule MachinePol,HardwareInv
 ## PARAMETERS
 
 ### -Schedule
-Define the schedules to run on the machine - 'HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'SourceUpdateMessage', 'SendUnsentStateMessage'
+Define the schedules to run on the machine - 'HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'RefreshDefaultMP', 'SourceUpdateMessage', 'SendUnsentStateMessage'
 
 ```yaml
 Type: String[]
@@ -174,6 +174,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 **Author**:      Cody Mathis  
 **Contact**:     @CodyMathis123  
 **Created**:     2018-11-20  
-**Updated**:     2020-03-02  
+**Updated**:     2020-11-27  
 
 ## RELATED LINKS

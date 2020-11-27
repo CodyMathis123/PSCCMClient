@@ -3,7 +3,7 @@ function Invoke-CCMClientAction {
     param
     (
         [parameter(Mandatory = $true)]
-        [ValidateSet('HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'SourceUpdateMessage', 'SendUnsentStateMessage')]
+        [ValidateSet('HardwareInv', 'FullHardwareInv', 'SoftwareInv', 'UpdateScan', 'UpdateEval', 'MachinePol', 'AppEval', 'DDR', 'RefreshDefaultMP', 'SourceUpdateMessage', 'SendUnsentStateMessage')]
         [ValidateNotNullOrEmpty()]
         [string[]]$Schedule,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
@@ -75,6 +75,9 @@ function Invoke-CCMClientAction {
                         }
                         'DDR' {
                             '{00000000-0000-0000-0000-000000000003}'
+                        }
+                        'RefreshDefaultMP' {
+                            '{00000000-0000-0000-0000-000000000023}'
                         }
                         'SourceUpdateMessage' {
                             '{00000000-0000-0000-0000-000000000032}'
