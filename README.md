@@ -17,10 +17,12 @@ I encourage anyone that wants to contribute to start picking away! I'm currently
 Current list of functions:
 
 * ConvertFrom-CCMLogFile
+    * Alias: Get-CCMLogFile
 * ConvertFrom-CCMSchedule
 * ConvertTo-CCMLogFile
 * Get-CCMApplication
 * Get-CCMBaseline
+    * Alias: Get-CCMCB
 * Get-CCMCacheContent
 * Get-CCMCacheInfo
 * Get-CCMCimInstance
@@ -28,25 +30,36 @@ Current list of functions:
 * Get-CCMClientInfo
 * Get-CCMClientVersion
 * Get-CCMCurrentManagementPoint
+    * Alias: Get-CCMCurrentMP
+    * Alias: Get-CCMMP
 * Get-CCMCurrentSoftwareUpdatePoint
+    * Alias: Get-CCMCurrentSUP
+    * Alias: Get-CCMSUP
 * Get-CCMCurrentWindowAvailableTime
 * Get-CCMDNSSuffix
 * Get-CCMExecStartupTime
 * Get-CCMGUID
 * Get-CCMLastHardwareInventory
+    * Alias: Get-CCMLastHINV
 * Get-CCMLastHeartbeat
+    * Alias: Get-CCMLastDDR
 * Get-CCMLastScheduleTrigger
 * Get-CCMLastSoftwareInventory
+    * Alias: Get-CCMLastSINV
 * Get-CCMLoggingConfiguration
 * Get-CCMMaintenanceWindow
+    * Alias: Get-CCMMW
 * Get-CCMPackage
 * Get-CCMPrimaryUser
 * Get-CCMProvisioningMode
 * Get-CCMRegistryProperty
+    * Alias: Get-CIMRegistryProperty
 * Get-CCMServiceWindow
 * Get-CCMSite
 * Get-CCMSoftwareUpdate
+    * Alias: Get-CCMUpdate
 * Get-CCMSoftwareUpdateGroup
+    * Alias: Get-CCMSUG
 * Get-CCMSoftwareUpdateSettings
 * Get-CCMTaskSequence
 * Invoke-CCMApplication
@@ -56,6 +69,7 @@ Current list of functions:
 * Invoke-CCMPackage
 * Invoke-CCMResetPolicy
 * Invoke-CCMSoftwareUpdate
+    * Alias: Invoke-CCMUpdate
 * Invoke-CCMTaskSequence
 * Invoke-CCMTriggerSchedule
 * Invoke-CIMPowerShell
@@ -68,8 +82,10 @@ Current list of functions:
 * Set-CCMDNSSuffix
 * Set-CCMLoggingConfiguration
 * Set-CCMManagementPoint
+    * Alias: Set-CCMMP
 * Set-CCMProvisioningMode
 * Set-CCMRegistryProperty
+    * Alias: Set-CIMRegistryProperty
 * Set-CCMSite
 * Test-CCMIsClientAlwaysOnInternet
 * Test-CCMIsClientOnInternet
