@@ -95,10 +95,10 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('SCCM', 'MEMCM', 'CIM', 'ConfigMgr', 'PowerShell', 'SystemCenter')
+            Tags         = @('SCCM', 'MEMCM', 'MECM','CIM', 'ConfigMgr', 'PowerShell', 'SystemCenter')
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+             LicenseUri = 'https://github.com/CodyMathis123/PSCCMClient/blob/Release/LICENSE'
 
             # A URL to the main website for this project.
             ProjectUri   = 'https://github.com/CodyMathis123/PSCCMClient'
@@ -122,8 +122,9 @@ v0.3.1
 * Get-CCMConnection now selects the 0 index CimSession, or PSSession found
             This addresses Issue #48
             https://github.com/CodyMathis123/PSCCMClient/issues/48
-* Move the help to external help, and have markdown version available on repo
+* Move the help to external help, and have markdown version available on repo. Built using PlaytPS
 * Fixed a bug where Remove-CCMCacheContent -Clear would throw a null reference exception
+* Doesn't change functionality but, changed to using ModuleBuilder to build the module
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
