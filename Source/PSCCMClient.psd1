@@ -127,6 +127,9 @@ v0.3.1
 * Doesn't change functionality but, changed to using ModuleBuilder to build the module
 * Add RefreshDefaultMP to Invoke-CCMClientAction function. This is useful when you want to force a check
             on a client to switch between CMG and intranet resources.
+* Improve the region documentation in Get-CCMLogFile
+* Fix function reference in Get-CCMClientInfo
+* Improve splitting in Get-CCMLogFile
 v0.3.0
 * All commands that run remotely now support PSSession, as well as CimSession
 * Add Get-CCMConnection to module in private folder
