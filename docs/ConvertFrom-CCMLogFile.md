@@ -39,32 +39,32 @@ searched and manipulated easily with PowerShell
 ### EXAMPLE 1
 ```
 ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\ccmexec.log'
-    Returns the CCMExec.log as a CMLogEntry
 ```
+Returns the CCMExec.log as a CMLogEntry
 
 ### EXAMPLE 2
 ```
 ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\AppEnforce.log', 'c:\windows\ccm\logs\AppDiscovery.log' | Sort-Object -Property Timestamp
-    Returns the AppEnforce.log and AppDiscovery.log as a CMLogEntry sorted by Timestamp
 ```
+Returns the AppEnforce.log and AppDiscovery.log as a CMLogEntry sorted by Timestamp
 
 ### EXAMPLE 3
 ```
 ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\smstslog.log' -ParseSMSTS
-    Returns all the actions that ran according to the SMSTSLog provided
 ```
+Returns all the actions that ran according to the SMSTSLog provided
 
 ### EXAMPLE 4
 ```
 ConvertFrom-CCMLogFile -Path 'c:\windows\ccm\logs\cas.log' -Filter "Successfully created download  request \{(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\} for content (\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}\.\d+"
-    Return all log entires from the CAS.Log which pertain creating download requests for updates
 ```
+Return all log entires from the CAS.Log which pertain creating download requests for updates
 
 ### EXAMPLE 5
 ```
 ConvertFrom-CCMLogFile -Path C:\windows\ccm\logs\AppDiscovery.log -TimestampGreaterThan (Get-Date).AddDays(-1)
-    Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
 ```
+Returns all log entries from the AppDiscovery.log file which have a timestamp within the last day
 
 ## PARAMETERS
 
