@@ -19,79 +19,79 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 
 ## List of functions:
 
-* ConvertFrom-CCMLogFile
+* [ConvertFrom-CCMLogFile](docs/ConvertFrom-CCMLogFile.md)
     * Alias: Get-CCMLogFile
-* ConvertFrom-CCMSchedule
-* ConvertTo-CCMLogFile
-* Get-CCMApplication
-* Get-CCMBaseline
+* [ConvertFrom-CCMSchedule](docs/ConvertFrom-CCMSchedule.md)
+* [ConvertTo-CCMLogFile](docs/ConvertTo-CCMLogFile.md)
+* [Get-CCMApplication](docs/Get-CCMApplication.md)
+* [Get-CCMBaseline](docs/Get-CCMBaseline.md)
     * Alias: Get-CCMCB
-* Get-CCMCacheContent
-* Get-CCMCacheInfo
-* Get-CCMCimInstance
-* Get-CCMClientDirectory
-* Get-CCMClientInfo
-* Get-CCMClientVersion
-* Get-CCMCurrentManagementPoint
+* [Get-CCMCacheContent](docs/Get-CCMCacheContent.md)
+* [Get-CCMCacheInfo](docs/Get-CCMCacheInfo.md)
+* [Get-CCMCimInstance](docs/Get-CCMCimInstance.md)
+* [Get-CCMClientDirectory](docs/Get-CCMClientDirectory.md)
+* [Get-CCMClientInfo](docs/Get-CCMClientInfo.md)
+* [Get-CCMClientVersion](docs/Get-CCMClientVersion.md)
+* [Get-CCMCurrentManagementPoint](docs/Get-CCMCurrentManagementPoint.md)
     * Alias: Get-CCMCurrentMP
     * Alias: Get-CCMMP
-* Get-CCMCurrentSoftwareUpdatePoint
+* [Get-CCMCurrentSoftwareUpdatePoint](docs/Get-CCMCurrentSoftwareUpdatePoint.md)
     * Alias: Get-CCMCurrentSUP
     * Alias: Get-CCMSUP
-* Get-CCMCurrentWindowAvailableTime
-* Get-CCMDNSSuffix
-* Get-CCMExecStartupTime
-* Get-CCMGUID
-* Get-CCMLastHardwareInventory
+* [Get-CCMCurrentWindowAvailableTime](docs/Get-CCMCurrentWindowAvailableTime.md)
+* [Get-CCMDNSSuffix](docs/Get-CCMDNSSuffix.md)
+* [Get-CCMExecStartupTime](docs/Get-CCMExecStartupTime.md)
+* [Get-CCMGUID](docs/Get-CCMGUID.md)
+* [Get-CCMLastHardwareInventory](docs/Get-CCMLastHardwareInventory.md)
     * Alias: Get-CCMLastHINV
-* Get-CCMLastHeartbeat
+* [Get-CCMLastHeartbeat](docs/Get-CCMLastHeartbeat.md)
     * Alias: Get-CCMLastDDR
-* Get-CCMLastScheduleTrigger
-* Get-CCMLastSoftwareInventory
+* [Get-CCMLastScheduleTrigger](docs/Get-CCMLastScheduleTrigger.md)
+* [Get-CCMLastSoftwareInventory](docs/Get-CCMLastSoftwareInventory.md)
     * Alias: Get-CCMLastSINV
-* Get-CCMLoggingConfiguration
-* Get-CCMMaintenanceWindow
-    * Alias: Get-CCMMW
-* Get-CCMPackage
-* Get-CCMPrimaryUser
-* Get-CCMProvisioningMode
-* Get-CCMRegistryProperty
+* [Get-CCMLoggingConfiguration](docs/Get-CCMLoggingConfiguration.md)
+* [Get-CCMMaintenanceWindow](docs/Get-CCMMaintenanceWindow.md)
+    * Alias: [Get-CCMMW](docs/Get-CCMMW.md)
+* [Get-CCMPackage](docs/Get-CCMPackage.md)
+* [Get-CCMPrimaryUser](docs/Get-CCMPrimaryUser.md)
+* [Get-CCMProvisioningMode](docs/Get-CCMProvisioningMode.md)
+* [Get-CCMRegistryProperty](docs/Get-CCMRegistryProperty.md)
     * Alias: Get-CIMRegistryProperty
-* Get-CCMServiceWindow
-* Get-CCMSite
-* Get-CCMSoftwareUpdate
+* [Get-CCMServiceWindow](docs/Get-CCMServiceWindow.md)
+* [Get-CCMSite](docs/Get-CCMSite.md)
+* [Get-CCMSoftwareUpdate](docs/Get-CCMSoftwareUpdate.md)
     * Alias: Get-CCMUpdate
-* Get-CCMSoftwareUpdateGroup
+* [Get-CCMSoftwareUpdateGroup](docs/Get-CCMSoftwareUpdateGroup.md)
     * Alias: Get-CCMSUG
-* Get-CCMSoftwareUpdateSettings
-* Get-CCMTaskSequence
-* Invoke-CCMApplication
-* Invoke-CCMBaseline
-* Invoke-CCMClientAction
-* Invoke-CCMCommand
-* Invoke-CCMPackage
-* Invoke-CCMResetPolicy
-* Invoke-CCMSoftwareUpdate
+* [Get-CCMSoftwareUpdateSettings](docs/Get-CCMSoftwareUpdateSettings.md)
+* [Get-CCMTaskSequence](docs/Get-CCMTaskSequence.md)
+* [Invoke-CCMApplication](docs/Invoke-CCMApplication.md)
+* [Invoke-CCMBaseline](docs/Invoke-CCMBaseline.md)
+* [Invoke-CCMClientAction](docs/Invoke-CCMClientAction.md)
+* [Invoke-CCMCommand](docs/Invoke-CCMCommand.md)
+* [Invoke-CCMPackage](docs/Invoke-CCMPackage.md)
+* [Invoke-CCMResetPolicy](docs/Invoke-CCMResetPolicy.md)
+* [Invoke-CCMSoftwareUpdate](docs/Invoke-CCMSoftwareUpdate.md)
     * Alias: Invoke-CCMUpdate
-* Invoke-CCMTaskSequence
-* Invoke-CCMTriggerSchedule
-* Invoke-CIMPowerShell
-* New-LoopAction
-* Remove-CCMCacheContent
-* Repair-CCMCacheLocation
-* Set-CCMCacheLocation
-* Set-CCMCacheSize
-* Set-CCMClientAlwaysOnInternet
-* Set-CCMDNSSuffix
-* Set-CCMLoggingConfiguration
-* Set-CCMManagementPoint
+* [Invoke-CCMTaskSequence](docs/Invoke-CCMTaskSequence.md)
+* [Invoke-CCMTriggerSchedule](docs/Invoke-CCMTriggerSchedule.md)
+* [Invoke-CIMPowerShell](docs/Invoke-CIMPowerShell.md)
+* [New-LoopAction](docs/New-LoopAction.md)
+* [Remove-CCMCacheContent](docs/Remove-CCMCacheContent.md)
+* [Repair-CCMCacheLocation](docs/Repair-CCMCacheLocation.md)
+* [Set-CCMCacheLocation](docs/Set-CCMCacheLocation.md)
+* [Set-CCMCacheSize](docs/Set-CCMCacheSize.md)
+* [Set-CCMClientAlwaysOnInternet](docs/Set-CCMClientAlwaysOnInternet.md)
+* [Set-CCMDNSSuffix](docs/Set-CCMDNSSuffix.md)
+* [Set-CCMLoggingConfiguration](docs/Set-CCMLoggingConfiguration.md)
+* [Set-CCMManagementPoint](docs/Set-CCMManagementPoint.md)
     * Alias: Set-CCMMP
-* Set-CCMProvisioningMode
-* Set-CCMRegistryProperty
+* [Set-CCMProvisioningMode](docs/Set-CCMProvisioningMode.md)
+* [Set-CCMRegistryProperty](docs/Set-CCMRegistryProperty.md)
     * Alias: Set-CIMRegistryProperty
-* Set-CCMSite
-* Test-CCMIsClientAlwaysOnInternet
-* Test-CCMIsClientOnInternet
-* Test-CCMIsWindowAvailableNow
-* Test-CCMStaleLog
-* Write-CCMLogEntry
+* [Set-CCMSite](docs/Set-CCMSite.md)
+* [Test-CCMIsClientAlwaysOnInternet](docs/Test-CCMIsClientAlwaysOnInternet.md)
+* [Test-CCMIsClientOnInternet](docs/Test-CCMIsClientOnInternet.md)
+* [Test-CCMIsWindowAvailableNow](docs/Test-CCMIsWindowAvailableNow.md)
+* [Test-CCMStaleLog](docs/Test-CCMStaleLog.md)
+* [Write-CCMLogEntry](docs/Write-CCMLogEntry.md)
