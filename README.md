@@ -1,7 +1,7 @@
 # PSCCMClient PowerShell Module
 
 ## What is it?
-PSCCMClient is a PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM/MECM/ConfigMgr/SCCM/SMS) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below examples, as well as an array of Computer Names, CimSessions, or PSSessions.
+PSCCMClient is a PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM/MECM/ConfigMgr/SCCM/SMS) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below examples. Additionally you can pass an array of Computer Names, CimSessions, or PSSessions to the functions to work with remote devices.
 
 ```Powershell
 Get-CCMUpdate | Invoke-CCMUpdate
