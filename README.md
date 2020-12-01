@@ -51,7 +51,7 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
     * Alias: Get-CCMLastSINV
 * [Get-CCMLoggingConfiguration](docs/Get-CCMLoggingConfiguration.md)
 * [Get-CCMMaintenanceWindow](docs/Get-CCMMaintenanceWindow.md)
-    * Alias: [Get-CCMMW](docs/Get-CCMMW.md)
+    * Alias: Get-CCMMW
 * [Get-CCMPackage](docs/Get-CCMPackage.md)
 * [Get-CCMPrimaryUser](docs/Get-CCMPrimaryUser.md)
 * [Get-CCMProvisioningMode](docs/Get-CCMProvisioningMode.md)
