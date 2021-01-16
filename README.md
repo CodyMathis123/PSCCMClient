@@ -1,6 +1,7 @@
 # PSCCMClient PowerShell Module
 
-## What is it?
+## What is it
+
 PSCCMClient is a PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM/MECM/ConfigMgr/SCCM/SMS) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below examples. Additionally you can pass an array of Computer Names, CimSessions, or PSSessions to the functions to work with remote devices.
 
 ```Powershell
@@ -17,15 +18,15 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 
 ## [Contributing](CONTRIBUTING.md)
 
-## List of functions:
+## List of functions
 
 * [ConvertFrom-CCMLogFile](docs/ConvertFrom-CCMLogFile.md)
-    * Alias: Get-CCMLogFile
+  * Alias: Get-CCMLogFile
 * [ConvertFrom-CCMSchedule](docs/ConvertFrom-CCMSchedule.md)
 * [ConvertTo-CCMLogFile](docs/ConvertTo-CCMLogFile.md)
 * [Get-CCMApplication](docs/Get-CCMApplication.md)
 * [Get-CCMBaseline](docs/Get-CCMBaseline.md)
-    * Alias: Get-CCMCB
+  * Alias: Get-CCMCB
 * [Get-CCMCacheContent](docs/Get-CCMCacheContent.md)
 * [Get-CCMCacheInfo](docs/Get-CCMCacheInfo.md)
 * [Get-CCMCimInstance](docs/Get-CCMCimInstance.md)
@@ -33,36 +34,36 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 * [Get-CCMClientInfo](docs/Get-CCMClientInfo.md)
 * [Get-CCMClientVersion](docs/Get-CCMClientVersion.md)
 * [Get-CCMCurrentManagementPoint](docs/Get-CCMCurrentManagementPoint.md)
-    * Alias: Get-CCMCurrentMP
-    * Alias: Get-CCMMP
+  * Alias: Get-CCMCurrentMP
+  * Alias: Get-CCMMP
 * [Get-CCMCurrentSoftwareUpdatePoint](docs/Get-CCMCurrentSoftwareUpdatePoint.md)
-    * Alias: Get-CCMCurrentSUP
-    * Alias: Get-CCMSUP
+  * Alias: Get-CCMCurrentSUP
+  * Alias: Get-CCMSUP
 * [Get-CCMCurrentWindowAvailableTime](docs/Get-CCMCurrentWindowAvailableTime.md)
 * [Get-CCMDNSSuffix](docs/Get-CCMDNSSuffix.md)
 * [Get-CCMExecStartupTime](docs/Get-CCMExecStartupTime.md)
 * [Get-CCMGUID](docs/Get-CCMGUID.md)
 * [Get-CCMLastHardwareInventory](docs/Get-CCMLastHardwareInventory.md)
-    * Alias: Get-CCMLastHINV
+  * Alias: Get-CCMLastHINV
 * [Get-CCMLastHeartbeat](docs/Get-CCMLastHeartbeat.md)
-    * Alias: Get-CCMLastDDR
+  * Alias: Get-CCMLastDDR
 * [Get-CCMLastScheduleTrigger](docs/Get-CCMLastScheduleTrigger.md)
 * [Get-CCMLastSoftwareInventory](docs/Get-CCMLastSoftwareInventory.md)
-    * Alias: Get-CCMLastSINV
+  * Alias: Get-CCMLastSINV
 * [Get-CCMLoggingConfiguration](docs/Get-CCMLoggingConfiguration.md)
 * [Get-CCMMaintenanceWindow](docs/Get-CCMMaintenanceWindow.md)
-    * Alias: Get-CCMMW
+  * Alias: Get-CCMMW
 * [Get-CCMPackage](docs/Get-CCMPackage.md)
 * [Get-CCMPrimaryUser](docs/Get-CCMPrimaryUser.md)
 * [Get-CCMProvisioningMode](docs/Get-CCMProvisioningMode.md)
 * [Get-CCMRegistryProperty](docs/Get-CCMRegistryProperty.md)
-    * Alias: Get-CIMRegistryProperty
+  * Alias: Get-CIMRegistryProperty
 * [Get-CCMServiceWindow](docs/Get-CCMServiceWindow.md)
 * [Get-CCMSite](docs/Get-CCMSite.md)
 * [Get-CCMSoftwareUpdate](docs/Get-CCMSoftwareUpdate.md)
-    * Alias: Get-CCMUpdate
+  * Alias: Get-CCMUpdate
 * [Get-CCMSoftwareUpdateGroup](docs/Get-CCMSoftwareUpdateGroup.md)
-    * Alias: Get-CCMSUG
+  * Alias: Get-CCMSUG
 * [Get-CCMSoftwareUpdateSettings](docs/Get-CCMSoftwareUpdateSettings.md)
 * [Get-CCMTaskSequence](docs/Get-CCMTaskSequence.md)
 * [Invoke-CCMApplication](docs/Invoke-CCMApplication.md)
@@ -72,7 +73,7 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 * [Invoke-CCMPackage](docs/Invoke-CCMPackage.md)
 * [Invoke-CCMResetPolicy](docs/Invoke-CCMResetPolicy.md)
 * [Invoke-CCMSoftwareUpdate](docs/Invoke-CCMSoftwareUpdate.md)
-    * Alias: Invoke-CCMUpdate
+  * Alias: Invoke-CCMUpdate
 * [Invoke-CCMTaskSequence](docs/Invoke-CCMTaskSequence.md)
 * [Invoke-CCMTriggerSchedule](docs/Invoke-CCMTriggerSchedule.md)
 * [Invoke-CIMPowerShell](docs/Invoke-CIMPowerShell.md)
@@ -85,10 +86,10 @@ Largely this is leveraging CIM to gather info, and act upon it. This is why ther
 * [Set-CCMDNSSuffix](docs/Set-CCMDNSSuffix.md)
 * [Set-CCMLoggingConfiguration](docs/Set-CCMLoggingConfiguration.md)
 * [Set-CCMManagementPoint](docs/Set-CCMManagementPoint.md)
-    * Alias: Set-CCMMP
+  * Alias: Set-CCMMP
 * [Set-CCMProvisioningMode](docs/Set-CCMProvisioningMode.md)
 * [Set-CCMRegistryProperty](docs/Set-CCMRegistryProperty.md)
-    * Alias: Set-CIMRegistryProperty
+  * Alias: Set-CIMRegistryProperty
 * [Set-CCMSite](docs/Set-CCMSite.md)
 * [Test-CCMIsClientAlwaysOnInternet](docs/Test-CCMIsClientAlwaysOnInternet.md)
 * [Test-CCMIsClientOnInternet](docs/Test-CCMIsClientOnInternet.md)
