@@ -33,9 +33,9 @@
 		$ScriptBlockString = [string]::Format(@'
 		{0}
 
-		$namedPipe = New-Object System.IO.Pipes.NamedPipeServerStream "{1}", "Out"
+		$namedPipe = [System.IO.Pipes.NamedPipeServerStream]::new("{1}", "Out")
 		$namedPipe.WaitForConnection()
-		$streamWriter = New-Object System.IO.StreamWriter $namedPipe
+		$streamWriter = [System.IO.StreamWriter]::new($namedPipe)
 		$streamWriter.AutoFlush = $true
 		$TempResultPreConversion = & {{
 			{2}
@@ -43,7 +43,7 @@
 			{3}
 		}}
 		$results = ConvertTo-CCMCodeStringFromObject -inputObject $TempResultPreConversion
-		$streamWriter.WriteLine("$($results)")
+		$streamWriter.WriteLine($results)
 		$streamWriter.dispose()
 		$namedPipe.dispose()
 '@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock)
@@ -62,12 +62,12 @@
 			$connectionSplat = $ConnectionInfo.connectionSplat
 
 			$invokeCommandSplat['Arguments'] = @{
-				CommandLine = [string]::Format("powershell.exe (invoke-command ([scriptblock]::Create([system.text.encoding]::UTF8.GetString([System.convert]::FromBase64string('{0}')))))", $encodedScriptBlock)
+				CommandLine = [string]::Format("powershell.exe -EncodedCommand {0}", $encodedScriptBlock)
 			}
 
 			$null = Invoke-CimMethod @invokeCommandSplat @connectionSplat
 
-			$namedPipe = New-Object System.IO.Pipes.NamedPipeClientStream $Computer, "$($PipeName)", "In"
+			$namedPipe = [ System.IO.Pipes.NamedPipeClientStream]::new($Computer, $PipeName, "In")
 			$namedPipe.Connect($timeout)
 			$streamReader = New-Object System.IO.StreamReader $namedPipe
 
