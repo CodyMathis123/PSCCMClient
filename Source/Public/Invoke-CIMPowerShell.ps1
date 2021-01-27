@@ -10,7 +10,7 @@
 		[string[]]$FunctionsToLoad,
 		[Parameter(Mandatory = $false)]
 		[ValidateRange(1000, 900000)]
-		[int32]$Timeout = 120000,
+		[int32]$Timeout = 15000,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
 		[Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]

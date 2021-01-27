@@ -109,7 +109,7 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: 120000
+Default value: 15000
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -157,6 +157,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 **Author**:      Cody Mathis  
 **Contact**:     @CodyMathis123  
 **Created**:     2020-01-07  
-**Updated**:     2020-09-29  
+**Updated**:     2021-01-27  
 
 ## RELATED LINKS
