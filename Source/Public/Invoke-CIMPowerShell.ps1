@@ -49,7 +49,7 @@
 '@ , $SupportFunctions, $PipeName, $HelperFunctions, $ScriptBlock)
 
 		$scriptBlockPreEncoded = [scriptblock]::Create($ScriptBlockString)
-		$byteCommand = [System.Text.encoding]::UTF8.GetBytes($scriptBlockPreEncoded)
+		$byteCommand = [System.Text.encoding]::Unicode.GetBytes($scriptBlockPreEncoded)
 		$encodedScriptBlock = [convert]::ToBase64string($byteCommand)
 	}
 	process {
