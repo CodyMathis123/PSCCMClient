@@ -12,7 +12,7 @@
     RootModule        = 'PSCCMClient.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.3.1'
+    ModuleVersion     = '0.3.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@
     CompanyName       = 'PSCCMClient'
 
     # Copyright statement for this module
-    Copyright         = '(c) 2020 Cody Mathis. All rights reserved.'
+    Copyright         = '(c) 2021 Cody Mathis. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description       = 'Module focused on interacting with and managing the MEMCM Client'
@@ -108,6 +108,8 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v0.3.2
+* Update Invoke-CimPowerShell to directly use 'powershell.exe -EncodedCommand' and also stop using New-Object
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels
