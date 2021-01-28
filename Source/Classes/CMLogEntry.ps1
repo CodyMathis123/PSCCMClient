@@ -50,7 +50,7 @@ class CMLogEntry {
         $MonthParser = $DateStringArray[0] -replace '\d', 'M'
         $DayParser = $DateStringArray[1] -replace '\d', 'd'
 
-        $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fff', $MonthParser, $DayParser)
+        $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fffzz', $MonthParser, $DayParser)
         $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
         try {
             $This.Timestamp = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
@@ -73,7 +73,7 @@ class CMLogEntry {
     [string]ConvertToCMLogLine() {
         return [string]::Format('<![LOG[{0}]LOG]!><time="{1}{2}" date="{3}" component="{4}" context="" type="{5}" thread="{6}" file="">'
             , $this.Message
-            , $this.Timestamp.ToString('HH:mm:ss.fff')
+            , $this.Timestamp.ToString('HH:mm:ss.fffzz')
             , $this.Offset
             , $this.Timestamp.ToString('MM-dd-yyyy')
             , $this.Component
