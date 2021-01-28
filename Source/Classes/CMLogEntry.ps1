@@ -50,7 +50,7 @@ class CMLogEntry {
         $MonthParser = $DateStringArray[0] -replace '\d', 'M'
         $DayParser = $DateStringArray[1] -replace '\d', 'd'
 
-        $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fffzz', $MonthParser, $DayParser)
+        $DateTimeFormat = [string]::Format('{0}-{1}-yyyyHH:mm:ss.fff', $MonthParser, $DayParser)
         $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
         try {
             $This.Timestamp = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
