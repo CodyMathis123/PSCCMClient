@@ -16,6 +16,14 @@ class CMLogEntry {
         $this.Thread = $Thread
     }
 
+    CMLogEntry([string]$Message, [Severity]$Type, [string]$Component, [int]$Thread, [datetime]$Timestamp) {
+        $this.Message = $Message
+        $this.Type = $Type
+        $this.Component = $Component
+        $this.Thread = $Thread
+        $this.Timestamp = $Timestamp
+    }
+
     [void]ResolveTimestamp([array]$LogLineSubArray, [CMLogType]$Type) {
         [string]$DateString = [string]::Empty
         [string]$TimeString = [string]::Empty
