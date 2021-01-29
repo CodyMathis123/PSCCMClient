@@ -98,7 +98,7 @@
             Tags         = @('SCCM', 'MEMCM', 'MECM','CIM', 'ConfigMgr', 'PowerShell', 'SystemCenter')
 
             # A URL to the license for this module.
-             LicenseUri = 'https://github.com/CodyMathis123/PSCCMClient/blob/Release/LICENSE'
+            LicenseUri = 'https://github.com/CodyMathis123/PSCCMClient/blob/Release/LICENSE'
 
             # A URL to the main website for this project.
             ProjectUri   = 'https://github.com/CodyMathis123/PSCCMClient'
@@ -110,6 +110,7 @@
             ReleaseNotes = @'
 v0.3.2
 * Update Invoke-CimPowerShell to directly use 'powershell.exe -EncodedCommand' and also stop using New-Object
+* Improved the Timestamp property of the ConvertToCMLogLine method on the CMLogEntry class (Credit to @SysBehr)
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels
