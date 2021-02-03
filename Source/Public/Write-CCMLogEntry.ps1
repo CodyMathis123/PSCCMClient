@@ -13,7 +13,7 @@ Function Write-CCMLogEntry {
         [parameter(Mandatory = $true)]
         [string]$Folder,
         [parameter(Mandatory = $false)]
-        [int]$Bias = (Get-CimInstance -Query "SELECT Bias FROM Win32_TimeZone").Bias,
+        [int]$Bias = [System.DateTimeOffset]::Now.Offset.TotalMinutes,
         [parameter(Mandatory = $false)]
         [int]$MaxLogFileSize = 5MB,
         [parameter(Mandatory = $false)]
@@ -87,7 +87,19 @@ Function Write-CCMLogEntry {
         $Date = (Get-Date -Format 'MM-dd-yyyy')
 
         # Construct context for log entry
-        $Context = $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+        try {
+            $Context = $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+        }
+        catch {
+            $Context = switch ((Get-ChildItem -Path env:).Key) {
+                Username {
+                    $env:USERNAME
+                }
+                User {
+                    $env:USER
+                }
+            }
+        }
     }
     process {
         foreach ($MSG in $Value) {
