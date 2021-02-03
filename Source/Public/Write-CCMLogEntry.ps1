@@ -10,8 +10,8 @@ Function Write-CCMLogEntry {
         [string]$Component,
         [parameter(Mandatory = $true)]
         [string]$FileName,
-        [parameter(Mandatory = $true)]
-        [string]$Folder,
+        [parameter(Mandatory = $false)]
+        [string]$Folder = (Get-Location).Path,
         [parameter(Mandatory = $false)]
         [int]$Bias = [System.DateTimeOffset]::Now.Offset.TotalMinutes,
         [parameter(Mandatory = $false)]
