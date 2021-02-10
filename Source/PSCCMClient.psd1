@@ -111,6 +111,7 @@
 v0.3.2
 * Update Invoke-CimPowerShell to directly use 'powershell.exe -EncodedCommand' and also stop using New-Object
 * Improved the Timestamp property of the ConvertToCMLogLine method on the CMLogEntry class (Credit to @SysBehr)
+* Add the 'Repair' method to the Invoke-CCMApplication function
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels

@@ -112,7 +112,7 @@ Accept wildcard characters: False
 ```
 
 ### -Method
-Install, or Uninstall.
+Install, Uninstall, or Repair.
 Keep in mind that you can only perform whatever action is available for an application.
     If it is a required application that does not allow uninstall, then the invoke will not work.
 

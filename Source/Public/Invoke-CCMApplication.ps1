@@ -9,7 +9,7 @@ Function Invoke-CCMApplication {
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [string[]]$Revision,
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Install', 'Uninstall')]
+        [ValidateSet('Install', 'Uninstall', 'Repair')]
         [Alias('Action')]
         [string]$Method,
         [Parameter(Mandatory = $false)]
