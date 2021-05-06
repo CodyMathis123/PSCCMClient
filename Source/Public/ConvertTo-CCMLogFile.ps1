@@ -4,7 +4,7 @@ function ConvertTo-CCMLogFile {
         [string]$LogPath
     )
     $LogContent = foreach ($Entry in ($CMLogEntries | Sort-Object -Property Timestamp)) {
-        $Entry.ConvertToCMLogLine()
+        $Entry.ToString()
     }
 
     Set-Content -Path $LogPath -Value $LogContent -Force

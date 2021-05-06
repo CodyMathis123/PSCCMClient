@@ -78,7 +78,7 @@ class CMLogEntry {
         return $this.Timestamp -ge $TimestampGreaterThan -and $this.Timestamp -le $TimestampLessThan 
     }
 
-    [string]ConvertToCMLogLine() {
+    [string]ToString() {
         return [string]::Format('<![LOG[{0}]LOG]!><time="{1}{2}" date="{3}" component="{4}" context="" type="{5}" thread="{6}" file="">'
             , $this.Message
             , $this.Timestamp.ToString('HH:mm:ss.fffzz')
