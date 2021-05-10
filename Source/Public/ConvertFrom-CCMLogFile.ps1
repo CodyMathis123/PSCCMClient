@@ -64,7 +64,7 @@ Function ConvertFrom-CCMLogFile {
                                 }
                                 #endregion if ParseSMSTS specified, check logline for known string for SMS step success / failure
 
-                                #region if CustomerFilter is specified, check logline against the string as a regex match
+                                #region if CustomFilter is specified, check logline against the string as a regex match
                                 CustomFilter {
                                     switch -regex ($UnparsedLogLine) {
                                         $Filter {
@@ -72,7 +72,7 @@ Function ConvertFrom-CCMLogFile {
                                         }
                                     }
                                 }
-                                #endregion if CustomerFilter is specified, check logline against the string as a regex match
+                                #endregion if CustomFilter is specified, check logline against the string as a regex match
 
                                 #region if no filtering is provided then the we parse all loglines
                                 default {
@@ -143,7 +143,7 @@ Function ConvertFrom-CCMLogFile {
                             $UnparsedLogLine = $PSItem
                             $Parse = $false
                             $Parse = switch ($PSCmdlet.ParameterSetName) {
-                                #region if CustomerFilter is specified, check logline against the string as a regex match
+                                #region if CustomFilter is specified, check logline against the string as a regex match
                                 CustomFilter {
                                     switch -regex ($UnparsedLogLine) {
                                         $Filter {
@@ -151,7 +151,7 @@ Function ConvertFrom-CCMLogFile {
                                         }
                                     }
                                 }
-                                #endregion if CustomerFilter is specified, check logline against the string as a regex match
+                                #endregion if CustomFilter is specified, check logline against the string as a regex match
 
                                 #region if no filtering is provided then the we parse all loglines
                                 default {
