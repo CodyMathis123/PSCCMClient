@@ -114,6 +114,7 @@ v0.3.2
 * Add the 'Repair' method to the Invoke-CCMApplication function
 * Allow value from pipeline for Write-CCMLogEntry regardless of the property name
 * Change the Severity parameter of Write-CCMLogEntry to use the Severity enum
+* Update the CMLogEntry class to override the ToString method.
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels
