@@ -8,16 +8,18 @@ schema: 2.0.0
 # Write-CCMLogEntry
 
 ## SYNOPSIS
+
 Write to a log file in the CMTrace Format
 
 ## SYNTAX
 
-```
-Write-CCMLogEntry [-Value] <String[]> [[-Severity] <String>] [[-Component] <String>] [-FileName] <String>
+```powershell
+Write-CCMLogEntry [-Value] <String[]> [[-Severity] <Severity>] [[-Component] <String>] [-FileName] <String>
  [-Folder] <String> [[-Bias] <Int32>] [[-MaxLogFileSize] <Int32>] [[-LogsToKeep] <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
+
 The function is used to write to a log file in a CMTrace compatible format.
 This ensures that CMTrace or OneTrace can parse the log
     and provide data in a familiar format.
@@ -25,7 +27,8 @@ This ensures that CMTrace or OneTrace can parse the log
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+
+```powershell
 Write-CCMLogEntry -Value 'Testing Function' -Component 'Test Script' -FileName 'LogTest.Log' -Folder 'c:\temp'
     Write out 'Testing Function' to the c:\temp\LogTest.Log file in a CMTrace format, noting 'Test Script' as the component.
 ```
@@ -33,6 +36,7 @@ Write-CCMLogEntry -Value 'Testing Function' -Component 'Test Script' -FileName '
 ## PARAMETERS
 
 ### -Value
+
 String to be added it to the log file as the message, or value
 
 ```yaml
@@ -48,12 +52,13 @@ Accept wildcard characters: False
 ```
 
 ### -Severity
+
 Severity for the log entry.
 You can either enter the string values of Informational, Warning, or Error, or alternatively
     you can enter 1 for Informational, 2 for Warning, and 3 for Error.
 
 ```yaml
-Type: String
+Type: Severity
 Parameter Sets: (All)
 Aliases:
 
@@ -65,6 +70,7 @@ Accept wildcard characters: False
 ```
 
 ### -Component
+
 Stage that the log entry is occurring in, log refers to as 'component.'
 
 ```yaml
@@ -80,6 +86,7 @@ Accept wildcard characters: False
 ```
 
 ### -FileName
+
 Name of the log file that the entry will written to - note this should not be the full path.
 
 ```yaml
@@ -95,6 +102,7 @@ Accept wildcard characters: False
 ```
 
 ### -Folder
+
 Path to the folder where the log will be stored.
 
 ```yaml
@@ -110,6 +118,7 @@ Accept wildcard characters: False
 ```
 
 ### -Bias
+
 Set timezone Bias to ensure timestamps are accurate.
 This defaults to the local machines bias, but one can be provided.
 It can be
@@ -128,6 +137,7 @@ Accept wildcard characters: False
 ```
 
 ### -MaxLogFileSize
+
 Maximum size of log file before it rolls over.
 Set to 0 to disable log rotation.
 Defaults to 5MB
@@ -145,6 +155,7 @@ Accept wildcard characters: False
 ```
 
 ### -LogsToKeep
+
 Maximum number of rotated log files to keep.
 Set to 0 for unlimited rotated log files.
 Defaults to 0.
@@ -162,6 +173,7 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
+
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
@@ -174,6 +186,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 **Author**:      Cody Mathis, Adam Cook  
 **Contact**:     @CodyMathis123, @codaamok  
 **Created**:     2020-01-23  
-**Updated**:     2020-07-18  
+**Updated**:     2021-06-19
 
 ## RELATED LINKS

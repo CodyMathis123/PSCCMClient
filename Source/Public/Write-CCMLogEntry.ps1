@@ -1,11 +1,10 @@
 Function Write-CCMLogEntry {
     param (
-        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ValueFromPipeline = $true)]
         [Alias('Message', 'ToLog')]
         [string[]]$Value,
         [parameter(Mandatory = $false)]
-        [ValidateSet('Informational', 'Warning', 'Error', '1', '2', '3')]
-        [string]$Severity = 'Informational',
+        [Severity]$Severity = [Severity]::Informational,
         [parameter(Mandatory = $false)]
         [string]$Component,
         [parameter(Mandatory = $true)]
@@ -20,22 +19,6 @@ Function Write-CCMLogEntry {
         [int]$LogsToKeep = 0
     )
     begin {
-        # Convert Severity to integer log level
-        [int]$LogLevel = switch ($Severity) {
-            Informational {
-                1
-            }
-            Warning {
-                2
-            }
-            Error {
-                3
-            }
-            default {
-                $PSItem
-            }
-        }
-
         # Determine log file location
         $LogFilePath = Join-Path -Path $Folder -ChildPath $FileName
 
@@ -115,7 +98,7 @@ Function Write-CCMLogEntry {
             #endregion construct time stamp for log entry based on $Bias and current time
 
             #region construct the log entry according to CMTrace format
-            $LogText = [string]::Format('<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="{4}" type="{5}" thread="{6}" file="">', $MSG, $Time, $Date, $Component, $Context, $LogLevel, $PID)
+            $LogText = [string]::Format('<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="{4}" type="{5}" thread="{6}" file="">', $MSG, $Time, $Date, $Component, $Context, [int]$Severity, $PID)
             #endregion construct the log entry according to CMTrace format
 
             #region add value to log file
