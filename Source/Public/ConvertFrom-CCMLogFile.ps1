@@ -1,4 +1,4 @@
-Function ConvertFrom-CCMLogFile {
+function ConvertFrom-CCMLogFile {
     [CmdletBinding(DefaultParameterSetName = '__AllParameterSets')]
     [OutputType([CMLogEntry[]])]
     [Alias('Get-CCMLogFile')]

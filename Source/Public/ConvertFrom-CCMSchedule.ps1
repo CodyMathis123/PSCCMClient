@@ -1,4 +1,4 @@
-Function ConvertFrom-CCMSchedule {
+function ConvertFrom-CCMSchedule {
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('Schedules')]

@@ -10,7 +10,7 @@ function Invoke-CCMSoftwareUpdate {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -44,7 +44,7 @@ function Invoke-CCMSoftwareUpdate {
             $Result['ComputerName'] = $Computer
             $Result['Invoked'] = $false
 
-            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", "Invoke-CCMUpdate")) {
+            if ($PSCmdlet.ShouldProcess("[ComputerName = '$Computer']", 'Invoke-CCMSoftwareUpdate')) {
                 try {
                     $getUpdateSplat['Query'] = switch ($PSBoundParameters.ContainsKey('ArticleID')) {
                         $true {
@@ -73,35 +73,48 @@ function Invoke-CCMSoftwareUpdate {
                         $invokeCIMMethodSplat['Arguments'] = @{
                             CCMUpdates = [ciminstance[]]$MissingUpdates
                         }
+
+                        $Invocation = switch -regex ($ConnectionInfo.ConnectionType) {
+                            '^ComputerName$|^CimSession$' {
+                                Invoke-CimMethod @invokeCIMMethodSplat @connectionSplat -ErrorAction Stop
+                            }
+                        # TODO - Fix PSSession support. Currently does not work.
+                            'PSSession' {
+                                $invokeUpdatesSplat = @{
+                                    ScriptBlock  = {
+                                        param (
+                                            $invokeCIMMethodSplat
+                                        )
+                                        Invoke-CimMethod @invokeCIMMethodSplat
+                                    }
+                                    ArgumentList = $invokeCIMMethodSplat
+                                }
+                                Invoke-Command @invokeUpdatesSplat @connectionSplat
+                            }
+                        }
                     }
                     else {
                         Write-Warning "$Computer has no updates available to invoke"
                     }
-                    $Invocation = switch ($Computer -eq $env:ComputerName) {
-                        $true {
-                            Invoke-CimMethod @invokeCIMMethodSplat
-                        }
-                        $false {
-                            $invokeCommandSplat = @{
-                                ScriptBlock  = {
-                                    param($invokeCIMMethodSplat)
-                                    Invoke-CimMethod @invokeCIMMethodSplat
-                                }
-                                ArgumentList = $invokeCIMMethodSplat
-                            }
-                            Invoke-CCMCommand @invokeCommandSplat @connectionSplat
-                        }
-                    }
+
                     if ($Invocation) {
                         Write-Verbose "Successfully invoked updates on $Computer via the 'InstallUpdates' CIM method"
                         $Result['Invoked'] = $true
                     }
 
                 }
+                catch [Microsoft.Management.Infrastructure.CimException] {
+                    if (Test-CimKnownError -FullyQualifiedErrorId $_.FullyQualifiedErrorId) {
+                        Write-Verbose "Suppressing known error - [$($_.FullyQualifiedErrorId)]"
+                        Write-Verbose "Successfully invoked updates on $Computer via the 'InstallUpdates' CIM method"
+                        $Result['Invoked'] = $true
+                    }
+                }
                 catch {
                     $ErrorMessage = $_.Exception.Message
                     Write-Error $ErrorMessage
                 }
+
                 [pscustomobject]$Result
             }
         }
