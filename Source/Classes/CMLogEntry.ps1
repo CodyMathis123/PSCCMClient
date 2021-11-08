@@ -62,12 +62,12 @@ class CMLogEntry {
         $DateTimeString = [string]::Format('{0}{1}', $DateString, $TimeString)
         try {
             $This.Timestamp = [datetime]::ParseExact($DateTimeString, $DateTimeFormat, $null)
-            # try{
+            if ($TimeStringRaw.Length -eq 16) {
                 $this.Offset = $TimeStringRaw.Substring(12, 4)
-            # }
-            # catch {
-                # $this.Offset = "+000"
-            # }
+            }
+            else{
+                $this.Offset = '+000'
+            }
         }
         catch {
             Write-Warning "Failed to parse [DateString: $DateString] [TimeString: $TimeString] with [Parser: $DateTimeFormat] [Error: $($_.Exception.Message)]"
