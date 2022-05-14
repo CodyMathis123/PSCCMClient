@@ -37,7 +37,7 @@ function Get-CCMCacheContent {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CacheContent = switch ($Computer -eq $env:ComputerName) {
+                [array]$CacheContent = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getCacheContentSplat @connectionSplat
                     }

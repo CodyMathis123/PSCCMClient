@@ -36,7 +36,7 @@ function Get-CCMExecStartupTime {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CCMExecService = switch ($Computer -eq $env:ComputerName) {
+                [array]$CCMExecService = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getCCMExecServiceSplat @connectionSplat
                     }
@@ -47,7 +47,7 @@ function Get-CCMExecStartupTime {
                 if ($CCMExecService -is [Object] -and $CCMExecService.Count -gt 0) {
                     foreach ($Service in $CCMExecService) {
                         $getCCMExecProcessSplat['Query'] = [string]::Format("Select CreationDate from Win32_Process WHERE ProcessID = '{0}'", $Service.ProcessID)
-                        [ciminstance[]]$CCMExecProcess = switch ($Computer -eq $env:ComputerName) {
+                        [array]$CCMExecProcess = switch ($Computer -eq $env:ComputerName) {
                             $true {
                                 Get-CimInstance @getCCMExecProcessSplat @connectionSplat
                             }

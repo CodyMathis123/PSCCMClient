@@ -36,7 +36,7 @@ function Get-CCMClientVersion {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$Currentversion = switch ($Computer -eq $env:ComputerName) {
+                [array]$Currentversion = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getClientVersionSplat @connectionSplat
                     }

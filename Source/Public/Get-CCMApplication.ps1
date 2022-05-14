@@ -88,7 +88,7 @@ function Get-CCMApplication {
                         [string]::Format('$AppFound.ID -eq "{0}"', [string]::Join('" -or $AppFound.ID -eq "', $ApplicationID))
                     }
                 }
-                [ciminstance[]]$applications = switch ($Computer -eq $env:ComputerName) {
+                [array]$applications = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getapplicationsplat @connectionSplat
                     }

@@ -38,7 +38,7 @@ function Get-CCMLastHardwareInventory {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastHinv = switch ($Computer -eq $env:ComputerName) {
+                [array]$LastHinv = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getLastHinvSplat @connectionSplat
                     }

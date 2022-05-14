@@ -69,7 +69,7 @@ function Get-CCMSoftwareUpdateGroup {
                 }
                 $getSUGSplat['Query'] = [string]::Format('SELECT * FROM CCM_UpdateCIAssignment{0}', $Filter)
 
-                [ciminstance[]]$DeployedSUG = switch ($Computer -eq $env:ComputerName) {
+                [array]$DeployedSUG = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getSUGSplat @connectionSplat
                     }

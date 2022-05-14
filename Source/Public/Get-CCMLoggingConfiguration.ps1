@@ -43,7 +43,7 @@ function Get-CCMLoggingConfiguration {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CimResult = switch ($Computer -eq $env:ComputerName) {
+                [array]$CimResult = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getLogInfoSplat @connectionSplat
                     }

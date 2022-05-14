@@ -38,7 +38,7 @@ function Get-CCMLastHeartbeat {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastDDR = switch ($Computer -eq $env:ComputerName) {
+                [array]$LastDDR = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getLastDDRSplat @connectionSplat
                     }

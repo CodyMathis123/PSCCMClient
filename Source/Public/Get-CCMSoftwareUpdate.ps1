@@ -89,7 +89,7 @@ function Get-CCMSoftwareUpdate {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
+                [array]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getUpdateSplat @connectionSplat
                     }

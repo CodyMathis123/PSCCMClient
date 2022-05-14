@@ -57,7 +57,7 @@ function Get-CCMTaskSequence {
                 }
                 $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_TaskSequence{0}', $Filter)
 
-                [ciminstance[]]$Packages = switch ($Computer -eq $env:ComputerName) {
+                [array]$Packages = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getPackageSplat @connectionSplat
                     }
