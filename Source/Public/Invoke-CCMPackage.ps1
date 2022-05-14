@@ -88,7 +88,7 @@ function Invoke-CCMPackage {
                     }
                     $getPackageSplat['Query'] = [string]::Format('SELECT * FROM CCM_SoftwareDistribution{0}', $Filter)
 
-                    [ciminstance[]]$Packages = switch ($Computer -eq $env:ComputerName) {
+                    [array]$Packages = switch ($Computer -eq $env:ComputerName) {
                         $true {
                             Get-CimInstance @getPackageSplat @connectionSplat
                         }
