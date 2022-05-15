@@ -55,7 +55,7 @@ function Invoke-CCMSoftwareUpdate {
                         }
                     }
 
-                    [ciminstance[]]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
+                    [array]$MissingUpdates = switch ($Computer -eq $env:ComputerName) {
                         $true {
                             Get-CimInstance @getUpdateSplat @connectionSplat
                         }
@@ -64,7 +64,7 @@ function Invoke-CCMSoftwareUpdate {
                         }
                     }
 
-                    if ($MissingUpdates -is [ciminstance[]]) {
+                    if ($MissingUpdates -is [array]) {
                         switch ($PSBoundParameters.ContainsKey('ArticleID')) {
                             $false {
                                 $ArticleID = $MissingUpdates.ArticleID
