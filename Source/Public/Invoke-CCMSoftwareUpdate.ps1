@@ -70,24 +70,29 @@ function Invoke-CCMSoftwareUpdate {
                                 $ArticleID = $MissingUpdates.ArticleID
                             }
                         }
-                        $invokeCIMMethodSplat['Arguments'] = @{
-                            CCMUpdates = [ciminstance[]]$MissingUpdates
-                        }
-
                         $Invocation = switch -regex ($ConnectionInfo.ConnectionType) {
                             '^ComputerName$|^CimSession$' {
+                                $invokeCIMMethodSplat['Arguments'] = @{
+                                    CCMUpdates = [ciminstance[]]$MissingUpdates
+                                }
                                 Invoke-CimMethod @invokeCIMMethodSplat @connectionSplat -ErrorAction Stop
                             }
-                        # TODO - Fix PSSession support. Currently does not work.
                             'PSSession' {
+                            # Pass list of missing updates to the target machine as a parameter,
+                            # then do any casting etc required and build icim's arguments there
+                            # The Out-Null in the script block is required to avoid 'Could not infer CimType from the provided .NET object' errors, though not sure why it prevents them.
                                 $invokeUpdatesSplat = @{
                                     ScriptBlock  = {
                                         param (
-                                            $invokeCIMMethodSplat
+                                            $invokeCIMMethodSplat,
+                                            $toInstall
                                         )
-                                        Invoke-CimMethod @invokeCIMMethodSplat
+                                        $toInstall|Out-Null
+                                        Invoke-CimMethod @invokeCIMMethodSplat -Arguments @{
+                                            CCMUpdates = [ciminstance[]]$toInstall
+                                        }
                                     }
-                                    ArgumentList = $invokeCIMMethodSplat
+                                    ArgumentList = $invokeCIMMethodSplat, $MissingUpdates
                                 }
                                 Invoke-Command @invokeUpdatesSplat @connectionSplat
                             }
