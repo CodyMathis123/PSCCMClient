@@ -116,6 +116,8 @@ v0.3.2
 * Change the Severity parameter of Write-CCMLogEntry to use the Severity enum
 * Update the CMLogEntry class to override the ToString method.
 * Update ConvertFrom-CCMLogFile to account for timestamp that do not include an offset, defaulting to +000 if not able to be parsed
+* Remove the casts of Get-CimInstance output to [CimInstance[]] to allow the module to be used on non-Windows platforms that don't have [CimInstance]. Tested on macOS and Windows, but Linux should work too. (Credit to @theaquamarine)
+* Fix using Invoke-CCMSoftwareUpdate using a PSSession. PSSessions have to be used from non-Windows platforms, so this contributed to the above. (Credit to @theaquamarine)
 v0.3.1
 * Get-CCMSoftwareUpdate function now accounts for new AV Def names for the 'IncludeDefs' switch parameter
 * Write-CCMLogEntry now also accepts the string names of the severity levels
