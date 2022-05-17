@@ -74,7 +74,7 @@ function Get-CCMMaintenanceWindow {
                 }
                 $Result['TimeZone'] = $TZ.Caption
 
-                [ciminstance[]]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
+                [array]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getMaintenanceWindowSplat @connectionSplat
                     }

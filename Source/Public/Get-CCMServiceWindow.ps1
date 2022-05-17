@@ -61,7 +61,7 @@ function Get-CCMServiceWindow {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
+                [array]$ServiceWindows = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getServiceWindowSplat @connectionSplat
                     }

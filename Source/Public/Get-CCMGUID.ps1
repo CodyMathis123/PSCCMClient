@@ -37,7 +37,7 @@ function Get-CCMGUID {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentGUID = switch ($Computer -eq $env:ComputerName) {
+                [array]$CurrentGUID = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getGUIDSplat @connectionSplat
                     }

@@ -37,7 +37,7 @@ function Get-CCMCurrentSoftwareUpdatePoint {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentSUP = switch ($Computer -eq $env:ComputerName) {
+                [array]$CurrentSUP = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @CurrentSUPSplat @connectionSplat
                     }

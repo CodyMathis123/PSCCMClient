@@ -39,7 +39,7 @@ function Get-CCMPrimaryUser {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$PrimaryUsers = switch ($Computer -eq $env:ComputerName) {
+                [array]$PrimaryUsers = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getPrimaryUserSplat @connectionSplat
                     }

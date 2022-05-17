@@ -82,7 +82,7 @@ function Invoke-CCMTaskSequence {
                     }
                     $getTaskSequenceSplat['Query'] = [string]::Format('SELECT * FROM CCM_TaskSequence{0}', $Filter)
 
-                    [ciminstance[]]$TaskSequences = switch ($Computer -eq $env:ComputerName) {
+                    [array]$TaskSequences = switch ($Computer -eq $env:ComputerName) {
                         $true {
                             Get-CimInstance @getTaskSequenceSplat @connectionSplat
                         }

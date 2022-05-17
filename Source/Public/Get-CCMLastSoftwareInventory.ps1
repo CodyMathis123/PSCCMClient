@@ -38,7 +38,7 @@ function Get-CCMLastSoftwareInventory {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$LastSINV = switch ($Computer -eq $env:ComputerName) {
+                [array]$LastSINV = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getLastSINVSplat @connectionSplat
                     }

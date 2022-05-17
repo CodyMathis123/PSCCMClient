@@ -37,7 +37,7 @@ function Get-CCMCurrentManagementPoint {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$CurrentMP = switch ($Computer -eq $env:ComputerName) {
+                [array]$CurrentMP = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getCurrentMPSplat @connectionSplat
                     }

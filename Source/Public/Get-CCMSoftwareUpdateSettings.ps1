@@ -36,7 +36,7 @@ function Get-CCMSoftwareUpdateSettings {
             $Result = [ordered]@{ }
             $Result['ComputerName'] = $Computer
 
-            [ciminstance[]]$Settings = switch ($Computer -eq $env:ComputerName) {
+            [array]$Settings = switch ($Computer -eq $env:ComputerName) {
                 $true {
                     Get-CimInstance @getSoftwareUpdateSettingsSplat @connectionSplat
                 }

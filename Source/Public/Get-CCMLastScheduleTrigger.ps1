@@ -177,7 +177,7 @@ function Get-CCMLastScheduleTrigger {
             $Result['ComputerName'] = $Computer
 
             try {
-                [ciminstance[]]$ScheduleHistory = switch ($Computer -eq $env:ComputerName) {
+                [array]$ScheduleHistory = switch ($Computer -eq $env:ComputerName) {
                     $true {
                         Get-CimInstance @getSchedHistSplat @connectionSplat
                     }
