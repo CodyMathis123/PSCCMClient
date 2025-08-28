@@ -132,12 +132,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_InstalledComponent WHERE DisplayName = 'Configuration Manager Client'");
+                // Use query like PowerShell: 'SELECT ClientVersion FROM SMS_Client'
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT ClientVersion FROM SMS_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
-                    return obj["Version"]?.ToString() ?? "";
+                    return obj["ClientVersion"]?.ToString() ?? "";
                 }
             }
             catch (Exception ex)
@@ -270,6 +271,27 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
+                // First try COM object approach (like PowerShell for local calls)
+                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
+                        if (comType != null)
+                        {
+                            var smsClient = Activator.CreateInstance(comType);
+                            var result = smsClient?.GetType().InvokeMember("GetAssignedSite", 
+                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
+                            return result?.ToString() ?? "";
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to WMI
+                    }
+                }
+
+                // Fallback to WMI approach
                 using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
@@ -286,12 +308,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Authority WHERE CurrentManagementPoint = TRUE");
+                // Use query like PowerShell: 'SELECT CurrentManagementPoint FROM SMS_Authority'
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT CurrentManagementPoint FROM SMS_Authority");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
-                    return obj["Name"]?.ToString() ?? "";
+                    return obj["CurrentManagementPoint"]?.ToString() ?? "";
                 }
             }
             catch { }
@@ -302,12 +325,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
+                // Use query like PowerShell: 'SELECT ContentLocation FROM CCM_UpdateSource'
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\SoftwareUpdates\WUAHandler", "SELECT ContentLocation FROM CCM_UpdateSource");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
-                    return obj["WSUSLocationServer"]?.ToString() ?? "";
+                    return obj["ContentLocation"]?.ToString() ?? "";
                 }
             }
             catch { }
@@ -338,6 +362,27 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
+                // First try COM object approach (like PowerShell for local calls)
+                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
+                        if (comType != null)
+                        {
+                            var smsClient = Activator.CreateInstance(comType);
+                            var result = smsClient?.GetType().InvokeMember("GetDNSSuffix", 
+                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
+                            return result?.ToString() ?? "";
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to WMI
+                    }
+                }
+
+                // Fallback to WMI approach
                 using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
@@ -354,16 +399,17 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                // Use query like PowerShell: 'SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client'
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
                     return new CCMGuidInfo
                     {
-                        GUID = obj["ClientId"]?.ToString() ?? "",
-                        ClientGUIDChangeDate = obj["ClientIdChangeDate"] as DateTime?,
-                        PreviousGUID = obj["PreviousClientId"]?.ToString() ?? ""
+                        GUID = obj["ClientID"]?.ToString() ?? "",
+                        ClientGUIDChangeDate = obj["ClientIDChangeDate"] as DateTime?,
+                        PreviousGUID = obj["PreviousClientID"]?.ToString() ?? ""
                     };
                 }
             }
@@ -435,29 +481,163 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Logging_GlobalConfiguration");
+                // Use correct namespace like PowerShell: 'root\ccm\policy\machine\actualconfig'
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\policy\machine\actualconfig", "SELECT * FROM CCM_Logging_GlobalConfiguration");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
-                    return new CCMLoggingConfiguration
+                    var config = new CCMLoggingConfiguration
                     {
-                        LogDirectory = obj["LogDirectory"]?.ToString() ?? "",
                         LogMaxSize = Convert.ToInt32(obj["LogMaxSize"] ?? 0),
                         LogMaxHistory = Convert.ToInt32(obj["LogMaxHistory"] ?? 0),
                         LogLevel = Convert.ToInt32(obj["LogLevel"] ?? 0),
                         LogEnabled = Convert.ToBoolean(obj["LogEnabled"] ?? false)
                     };
+
+                    // Get log directory from registry like PowerShell does
+                    try
+                    {
+                        var registryService = new CCMRegistryService(_computerName);
+                        var logDirProperty = registryService.GetRegistryProperty(
+                            "HKEY_LOCAL_MACHINE",
+                            "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global",
+                            "LogDirectory");
+                        config.LogDirectory = logDirProperty?.Value ?? "";
+                    }
+                    catch
+                    {
+                        config.LogDirectory = "";
+                    }
+
+                    return config;
                 }
             }
             catch { }
             return null;
         }
 
+        /// <summary>
+        /// Tests if the client is currently on the internet
+        /// </summary>
+        /// <returns>True if client is on internet</returns>
+        public async Task<bool> IsClientOnInternetAsync()
+        {
+            return await Task.Run(() => IsClientOnInternet());
+        }
+
+        /// <summary>
+        /// Tests if the client is currently on the internet (synchronous)
+        /// </summary>
+        /// <returns>True if client is on internet</returns>
+        public bool IsClientOnInternet()
+        {
+            return TestIsClientOnInternet();
+        }
+
+        /// <summary>
+        /// Tests if the client is always on the internet
+        /// </summary>
+        /// <returns>True if client is always on internet</returns>
+        public async Task<bool> IsClientAlwaysOnInternetAsync()
+        {
+            return await Task.Run(() => IsClientAlwaysOnInternet());
+        }
+
+        /// <summary>
+        /// Tests if the client is always on the internet (synchronous)
+        /// </summary>
+        /// <returns>True if client is always on internet</returns>
+        public bool IsClientAlwaysOnInternet()
+        {
+            return TestIsClientAlwaysOnInternet();
+        }
+
+        /// <summary>
+        /// Sets the client always on internet setting
+        /// </summary>
+        /// <param name="alwaysOnInternet">True to set always on internet</param>
+        /// <returns>True if successful</returns>
+        public async Task<bool> SetClientAlwaysOnInternetAsync(bool alwaysOnInternet)
+        {
+            return await Task.Run(() => SetClientAlwaysOnInternet(alwaysOnInternet));
+        }
+
+        /// <summary>
+        /// Sets the client always on internet setting (synchronous)
+        /// </summary>
+        /// <param name="alwaysOnInternet">True to set always on internet</param>
+        /// <returns>True if successful</returns>
+        public bool SetClientAlwaysOnInternet(bool alwaysOnInternet)
+        {
+            try
+            {
+                // First try COM object approach (like PowerShell for local calls)
+                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
+                        if (comType != null)
+                        {
+                            var smsClient = Activator.CreateInstance(comType);
+                            smsClient?.GetType().InvokeMember("SetClientAlwaysOnInternet", 
+                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, new object[] { alwaysOnInternet });
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to WMI
+                    }
+                }
+
+                // Fallback to WMI approach
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var results = searcher.Get();
+
+                foreach (ManagementObject obj in results)
+                {
+                    var inParams = obj.GetMethodParameters("SetClientAlwaysOnInternet");
+                    inParams["bAlwaysOnInternet"] = alwaysOnInternet;
+                    
+                    var outParams = obj.InvokeMethod("SetClientAlwaysOnInternet", inParams, null);
+                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to set client always on internet setting to '{alwaysOnInternet}' on {_computerName}: {ex.Message}", ex);
+            }
+
+            return false;
+        }
+
         private bool TestIsClientOnInternet()
         {
             try
             {
+                // First try COM object approach (like PowerShell for local calls)
+                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
+                        if (comType != null)
+                        {
+                            var smsClient = Activator.CreateInstance(comType);
+                            var result = smsClient?.GetType().InvokeMember("IsClientOnInternet", 
+                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
+                            return Convert.ToBoolean(result ?? false);
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to WMI
+                    }
+                }
+
+                // Fallback to WMI approach
                 using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_ClientUtilities");
                 using var results = searcher.Get();
 
@@ -476,6 +656,27 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
+                // First try COM object approach (like PowerShell for local calls)
+                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
+                        if (comType != null)
+                        {
+                            var smsClient = Activator.CreateInstance(comType);
+                            var result = smsClient?.GetType().InvokeMember("IsClientAlwaysOnInternet", 
+                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
+                            return Convert.ToBoolean(result ?? false);
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to WMI
+                    }
+                }
+
+                // Fallback to WMI approach
                 using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 

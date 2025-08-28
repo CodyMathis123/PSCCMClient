@@ -62,7 +62,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Trigger the schedule
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM SMS_Client");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM sms_client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -135,7 +135,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM SMS_Client");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM sms_client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -190,7 +190,7 @@ namespace PSCCMClient.Core.Services
                     _ => 1
                 };
 
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM SMS_Client");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM sms_client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
