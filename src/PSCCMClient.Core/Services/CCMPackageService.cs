@@ -74,12 +74,9 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig");
-                scope.Connect();
-
+                var namespacePath = GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig");
                 var query = $"SELECT * FROM CCM_SoftwareDistribution WHERE PKG_Name LIKE '%{packageName}%'";
-                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
-                using var collection = searcher.Get();
+                using var collection = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in collection)
                 {
@@ -93,7 +90,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw CreateException("retrieve packages by name '{packageName}'", ex);
+                throw CreateException($"retrieve packages by name '{packageName}'", ex);
             }
 
             return packages;
@@ -120,23 +117,18 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\ClientSDK");
-                scope.Connect();
-
-                using var progClass = new ManagementClass(scope, new ManagementPath("CCM_ProgramsManager"), null);
-                using var inParams = progClass.GetMethodParameters("ExecuteProgram");
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                var parameters = WMIHelper.GetClassMethodParameters(namespacePath, "CCM_ProgramsManager", "ExecuteProgram");
                 
-                inParams["PackageID"] = packageId;
-                inParams["ProgramID"] = programName;
+                parameters["PackageID"] = packageId;
+                parameters["ProgramID"] = programName;
 
-                using var outParams = progClass.InvokeMethod("ExecuteProgram", inParams, null);
-                var returnValue = Convert.ToInt32(outParams["ReturnValue"]);
-                
-                return returnValue == 0;
+                var result = InvokeWMIClassMethod(namespacePath, "CCM_ProgramsManager", "ExecuteProgram", parameters);
+                return WMIHelper.IsMethodCallSuccessful(result);
             }
             catch (Exception ex)
             {
-                throw CreateException("invoke package {packageId}/{programName}", ex);
+                throw CreateException($"invoke package {packageId}/{programName}", ex);
             }
         }
     }

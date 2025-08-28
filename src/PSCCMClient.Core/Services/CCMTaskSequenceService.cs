@@ -32,8 +32,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_Program WHERE PackageType = 4");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Program WHERE PackageType = 4");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -85,9 +85,9 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
-                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
@@ -139,9 +139,9 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
-                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
@@ -152,7 +152,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw CreateException("invoke task sequence '{packageId}\\{programId}'", ex);
+                throw CreateException($"invoke task sequence '{packageId}\\{programId}'", ex);
             }
 
             return false;
@@ -179,9 +179,9 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, 
                     $"SELECT * FROM CCM_Program WHERE Name LIKE '%{name}%' AND PackageType = 4");
-                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {

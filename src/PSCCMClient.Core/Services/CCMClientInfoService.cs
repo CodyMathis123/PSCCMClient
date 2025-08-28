@@ -133,17 +133,14 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ClientVersion FROM SMS_Client'
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT ClientVersion FROM SMS_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    return obj["ClientVersion"]?.ToString() ?? "";
-                }
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var result = QueryFirstWMIObject(namespacePath, "SELECT ClientVersion FROM SMS_Client");
+                
+                return result?["ClientVersion"]?.ToString() ?? "";
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve client version from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve client version", ex);
             }
 
             return "";
@@ -204,17 +201,14 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\CIModels"), "SELECT User FROM CCM_PrimaryUser");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    return obj["User"]?.ToString() ?? "";
-                }
+                var namespacePath = GetNamespacePath("root\\CCM\\CIModels");
+                var result = QueryFirstWMIObject(namespacePath, "SELECT User FROM CCM_PrimaryUser");
+                
+                return result?["User"]?.ToString() ?? "";
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve primary user from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve primary user", ex);
             }
 
             return "";
@@ -238,32 +232,27 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // First get the CCMExec service process ID
-                using var serviceSearcher = new ManagementObjectSearcher(GetNamespacePath("root\\cimv2"), "SELECT ProcessID FROM Win32_Service WHERE Name = 'CCMExec'");
-                using var serviceResults = serviceSearcher.Get();
-
-                foreach (ManagementObject serviceObj in serviceResults)
+                var namespacePath = GetNamespacePath("root\\cimv2");
+                var serviceResult = QueryFirstWMIObject(namespacePath, "SELECT ProcessID FROM Win32_Service WHERE Name = 'CCMExec'");
+                
+                if (serviceResult?["ProcessID"] != null)
                 {
-                    var processId = serviceObj["ProcessID"]?.ToString();
+                    var processId = serviceResult["ProcessID"].ToString();
                     if (!string.IsNullOrEmpty(processId))
                     {
                         // Now get the process creation date
-                        using var processSearcher = new ManagementObjectSearcher(GetNamespacePath("root\\cimv2"), $"SELECT CreationDate FROM Win32_Process WHERE ProcessID = '{processId}'");
-                        using var processResults = processSearcher.Get();
-
-                        foreach (ManagementObject processObj in processResults)
+                        var processResult = QueryFirstWMIObject(namespacePath, $"SELECT CreationDate FROM Win32_Process WHERE ProcessID = '{processId}'");
+                        
+                        if (processResult?["CreationDate"] != null)
                         {
-                            var creationDate = processObj["CreationDate"]?.ToString();
-                            if (!string.IsNullOrEmpty(creationDate))
-                            {
-                                return ManagementDateTimeConverter.ToDateTime(creationDate);
-                            }
+                            return ConvertWmiDateTime(processResult["CreationDate"]);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve CCMExec startup time from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve CCMExec startup time", ex);
             }
 
             return null;

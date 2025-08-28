@@ -32,8 +32,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindow");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindow");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -78,8 +78,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_ServiceWindow");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindow");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -123,8 +123,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindowManager");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindowManager");
 
                 foreach (ManagementObject obj in results)
                 {

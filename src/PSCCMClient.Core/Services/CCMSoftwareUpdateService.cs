@@ -38,9 +38,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
-                    $"SELECT * FROM CCM_SoftwareUpdate WHERE {filter}");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, $"SELECT * FROM CCM_SoftwareUpdate WHERE {filter}");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -101,8 +100,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_UpdateStore");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_UpdateStore");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -140,9 +139,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", 
-                    "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -219,9 +217,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
-                    $"SELECT * FROM CCM_SoftwareUpdate WHERE UpdateID = '{updateID}'");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, $"SELECT * FROM CCM_SoftwareUpdate WHERE UpdateID = '{updateID}'");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -232,7 +229,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw CreateException("invoke software update '{updateID}'", ex);
+                throw CreateException($"invoke software update '{updateID}'", ex);
             }
 
             return false;
