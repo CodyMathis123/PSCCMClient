@@ -1,50 +1,19 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for retrieving Configuration Manager client information
     /// </summary>
-    public class CCMClientInfoService
+    public class CCMClientInfoService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMClientInfoService(string computerName)
+        public CCMClientInfoService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
-        /// <summary>
-        /// Helper method to get the correct namespace path for local or remote operations
-        /// </summary>
-        private string GetNamespacePath(string baseNamespace)
-        {
-            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
-        }
 
-        /// <summary>
-        /// Helper method to convert WMI datetime strings to DateTime
-        /// </summary>
-        private DateTime? ConvertWmiDateTime(object? wmiDateTime)
-        {
-            if (wmiDateTime == null)
-                return null;
-
-            try
-            {
-                string dateTimeString = wmiDateTime.ToString();
-                if (string.IsNullOrEmpty(dateTimeString))
-                    return null;
-                    
-                return ManagementDateTimeConverter.ToDateTime(dateTimeString);
-            }
-            catch
-            {
-                return null;
-            }
-        }
 
         /// <summary>
         /// Gets comprehensive client information
@@ -545,45 +514,22 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                // First try COM object approach (like PowerShell for local calls)
-                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
-                        if (comType != null)
-                        {
-                            var smsClient = Activator.CreateInstance(comType);
-                            smsClient?.GetType().InvokeMember("SetClientAlwaysOnInternet", 
-                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, new object[] { alwaysOnInternet });
-                            return true;
-                        }
-                    }
-                    catch
-                    {
-                        // Fall back to WMI
-                    }
-                }
-
-                // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    var inParams = obj.GetMethodParameters("SetClientAlwaysOnInternet");
-                    inParams["bAlwaysOnInternet"] = alwaysOnInternet;
-                    
-                    var outParams = obj.InvokeMethod("SetClientAlwaysOnInternet", inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
-                }
+                // PowerShell module uses registry approach to set this value
+                // Set DWORD value "ClientAlwaysOnInternet" in "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\CCM\Security"
+                uint enablement = alwaysOnInternet ? 1u : 0u;
+                
+                return RegistryHelper.SetDWORDValue(
+                    _computerName,
+                    "HKEY_LOCAL_MACHINE",
+                    "SOFTWARE\\Microsoft\\CCM\\Security",
+                    "ClientAlwaysOnInternet",
+                    enablement
+                );
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set client always on internet setting to '{alwaysOnInternet}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set client always on internet setting to '{alwaysOnInternet}'", ex);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -698,35 +644,27 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                // First try COM object approach (like PowerShell for local calls)
-                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                // For local operations, use COM object like PowerShell does
+                if (IsLocalComputer)
                 {
                     try
                     {
-                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
-                        if (comType != null)
-                        {
-                            var smsClient = Activator.CreateInstance(comType);
-                            var result = smsClient?.GetType().InvokeMember("IsClientOnInternet", 
-                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
-                            return Convert.ToBoolean(result ?? false);
-                        }
+                        var result = InvokeCOMMethod(COMHelper.ProgIds.SMSClient, "IsClientOnInternet");
+                        return Convert.ToBoolean(result ?? false);
                     }
                     catch
                     {
-                        // Fall back to WMI
+                        // Fall through to WMI if COM failed
                     }
                 }
 
-                // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_ClientUtilities");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                // WMI fallback for remote or when COM fails
+                var wmiObject = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_ClientUtilities");
+                if (wmiObject != null)
                 {
-                    var method = obj.GetMethodParameters("DetermineIfClientIsOnInternet");
-                    var result = obj.InvokeMethod("DetermineIfClientIsOnInternet", method, null);
-                    return Convert.ToBoolean(result["ClientIsOnInternet"] ?? false);
+                    var methodParams = WMIHelper.GetInstanceMethodParameters(wmiObject, "DetermineIfClientIsOnInternet");
+                    var result = InvokeWMIInstanceMethod(wmiObject, "DetermineIfClientIsOnInternet", methodParams);
+                    return Convert.ToBoolean(result?["ClientIsOnInternet"] ?? false);
                 }
             }
             catch { }
@@ -737,33 +675,25 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                // First try COM object approach (like PowerShell for local calls)
-                if (_computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase))
+                // For local operations, use COM object like PowerShell does
+                if (IsLocalComputer)
                 {
                     try
                     {
-                        var comType = Type.GetTypeFromProgID("Microsoft.SMS.Client");
-                        if (comType != null)
-                        {
-                            var smsClient = Activator.CreateInstance(comType);
-                            var result = smsClient?.GetType().InvokeMember("IsClientAlwaysOnInternet", 
-                                System.Reflection.BindingFlags.InvokeMethod, null, smsClient, null);
-                            return Convert.ToBoolean(result ?? false);
-                        }
+                        var result = InvokeCOMMethod(COMHelper.ProgIds.SMSClient, "IsClientAlwaysOnInternet");
+                        return Convert.ToBoolean(result ?? false);
                     }
                     catch
                     {
-                        // Fall back to WMI
+                        // Fall through to WMI if COM failed
                     }
                 }
 
-                // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                // WMI fallback for remote operations
+                var wmiObject = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT AlwaysInternet FROM CCM_Client");
+                if (wmiObject != null)
                 {
-                    return Convert.ToBoolean(obj["AlwaysInternet"] ?? false);
+                    return Convert.ToBoolean(wmiObject["AlwaysInternet"] ?? false);
                 }
             }
             catch { }

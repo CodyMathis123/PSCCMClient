@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager site and connectivity settings
     /// </summary>
-    public class CCMSiteService
+    public class CCMSiteService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMSiteService(string computerName)
+        public CCMSiteService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -32,7 +30,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -71,7 +69,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -108,7 +106,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Authority WHERE CurrentManagementPoint = TRUE");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Authority WHERE CurrentManagementPoint = TRUE");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -149,7 +147,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -186,7 +184,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig"), "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -225,7 +223,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -264,7 +262,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -299,7 +297,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_ClientUtilities");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_ClientUtilities");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -334,7 +332,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -369,7 +367,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
