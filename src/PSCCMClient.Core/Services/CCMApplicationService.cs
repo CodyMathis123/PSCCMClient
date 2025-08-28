@@ -16,6 +16,15 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
+        /// Helper method to get the correct namespace path for local or remote operations
+        /// </summary>
+        private string GetNamespacePath(string baseNamespace)
+        {
+            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
+        }
+
+        /// <summary>
         /// Gets all applications from the Configuration Manager client
         /// </summary>
         /// <returns>A collection of CCMApplication objects</returns>
@@ -44,7 +53,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\ClientSDK");
+                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
                 scope.Connect();
 
                 using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery("SELECT * FROM CCM_Application"));
@@ -79,7 +88,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\ClientSDK");
+                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
                 scope.Connect();
 
                 var query = $"SELECT * FROM CCM_Application WHERE Name LIKE '%{applicationName}%'";
@@ -123,7 +132,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\ClientSDK");
+                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
                 scope.Connect();
 
                 using var appClass = new ManagementClass(scope, new ManagementPath("CCM_Application"), null);

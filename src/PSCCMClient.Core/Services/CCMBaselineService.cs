@@ -16,6 +16,15 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
+        /// Helper method to get the correct namespace path for local or remote operations
+        /// </summary>
+        private string GetNamespacePath(string baseNamespace)
+        {
+            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
+        }
+
+        /// <summary>
         /// Gets configuration baselines from the client
         /// </summary>
         /// <param name="baselineName">Optional baseline name filter</param>
@@ -40,7 +49,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\dcm", query);
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\dcm"), query);
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -83,7 +92,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 var query = $"SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = '{baselineName}'";
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\dcm", query);
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\dcm"), query);
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
