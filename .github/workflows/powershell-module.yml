@@ -1,23 +1,29 @@
-name: Build and Publish PowerShell Module
+name: Build and Package PowerShell Module
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, feature/github-assets-publishing ]
     paths:
       - 'Source/**'
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
-      publish_module:
-        description: 'Publish module to PowerShell Gallery'
+      create_release:
+        description: 'Create GitHub release with assets'
         required: false
         default: false
         type: boolean
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build:
     runs-on: windows-latest
+    
+    outputs:
+      module-version: ${{ steps.version.outputs.version }}
     
     steps:
     - name: Checkout code
@@ -34,6 +40,24 @@ jobs:
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
         Install-Module -Name Pester -Force -SkipPublisherCheck
         Install-Module -Name PSScriptAnalyzer -Force
+
+    - name: Get module version
+      id: version
+      shell: pwsh
+      run: |
+        $ManifestPath = ".\Source\PSCCMClient.psd1"
+        if (Test-Path $ManifestPath) {
+          $manifest = Import-PowerShellDataFile -Path $ManifestPath
+          $version = $manifest.ModuleVersion
+          if (-not $version) {
+            $version = "1.0.0"
+          }
+          echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Module version: $version"
+        } else {
+          echo "version=1.0.0" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Module manifest not found, using default version 1.0.0"
+        }
 
     - name: Test PowerShell module syntax
       shell: pwsh
@@ -80,43 +104,65 @@ jobs:
         Copy-Item -Path $ModulePath -Destination "$OutputPath\PSCCMClient" -Recurse -Force
         
         # Create a zip package
-        Compress-Archive -Path "$OutputPath\PSCCMClient" -DestinationPath "$OutputPath\PSCCMClient.zip" -Force
+        $zipName = "PSCCMClient-${{ steps.version.outputs.version }}.zip"
+        Compress-Archive -Path "$OutputPath\PSCCMClient" -DestinationPath "$OutputPath\$zipName" -Force
         
-        Write-Host "Module package created"
+        Write-Host "Module package created: $zipName"
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: powershell-module
+        name: powershell-module-${{ steps.version.outputs.version }}
         path: ./artifacts/
 
-  publish:
+  publish-to-assets:
     needs: build
     runs-on: windows-latest
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_module == true)
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release == true
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: powershell-module
+        name: powershell-module-${{ needs.build.outputs.module-version }}
         path: ./artifacts
 
-    - name: Publish to PowerShell Gallery
-      shell: pwsh
-      run: |
-        $ErrorActionPreference = 'Stop'
-        
-        # Extract and publish module
-        Expand-Archive -Path "./artifacts/PSCCMClient.zip" -DestinationPath "./temp" -Force
-        
-        $ModulePath = "./temp/PSCCMClient"
-        if (Test-Path $ModulePath) {
-          Write-Host "Publishing module to PowerShell Gallery..."
-          Publish-Module -Path $ModulePath -NuGetApiKey $env:POWERSHELL_GALLERY_API_KEY -Verbose
-          Write-Host "Module published successfully"
-        } else {
-          throw "Module path not found: $ModulePath"
-        }
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
       env:
-        POWERSHELL_GALLERY_API_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ inputs.release_tag || format('powershell-v{0}', needs.build.outputs.module-version) }}
+        release_name: PowerShell Module Release ${{ inputs.release_tag || format('v{0}', needs.build.outputs.module-version) }}
+        body: |
+          ## PowerShell Module Release
+          
+          This release contains the PSCCMClient PowerShell module.
+          
+          ### Installation
+          ```powershell
+          # Download and extract the zip file, then import the module
+          Expand-Archive -Path "PSCCMClient-${{ needs.build.outputs.module-version }}.zip" -DestinationPath "C:\Modules\"
+          Import-Module "C:\Modules\PSCCMClient\PSCCMClient.psd1"
+          ```
+          
+          ### Module Version
+          - **Version**: ${{ needs.build.outputs.module-version }}
+          - **Built from**: ${{ github.sha }}
+          
+        draft: false
+        prerelease: false
+
+    - name: Upload PowerShell Module Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/PSCCMClient-${{ needs.build.outputs.module-version }}.zip
+        asset_name: PSCCMClient-${{ needs.build.outputs.module-version }}.zip
+        asset_content_type: application/zip

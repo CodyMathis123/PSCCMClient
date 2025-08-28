@@ -1,24 +1,30 @@
-name: Build and Publish .NET Package
+name: Build and Package .NET Library
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, feature/github-assets-publishing ]
     paths:
       - 'src/**'
       - 'PSCCMClient.sln'
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
-      publish_package:
-        description: 'Publish package to NuGet'
+      create_release:
+        description: 'Create GitHub release with assets'
         required: false
         default: false
         type: boolean
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build:
     runs-on: windows-latest
+    
+    outputs:
+      package-version: ${{ steps.version.outputs.version }}
     
     steps:
     - name: Checkout code
@@ -39,33 +45,73 @@ jobs:
       run: dotnet test PSCCMClient.sln --configuration Release --no-build --verbosity normal
       continue-on-error: true
 
+    - name: Get version from project
+      id: version
+      run: |
+        $version = (Select-Xml -Path "src/PSCCMClient.Core/PSCCMClient.Core.csproj" -XPath "//Version").Node.InnerText
+        if (-not $version) {
+          $version = "1.0.0"
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Package version: $version"
+      shell: pwsh
+
     - name: Pack NuGet package
       run: dotnet pack src/PSCCMClient.Core/PSCCMClient.Core.csproj --configuration Release --no-build --output ./artifacts
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: nuget-package
+        name: nuget-package-${{ steps.version.outputs.version }}
         path: ./artifacts/*.nupkg
 
-  publish:
+  publish-to-assets:
     needs: build
     runs-on: windows-latest
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_package == true)
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release == true
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: nuget-package
+        name: nuget-package-${{ needs.build.outputs.package-version }}
         path: ./artifacts
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-
-    - name: Publish to NuGet.org
-      run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
       env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ inputs.release_tag || format('dotnet-v{0}', needs.build.outputs.package-version) }}
+        release_name: .NET Package Release ${{ inputs.release_tag || format('v{0}', needs.build.outputs.package-version) }}
+        body: |
+          ## .NET Package Release
+          
+          This release contains the PSCCMClient .NET library package.
+          
+          ### Installation
+          ```bash
+          # Download the .nupkg file and install locally
+          dotnet add package PSCCMClient.Core --source ./path/to/downloaded/package
+          ```
+          
+          ### Package Version
+          - **Version**: ${{ needs.build.outputs.package-version }}
+          - **Built from**: ${{ github.sha }}
+          
+        draft: false
+        prerelease: false
+
+    - name: Upload NuGet Package Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/PSCCMClient.Core.${{ needs.build.outputs.package-version }}.nupkg
+        asset_name: PSCCMClient.Core.${{ needs.build.outputs.package-version }}.nupkg
+        asset_content_type: application/zip

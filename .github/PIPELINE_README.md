@@ -1,104 +1,112 @@
 # Build Pipelines
 
-This repository includes two separate GitHub Actions workflows for building and publishing packages:
+This repository includes two separate GitHub Actions workflows for building packages and creating GitHub releases with assets:
 
 ## 🏗️ .NET Package Pipeline (`dotnet-package.yml`)
 
-Builds and publishes the C# NuGet package for PSCCMClient.Core.
+Builds the C# NuGet package for PSCCMClient.Core and can create GitHub releases with package assets.
 
 ### Triggers
-- **Push to main/master** - Builds when C# code changes (`src/**`, `PSCCMClient.sln`)
-- **Release published** - Automatically publishes to NuGet.org
-- **Manual dispatch** - Allows manual triggering with optional publishing
+- **Push to branches** - Builds when C# code changes (`src/**`, `PSCCMClient.sln`)
+  - `main`, `master`, `feature/github-assets-publishing`
+- **Manual dispatch** - Allows manual triggering with option to create GitHub release
 
 ### Workflow Steps
 1. **Build** - Restores dependencies, builds solution, runs tests
-2. **Pack** - Creates NuGet package 
-3. **Publish** - Publishes to NuGet.org (only on release or manual dispatch)
+2. **Pack** - Creates NuGet package with version detection
+3. **Upload Artifacts** - Always uploads build artifacts
+4. **Create Release** - (Manual only) Creates GitHub release with NuGet package asset
 
-### Setup Requirements
-
-#### Secrets
-Add these secrets to your repository:
-- `NUGET_API_KEY` - Your NuGet.org API key for publishing packages
-
-#### Getting a NuGet API Key
-1. Go to [nuget.org](https://www.nuget.org/)
-2. Sign in and go to your account settings
-3. Create a new API key with package push permissions
-4. Add it as a repository secret named `NUGET_API_KEY`
+### Manual Release Creation
+1. Go to **Actions** → **Build and Package .NET Library**
+2. Click **Run workflow**
+3. Check **"Create GitHub release with assets"**
+4. Optionally specify a **release tag** (e.g., `v1.2.0`)
+5. Run the workflow
 
 ---
 
 ## 📦 PowerShell Module Pipeline (`powershell-module.yml`)
 
-Builds and publishes the PowerShell module to PowerShell Gallery.
+Builds the PowerShell module and can create GitHub releases with module assets.
 
 ### Triggers
-- **Push to main/master** - Builds when PowerShell code changes (`Source/**`)
-- **Release published** - Automatically publishes to PowerShell Gallery
-- **Manual dispatch** - Allows manual triggering with optional publishing
+- **Push to branches** - Builds when PowerShell code changes (`Source/**`)
+  - `main`, `master`, `feature/github-assets-publishing`
+- **Manual dispatch** - Allows manual triggering with option to create GitHub release
 
 ### Workflow Steps
 1. **Build** - Tests module manifest, runs PSScriptAnalyzer, Pester tests
-2. **Package** - Creates module package
-3. **Publish** - Publishes to PowerShell Gallery (only on release or manual dispatch)
+2. **Package** - Creates versioned module zip package
+3. **Upload Artifacts** - Always uploads build artifacts
+4. **Create Release** - (Manual only) Creates GitHub release with module zip asset
 
-### Setup Requirements
-
-#### Secrets
-Add these secrets to your repository:
-- `POWERSHELL_GALLERY_API_KEY` - Your PowerShell Gallery API key
-
-#### Getting a PowerShell Gallery API Key
-1. Go to [PowerShell Gallery](https://www.powershellgallery.com/)
-2. Sign in and go to account settings
-3. Generate a new API key with push permissions
-4. Add it as a repository secret named `POWERSHELL_GALLERY_API_KEY`
+### Manual Release Creation
+1. Go to **Actions** → **Build and Package PowerShell Module**
+2. Click **Run workflow**
+3. Check **"Create GitHub release with assets"**
+4. Optionally specify a **release tag** (e.g., `v1.2.0`)
+5. Run the workflow
 
 ---
 
-## 🚀 Manual Deployment
+## 🎯 Usage After Release
 
-Both pipelines can be triggered manually from the Actions tab:
-
-1. Go to **Actions** in your GitHub repository
-2. Select the workflow you want to run
-3. Click **Run workflow**
-4. Choose whether to publish packages (optional)
-
----
-
-## 📋 Pipeline Status
-
-Both pipelines will show status badges and provide downloadable artifacts:
-
-- **Build artifacts** - Always available for successful builds
-- **Published packages** - Available on NuGet.org and PowerShell Gallery after publishing
-
-### Example Usage After Publishing
+### Installing from GitHub Releases
 
 #### .NET Package
 ```bash
-dotnet add package PSCCMClient.Core
+# Download .nupkg from GitHub releases
+# Install locally:
+dotnet add package PSCCMClient.Core --source ./path/to/downloaded/package
 ```
 
 #### PowerShell Module
 ```powershell
-Install-Module -Name PSCCMClient
+# Download zip from GitHub releases
+# Extract and import:
+Expand-Archive -Path "PSCCMClient-1.0.0.zip" -DestinationPath "C:\Modules\"
+Import-Module "C:\Modules\PSCCMClient\PSCCMClient.psd1"
 ```
 
 ---
 
 ## 🔧 Pipeline Configuration
 
-### Customizing Triggers
-Edit the `on:` section of each workflow to modify when they run.
+### Branch Protection
+Both workflows currently build on:
+- `main`
+- `master` 
+- `feature/github-assets-publishing` (for testing)
 
-### Adding Tests
-- **C#**: Add test projects to the solution
-- **PowerShell**: Add `.Tests.ps1` files for Pester to discover
+### Version Detection
+- **C#**: Automatically reads version from `PSCCMClient.Core.csproj`
+- **PowerShell**: Automatically reads version from `PSCCMClient.psd1`
+- **Fallback**: Uses `1.0.0` if version not found
 
-### Version Management
-- **C#**: Update version in `PSCCMClient.Core.csproj`
-- **PowerShell**: Update `ModuleVersion` in `PSCCMClient.psd1`
+### Release Naming
+- **Default tags**: `dotnet-v{version}` or `powershell-v{version}`
+- **Custom tags**: Can be specified during manual dispatch
+- **Release names**: Include package type and version information
+
+### Artifacts
+Both workflows always upload build artifacts, even without creating releases:
+- Artifacts include version numbers in names
+- Available for download from the Actions tab
+- Retained according to repository retention settings
+
+---
+
+## 🚀 Future Migration
+
+When ready to publish to external repositories:
+
+1. **Add secrets** for external publishing:
+   - `NUGET_API_KEY` - For NuGet.org
+   - `POWERSHELL_GALLERY_API_KEY` - For PowerShell Gallery
+
+2. **Modify workflows** to add external publishing steps
+
+3. **Update triggers** to publish automatically on main/master releases
+
+This approach allows testing the build process and GitHub releases before committing to external package publication.
