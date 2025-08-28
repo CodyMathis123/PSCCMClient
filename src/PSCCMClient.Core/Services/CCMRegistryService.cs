@@ -115,10 +115,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     return new CCMProvisioningMode
                     {
@@ -130,7 +130,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get provisioning mode from {_computerName}: {ex.Message}", ex);
+                throw CreateException("get provisioning mode", ex);
             }
 
             return null;
@@ -155,19 +155,16 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                string namespacePath = GetNamespacePath("root\\CCM");
-                
-                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
-                using var mgmtClass = new ManagementClass(namespacePath, "SMS_Client", null);
-                var inParams = mgmtClass.GetMethodParameters("SetClientProvisioningMode");
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "SMS_Client", "SetClientProvisioningMode");
                 inParams["bEnable"] = enabled;
 
-                var outParams = mgmtClass.InvokeMethod("SetClientProvisioningMode", inParams, null);
-                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                var outParams = InvokeWMIClassMethod(namespacePath, "SMS_Client", "SetClientProvisioningMode", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set provisioning mode to '{enabled}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set provisioning mode to '{enabled}'", ex);
             }
         }
 
@@ -188,10 +185,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     return new CCMGuidInfo
                     {
@@ -203,7 +200,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get client GUID from {_computerName}: {ex.Message}", ex);
+                throw CreateException("get client GUID", ex);
             }
 
             return null;
@@ -226,10 +223,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\CIModels"), "SELECT * FROM CCM_UserAffinity");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM\\CIModels");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_UserAffinity");
+                
+                if (obj != null)
                 {
                     return new CCMPrimaryUser
                     {
@@ -241,7 +238,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get primary user from {_computerName}: {ex.Message}", ex);
+                throw CreateException("get primary user", ex);
             }
 
             return null;
@@ -264,10 +261,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Service WHERE Name = 'CcmExec'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Service WHERE Name = 'CcmExec'");
+                
+                if (obj != null)
                 {
                     return new CCMExecStartupTime
                     {
@@ -279,7 +276,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get CCM exec startup time from {_computerName}: {ex.Message}", ex);
+                throw CreateException("get CCM exec startup time", ex);
             }
 
             return null;

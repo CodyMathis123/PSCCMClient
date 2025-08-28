@@ -30,10 +30,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     return new CCMSite
                     {
@@ -44,7 +44,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve site from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve site", ex);
             }
 
             return null;
@@ -69,21 +69,21 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
-                    var inParams = obj.GetMethodParameters("SetClientSite");
+                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "SetClientSite");
                     inParams["sSiteCode"] = siteCode;
                     
-                    var outParams = obj.InvokeMethod("SetClientSite", inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                    var outParams = InvokeWMIInstanceMethod(obj, "SetClientSite", inParams);
+                    return WMIHelper.IsMethodCallSuccessful(outParams);
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set site code '{siteCode}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set site code '{siteCode}'", ex);
             }
 
             return false;
@@ -106,10 +106,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Authority WHERE CurrentManagementPoint = TRUE");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Authority WHERE CurrentManagementPoint = TRUE");
+                
+                if (obj != null)
                 {
                     return new CCMManagementPoint
                     {
@@ -122,7 +122,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve current management point from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve current management point", ex);
             }
 
             return null;
@@ -147,21 +147,21 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
-                    var inParams = obj.GetMethodParameters("SetCurrentManagementPoint");
+                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "SetCurrentManagementPoint");
                     inParams["sMP"] = managementPoint;
                     
-                    var outParams = obj.InvokeMethod("SetCurrentManagementPoint", inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                    var outParams = InvokeWMIInstanceMethod(obj, "SetCurrentManagementPoint", inParams);
+                    return WMIHelper.IsMethodCallSuccessful(outParams);
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set management point '{managementPoint}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set management point '{managementPoint}'", ex);
             }
 
             return false;
@@ -184,10 +184,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig"), "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
+                
+                if (obj != null)
                 {
                     return new CCMSoftwareUpdatePoint
                     {
@@ -200,7 +200,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve current software update point from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve current software update point", ex);
             }
 
             return null;
@@ -223,10 +223,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     return new CCMDNSSuffix
                     {
@@ -237,7 +237,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve DNS suffix from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve DNS suffix", ex);
             }
 
             return null;
@@ -262,10 +262,10 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     obj["DNSSuffix"] = dnsSuffix;
                     obj.Put();
@@ -274,7 +274,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set DNS suffix '{dnsSuffix}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set DNS suffix '{dnsSuffix}'", ex);
             }
 
             return false;
@@ -297,19 +297,19 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_ClientUtilities");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_ClientUtilities");
+                
+                if (obj != null)
                 {
-                    var inParams = obj.GetMethodParameters("DetermineIfClientIsOnInternet");
-                    var outParams = obj.InvokeMethod("DetermineIfClientIsOnInternet", inParams, null);
-                    return Convert.ToBoolean(outParams["ClientIsOnInternet"] ?? false);
+                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "DetermineIfClientIsOnInternet");
+                    var outParams = InvokeWMIInstanceMethod(obj, "DetermineIfClientIsOnInternet", inParams);
+                    return Convert.ToBoolean(outParams?["ClientIsOnInternet"] ?? false);
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to test if client is on internet on {_computerName}: {ex.Message}", ex);
+                throw CreateException("test if client is on internet", ex);
             }
 
             return false;
@@ -332,17 +332,17 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var namespacePath = GetNamespacePath("root\\CCM");
+                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                
+                if (obj != null)
                 {
                     return Convert.ToBoolean(obj["AlwaysInternet"] ?? false);
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to test if client is always on internet on {_computerName}: {ex.Message}", ex);
+                throw CreateException("test if client is always on internet", ex);
             }
 
             return false;

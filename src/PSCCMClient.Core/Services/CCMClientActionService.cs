@@ -59,14 +59,13 @@ namespace PSCCMClient.Core.Services
                     DeleteHardwareInventoryHistory();
                 }
 
-                // Use the base class to determine if it's a local computer and get the namespace path
+                // Use base class helper methods for WMI class method invocation
                 var namespacePath = GetNamespacePath("root\\ccm");
-                var mgmtClass = new ManagementClass(namespacePath, "sms_client", null);
-                var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "sms_client", "TriggerSchedule");
                 inParams["sScheduleID"] = scheduleId;
                 
-                var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
-                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "TriggerSchedule", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
             }
             catch (Exception ex)
             {
@@ -127,14 +126,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                // Use the base class to determine if it's a local computer and get the namespace path
+                // Use base class helper methods for WMI class method invocation
                 var namespacePath = GetNamespacePath("root\\ccm");
-                var mgmtClass = new ManagementClass(namespacePath, "sms_client", null);
-                var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "sms_client", "TriggerSchedule");
                 inParams["sScheduleID"] = scheduleId;
                 
-                var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
-                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "TriggerSchedule", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
             }
             catch (Exception ex)
             {
@@ -177,22 +175,17 @@ namespace PSCCMClient.Core.Services
                     _ => 1
                 };
 
-                // For local computer, use different approach like PowerShell does
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-                
-                string namespacePath = isLocal ? "root\\ccm" : $@"\\{_computerName}\root\ccm";
-                
-                // Use ManagementClass to call method on the class, not on instances
-                using var mgmtClass = new ManagementClass(namespacePath, "sms_client", null);
-                var inParams = mgmtClass.GetMethodParameters("ResetPolicy");
+                // Use base class helper methods for WMI class method invocation
+                var namespacePath = GetNamespacePath("root\\ccm");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "sms_client", "ResetPolicy");
                 inParams["uFlags"] = uFlags;
                 
-                var outParams = mgmtClass.InvokeMethod("ResetPolicy", inParams, null);
-                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "ResetPolicy", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to reset policy on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"reset policy with type '{resetType}'", ex);
             }
         }
 

@@ -283,10 +283,8 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
+                if (obj != null)
                 {
                     return obj["ClientSite"]?.ToString() ?? "";
                 }
@@ -300,10 +298,8 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT CurrentManagementPoint FROM SMS_Authority'
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT CurrentManagementPoint FROM SMS_Authority");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT CurrentManagementPoint FROM SMS_Authority");
+                if (obj != null)
                 {
                     return obj["CurrentManagementPoint"]?.ToString() ?? "";
                 }
@@ -317,10 +313,8 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ContentLocation FROM CCM_UpdateSource'
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\SoftwareUpdates\\WUAHandler"), "SELECT ContentLocation FROM CCM_UpdateSource");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\ccm\\SoftwareUpdates\\WUAHandler"), "SELECT ContentLocation FROM CCM_UpdateSource");
+                if (obj != null)
                 {
                     return obj["ContentLocation"]?.ToString() ?? "";
                 }
@@ -333,10 +327,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\SoftMgmtAgent"), "SELECT * FROM CacheConfig");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM\\SoftMgmtAgent"), "SELECT * FROM CacheConfig");
+                if (obj != null)
                 {
                     return new CCMCacheInfo
                     {
@@ -374,10 +366,8 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
+                if (obj != null)
                 {
                     return obj["DNSSuffix"]?.ToString() ?? "";
                 }
@@ -391,10 +381,8 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client'
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM"), "SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client");
+                if (obj != null)
                 {
                     return new CCMGuidInfo
                     {
@@ -413,10 +401,8 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use correct namespace like PowerShell: 'root\ccm\policy\machine\actualconfig'
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\policy\\machine\\actualconfig"), "SELECT * FROM CCM_Logging_GlobalConfiguration");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\ccm\\policy\\machine\\actualconfig"), "SELECT * FROM CCM_Logging_GlobalConfiguration");
+                if (obj != null)
                 {
                     var config = new CCMLoggingConfiguration
                     {
@@ -538,10 +524,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
+                if (obj != null)
                 {
                     return new CCMInventoryInfo
                     {
@@ -552,7 +536,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve last heartbeat from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve last heartbeat", ex);
             }
             return null;
         }
@@ -574,10 +558,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
+                if (obj != null)
                 {
                     return new CCMInventoryInfo
                     {
@@ -588,7 +570,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve last hardware inventory from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve last hardware inventory", ex);
             }
             return null;
         }
@@ -610,10 +592,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var obj = QueryFirstWMIObject(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
+                if (obj != null)
                 {
                     return new CCMInventoryInfo
                     {
@@ -624,7 +604,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve last software inventory from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve last software inventory", ex);
             }
             return null;
         }

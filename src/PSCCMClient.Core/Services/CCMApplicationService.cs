@@ -116,8 +116,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
-                using var appClass = new ManagementClass(namespacePath, "CCM_Application", null);
-                using var inParams = appClass.GetMethodParameters("Install");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "CCM_Application", "Install");
                 
                 inParams["Id"] = applicationId;
                 inParams["IsMachineTarget"] = true;
@@ -125,10 +124,8 @@ namespace PSCCMClient.Core.Services
                 inParams["Priority"] = "High";
                 inParams["IsRebootIfNeeded"] = false;
 
-                using var outParams = appClass.InvokeMethod("Install", inParams, null);
-                var returnValue = Convert.ToInt32(outParams["ReturnValue"]);
-                
-                return returnValue == 0;
+                var outParams = InvokeWMIClassMethod(namespacePath, "CCM_Application", "Install", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
             }
             catch (Exception ex)
             {
