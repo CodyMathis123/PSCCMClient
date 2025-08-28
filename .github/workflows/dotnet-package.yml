@@ -79,7 +79,6 @@ jobs:
       with:
         name: nuget-package-${{ needs.build.outputs.package-version }}
         path: ./artifacts/
-        path: ./artifacts
 
     - name: Create Release
       id: create_release
