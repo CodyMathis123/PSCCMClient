@@ -2,7 +2,7 @@ name: Build and Package .NET Library
 
 on:
   push:
-    branches: [ main, master, feature/github-assets-publishing ]
+    branches: [ main, master, dotnet ]
     paths:
       - 'src/**'
       - 'PSCCMClient.sln'
