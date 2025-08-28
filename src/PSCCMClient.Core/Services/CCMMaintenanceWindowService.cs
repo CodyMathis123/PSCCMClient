@@ -32,22 +32,27 @@ namespace PSCCMClient.Core.Services
 
             try
             {
+                // Get the time zone first
+                string timeZone = GetTimeZone();
+
                 var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
                 using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindow");
 
                 foreach (ManagementObject obj in results)
                 {
+                    var startTime = obj["StartTime"] as DateTime?;
+                    var endTime = obj["EndTime"] as DateTime?;
+                    
                     windows.Add(new CCMMaintenanceWindow
                     {
                         ComputerName = _computerName,
-                        Name = obj["Name"]?.ToString() ?? "",
-                        Description = obj["Description"]?.ToString() ?? "",
-                        StartTime = obj["StartTime"] as DateTime?,
-                        EndTime = obj["EndTime"] as DateTime?,
+                        TimeZone = timeZone,
+                        StartTime = startTime?.ToUniversalTime(),
+                        EndTime = endTime?.ToUniversalTime(),
                         Duration = Convert.ToInt32(obj["Duration"] ?? 0),
-                        ServiceWindowType = GetServiceWindowType(obj["Type"]),
-                        ServiceWindowSchedules = obj["ServiceWindowSchedules"]?.ToString() ?? "",
-                        IsEnabled = Convert.ToBoolean(obj["IsEnabled"] ?? false)
+                        DurationDescription = GetDurationDescription(Convert.ToInt32(obj["Duration"] ?? 0)),
+                        MWID = obj["ID"]?.ToString() ?? "",
+                        Type = GetMaintenanceWindowType(obj["Type"])
                     });
                 }
             }
@@ -86,15 +91,9 @@ namespace PSCCMClient.Core.Services
                     windows.Add(new CCMServiceWindow
                     {
                         ComputerName = _computerName,
+                        Schedules = obj["Schedules"]?.ToString() ?? "",
                         ServiceWindowID = obj["ServiceWindowID"]?.ToString() ?? "",
-                        Name = obj["Name"]?.ToString() ?? "",
-                        Description = obj["Description"]?.ToString() ?? "",
-                        StartTime = obj["StartTime"]?.ToString() ?? "",
-                        EndTime = obj["EndTime"]?.ToString() ?? "",
-                        Duration = Convert.ToInt32(obj["Duration"] ?? 0),
-                        RecurrenceType = Convert.ToInt32(obj["RecurrenceType"] ?? 0),
-                        Type = GetServiceWindowType(obj["Type"]),
-                        IsEnabled = Convert.ToBoolean(obj["IsEnabled"] ?? false)
+                        ServiceWindowType = GetServiceWindowType(obj["ServiceWindowType"])
                     });
                 }
             }
@@ -168,13 +167,12 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var currentTime = DateTime.Now;
+                var currentTime = DateTime.UtcNow;
                 var windows = GetMaintenanceWindows();
 
                 foreach (var window in windows)
                 {
-                    if (window.IsEnabled && 
-                        window.StartTime.HasValue && 
+                    if (window.StartTime.HasValue && 
                         window.EndTime.HasValue &&
                         currentTime >= window.StartTime.Value && 
                         currentTime <= window.EndTime.Value)
@@ -191,18 +189,64 @@ namespace PSCCMClient.Core.Services
             return false;
         }
 
+        private string GetTimeZone()
+        {
+            try
+            {
+                using var results = QueryWMIObjects("root\\cimv2", "SELECT Caption FROM Win32_TimeZone");
+                foreach (ManagementObject obj in results)
+                {
+                    return obj["Caption"]?.ToString() ?? "";
+                }
+            }
+            catch
+            {
+                // Fallback to local time zone if WMI query fails
+                return TimeZoneInfo.Local.DisplayName;
+            }
+            return "";
+        }
+
+        private static string GetDurationDescription(int durationInSeconds)
+        {
+            var timeSpan = TimeSpan.FromSeconds(durationInSeconds);
+            
+            if (timeSpan.TotalDays >= 1)
+            {
+                return $"{(int)timeSpan.TotalDays} day(s) {timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            }
+            
+            return $"{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+        }
+
+        private static string GetMaintenanceWindowType(object? typeValue)
+        {
+            if (typeValue == null) return "Unknown";
+
+            return Convert.ToInt32(typeValue) switch
+            {
+                1 => "All Deployment Service Window",
+                2 => "Program Service Window",
+                3 => "Reboot Required Service Window",
+                4 => "Software Update Service Window",
+                5 => "Task Sequences Service Window",
+                6 => "Corresponds to non-working hours",
+                _ => "Unknown"
+            };
+        }
+
         private static string GetServiceWindowType(object? typeValue)
         {
             if (typeValue == null) return "Unknown";
 
             return Convert.ToInt32(typeValue) switch
             {
-                1 => "All Deployments",
-                2 => "Program",
-                3 => "Reboot Required",
-                4 => "Software Update",
-                5 => "Task Sequence",
-                6 => "Correspondence",
+                1 => "All Deployment Service Window",
+                2 => "Program Service Window",
+                3 => "Reboot Required Service Window",
+                4 => "Software Update Service Window",
+                5 => "Task Sequences Service Window",
+                6 => "Corresponds to non-working hours",
                 _ => "Unknown"
             };
         }

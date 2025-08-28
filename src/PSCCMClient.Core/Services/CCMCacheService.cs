@@ -79,13 +79,13 @@ namespace PSCCMClient.Core.Services
                     {
                         ComputerName = _computerName,
                         ContentId = obj["ContentId"]?.ToString() ?? "",
-                        ContentVersion = obj["ContentVersion"]?.ToString() ?? "",
+                        ContentVersion = obj["ContentVer"]?.ToString() ?? "",
                         Location = obj["Location"]?.ToString() ?? "",
-                        Size = Convert.ToInt64(obj["ContentSize"] ?? 0),
-                        LastReferenceTime = obj["LastReferenceTime"] as DateTime?,
+                        LastReferenceTime = obj["LastReferenced"] as DateTime?,
                         ReferenceCount = Convert.ToInt32(obj["ReferenceCount"] ?? 0),
-                        ContentType = Convert.ToInt32(obj["ContentType"] ?? 0),
-                        CacheId = obj["CacheId"]?.ToString() ?? ""
+                        ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
+                        ContentComplete = Convert.ToBoolean(obj["ContentComplete"] ?? false),
+                        CacheElementId = obj["CacheID"]?.ToString() ?? ""
                     });
                 }
             }

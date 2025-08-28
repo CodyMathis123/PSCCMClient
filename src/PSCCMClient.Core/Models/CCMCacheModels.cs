@@ -47,11 +47,6 @@ namespace PSCCMClient.Core.Models
         public string Location { get; set; } = "";
 
         /// <summary>
-        /// Size of the cached content in bytes
-        /// </summary>
-        public long Size { get; set; }
-
-        /// <summary>
         /// Last time the content was referenced
         /// </summary>
         public DateTime? LastReferenceTime { get; set; }
@@ -62,13 +57,18 @@ namespace PSCCMClient.Core.Models
         public int ReferenceCount { get; set; }
 
         /// <summary>
-        /// Type of content (numeric value)
+        /// Size of the cached content in bytes
         /// </summary>
-        public int ContentType { get; set; }
+        public long ContentSize { get; set; }
 
         /// <summary>
-        /// Cache identifier
+        /// Whether the content is complete
         /// </summary>
-        public string CacheId { get; set; } = "";
+        public bool ContentComplete { get; set; }
+
+        /// <summary>
+        /// Cache element identifier
+        /// </summary>
+        public string CacheElementId { get; set; } = "";
     }
 }

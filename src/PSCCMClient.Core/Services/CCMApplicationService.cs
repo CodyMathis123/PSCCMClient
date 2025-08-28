@@ -49,9 +49,48 @@ namespace PSCCMClient.Core.Services
                 {
                     using (obj)
                     {
-                        var application = CCMApplication.FromManagementObject(obj);
-                        application.ComputerName = _computerName;
-                        applications.Add(application);
+                        applications.Add(new CCMApplication
+                        {
+                            ComputerName = _computerName,
+                            Name = obj["Name"]?.ToString() ?? "",
+                            FullName = obj["FullName"]?.ToString() ?? "",
+                            SoftwareVersion = obj["SoftwareVersion"]?.ToString() ?? "",
+                            Publisher = obj["Publisher"]?.ToString() ?? "",
+                            Description = obj["Description"]?.ToString() ?? "",
+                            Id = obj["Id"]?.ToString() ?? "",
+                            Revision = obj["Revision"]?.ToString() ?? "",
+                            EvaluationState = obj["EvaluationState"]?.ToString() ?? "",
+                            ErrorCode = obj["ErrorCode"]?.ToString() ?? "",
+                            AllowedActions = obj["AllowedActions"]?.ToString() ?? "",
+                            ResolvedState = obj["ResolvedState"]?.ToString() ?? "",
+                            InstallState = obj["InstallState"]?.ToString() ?? "",
+                            ApplicabilityState = obj["ApplicabilityState"]?.ToString() ?? "",
+                            ConfigureState = obj["ConfigureState"]?.ToString() ?? "",
+                            LastEvalTime = obj["LastEvalTime"] as DateTime?,
+                            LastInstallTime = obj["LastInstallTime"] as DateTime?,
+                            StartTime = obj["StartTime"] as DateTime?,
+                            Deadline = obj["Deadline"] as DateTime?,
+                            NextUserScheduledTime = obj["NextUserScheduledTime"] as DateTime?,
+                            IsMachineTarget = Convert.ToBoolean(obj["IsMachineTarget"] ?? false),
+                            IsPreflightOnly = Convert.ToBoolean(obj["IsPreflightOnly"] ?? false),
+                            NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
+                            UserUIExperience = Convert.ToBoolean(obj["UserUIExperience"] ?? false),
+                            OverrideServiceWindow = Convert.ToBoolean(obj["OverrideServiceWindow"] ?? false),
+                            RebootOutsideServiceWindow = Convert.ToBoolean(obj["RebootOutsideServiceWindow"] ?? false),
+                            AppDTs = obj["AppDTs"]?.ToString() ?? "",
+                            ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
+                            DeploymentReport = obj["DeploymentReport"]?.ToString() ?? "",
+                            EnforcePreference = obj["EnforcePreference"]?.ToString() ?? "",
+                            EstimatedInstallTime = Convert.ToInt32(obj["EstimatedInstallTime"] ?? 0),
+                            FileTypes = obj["FileTypes"]?.ToString() ?? "",
+                            HighImpactDeployment = Convert.ToBoolean(obj["HighImpactDeployment"] ?? false),
+                            InformativeUrl = obj["InformativeUrl"]?.ToString() ?? "",
+                            InProgressActions = obj["InProgressActions"]?.ToString() ?? "",
+                            PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
+                            ReleaseDate = obj["ReleaseDate"] as DateTime?,
+                            SupersessionState = obj["SupersessionState"]?.ToString() ?? "",
+                            Type = obj["Type"]?.ToString() ?? ""
+                        });
                     }
                 }
             }
@@ -82,9 +121,48 @@ namespace PSCCMClient.Core.Services
                 {
                     using (obj)
                     {
-                        var application = CCMApplication.FromManagementObject(obj);
-                        application.ComputerName = _computerName;
-                        applications.Add(application);
+                        applications.Add(new CCMApplication
+                        {
+                            ComputerName = _computerName,
+                            Name = obj["Name"]?.ToString() ?? "",
+                            FullName = obj["FullName"]?.ToString() ?? "",
+                            SoftwareVersion = obj["SoftwareVersion"]?.ToString() ?? "",
+                            Publisher = obj["Publisher"]?.ToString() ?? "",
+                            Description = obj["Description"]?.ToString() ?? "",
+                            Id = obj["Id"]?.ToString() ?? "",
+                            Revision = obj["Revision"]?.ToString() ?? "",
+                            EvaluationState = obj["EvaluationState"]?.ToString() ?? "",
+                            ErrorCode = obj["ErrorCode"]?.ToString() ?? "",
+                            AllowedActions = obj["AllowedActions"]?.ToString() ?? "",
+                            ResolvedState = obj["ResolvedState"]?.ToString() ?? "",
+                            InstallState = obj["InstallState"]?.ToString() ?? "",
+                            ApplicabilityState = obj["ApplicabilityState"]?.ToString() ?? "",
+                            ConfigureState = obj["ConfigureState"]?.ToString() ?? "",
+                            LastEvalTime = obj["LastEvalTime"] as DateTime?,
+                            LastInstallTime = obj["LastInstallTime"] as DateTime?,
+                            StartTime = obj["StartTime"] as DateTime?,
+                            Deadline = obj["Deadline"] as DateTime?,
+                            NextUserScheduledTime = obj["NextUserScheduledTime"] as DateTime?,
+                            IsMachineTarget = Convert.ToBoolean(obj["IsMachineTarget"] ?? false),
+                            IsPreflightOnly = Convert.ToBoolean(obj["IsPreflightOnly"] ?? false),
+                            NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
+                            UserUIExperience = Convert.ToBoolean(obj["UserUIExperience"] ?? false),
+                            OverrideServiceWindow = Convert.ToBoolean(obj["OverrideServiceWindow"] ?? false),
+                            RebootOutsideServiceWindow = Convert.ToBoolean(obj["RebootOutsideServiceWindow"] ?? false),
+                            AppDTs = obj["AppDTs"]?.ToString() ?? "",
+                            ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
+                            DeploymentReport = obj["DeploymentReport"]?.ToString() ?? "",
+                            EnforcePreference = obj["EnforcePreference"]?.ToString() ?? "",
+                            EstimatedInstallTime = Convert.ToInt32(obj["EstimatedInstallTime"] ?? 0),
+                            FileTypes = obj["FileTypes"]?.ToString() ?? "",
+                            HighImpactDeployment = Convert.ToBoolean(obj["HighImpactDeployment"] ?? false),
+                            InformativeUrl = obj["InformativeUrl"]?.ToString() ?? "",
+                            InProgressActions = obj["InProgressActions"]?.ToString() ?? "",
+                            PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
+                            ReleaseDate = obj["ReleaseDate"] as DateTime?,
+                            SupersessionState = obj["SupersessionState"]?.ToString() ?? "",
+                            Type = obj["Type"]?.ToString() ?? ""
+                        });
                     }
                 }
             }
