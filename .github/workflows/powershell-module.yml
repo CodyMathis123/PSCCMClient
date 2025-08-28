@@ -2,7 +2,7 @@ name: Build and Package PowerShell Module
 
 on:
   push:
-    branches: [ main, master, feature/github-assets-publishing ]
+    branches: [ main, master, dotnet ]
     paths:
       - 'Source/**'
   workflow_dispatch:
