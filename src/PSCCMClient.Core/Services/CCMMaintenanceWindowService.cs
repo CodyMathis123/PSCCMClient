@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager maintenance windows
     /// </summary>
-    public class CCMMaintenanceWindowService
+    public class CCMMaintenanceWindowService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMMaintenanceWindowService(string computerName)
+        public CCMMaintenanceWindowService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -34,8 +32,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindow");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindow");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -55,7 +53,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve maintenance windows from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve maintenance windows", ex);
             }
 
             return windows;
@@ -80,8 +78,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_ServiceWindow");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_ServiceWindow");
+                using var results = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in results)
                 {
@@ -102,7 +100,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve service windows from {_computerName}: {ex.Message}", ex);
+                throw new CreateException("retrieve service windows", {ex.Message}", ex);
             }
 
             return windows;
@@ -125,8 +123,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindowManager");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindowManager");
+                using var results = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in results)
                 {
@@ -147,7 +145,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get current window available time from {_computerName}: {ex.Message}", ex);
+                throw new CreateException("get current window available time", {ex.Message}", ex);
             }
 
             return null;
@@ -187,7 +185,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to test window availability on {_computerName}: {ex.Message}", ex);
+                throw new CreateException("test window availability", {ex.Message}", ex);
             }
 
             return false;

@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager packages
     /// </summary>
-    public class CCMPackageService
+    public class CCMPackageService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMPackageService(string computerName = ".")
+        public CCMPackageService(string computerName = ".") : base(computerName)
         {
-            _computerName = computerName;
         }
 
         /// <summary>
@@ -44,11 +42,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig");
-                scope.Connect();
-
-                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery("SELECT * FROM CCM_SoftwareDistribution"));
-                using var collection = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\Policy\\Machine\\ActualConfig");
+                using var collection = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_SoftwareDistribution");
 
                 foreach (ManagementObject obj in collection)
                 {
@@ -62,7 +57,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve packages from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve packages", ex);
             }
 
             return packages;
@@ -98,7 +93,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve packages by name '{packageName}' from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve packages by name '{packageName}'", ex);
             }
 
             return packages;
@@ -141,7 +136,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to invoke package {packageId}/{programName} on {_computerName}: {ex.Message}", ex);
+                throw CreateException("invoke package {packageId}/{programName}", ex);
             }
         }
     }

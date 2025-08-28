@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager software updates
     /// </summary>
-    public class CCMSoftwareUpdateService
+    public class CCMSoftwareUpdateService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMSoftwareUpdateService(string computerName)
+        public CCMSoftwareUpdateService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -40,7 +38,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_SoftwareUpdate WHERE {filter}");
                 using var results = searcher.Get();
 
@@ -78,7 +76,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve software updates from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve software updates", ex);
             }
 
             return updates;
@@ -103,7 +101,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_UpdateStore");
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_UpdateStore");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -119,7 +117,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve software update groups from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve software update groups", ex);
             }
 
             return groups;
@@ -142,7 +140,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", 
+                using var searcher = GetNamespacePath("root\CCM\Policy\Machine\ActualConfig", 
                     "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
                 using var results = searcher.Get();
 
@@ -196,7 +194,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve software update settings from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve software update settings", ex);
             }
 
             return null;
@@ -221,7 +219,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_SoftwareUpdate WHERE UpdateID = '{updateID}'");
                 using var results = searcher.Get();
 
@@ -234,7 +232,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to invoke software update '{updateID}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException("invoke software update '{updateID}'", ex);
             }
 
             return false;

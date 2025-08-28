@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager logging
     /// </summary>
-    public class CCMLoggingService
+    public class CCMLoggingService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMLoggingService(string computerName)
+        public CCMLoggingService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -32,8 +30,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Logging_GlobalConfiguration");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Logging_GlobalConfiguration");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -50,7 +48,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve logging configuration from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve logging configuration", ex);
             }
 
             return null;
@@ -79,8 +77,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Logging_GlobalConfiguration");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Logging_GlobalConfiguration");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -97,7 +95,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set logging configuration on {_computerName}: {ex.Message}", ex);
+                throw CreateException("set logging configuration", ex);
             }
 
             return false;
@@ -152,7 +150,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to write log entry on {_computerName}: {ex.Message}", ex);
+                throw CreateException("write log entry", ex);
             }
 
             return false;
@@ -201,7 +199,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to test stale logs on {_computerName}: {ex.Message}", ex);
+                throw CreateException("test stale logs", ex);
             }
 
             return results;

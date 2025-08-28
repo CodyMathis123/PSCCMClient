@@ -1,27 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager configuration baselines
     /// </summary>
-    public class CCMBaselineService
+    public class CCMBaselineService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMBaselineService(string computerName)
+        public CCMBaselineService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
-        }
-
-        /// <summary>
-        /// Helper method to get the correct namespace path for local or remote operations
-        /// </summary>
-        private string GetNamespacePath(string baseNamespace)
-        {
-            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
         }
 
         /// <summary>
@@ -49,8 +38,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\dcm"), query);
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\ccm\\dcm");
+                using var results = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in results)
                 {
@@ -66,7 +55,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve baselines from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve baselines", ex);
             }
 
             return baselines;
@@ -92,8 +81,8 @@ namespace PSCCMClient.Core.Services
             try
             {
                 var query = $"SELECT * FROM SMS_DesiredConfiguration WHERE DisplayName = '{baselineName}'";
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\dcm"), query);
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\ccm\\dcm");
+                using var results = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in results)
                 {
@@ -124,7 +113,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to invoke baseline '{baselineName}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"invoke baseline '{baselineName}'", ex);
             }
 
             return false;

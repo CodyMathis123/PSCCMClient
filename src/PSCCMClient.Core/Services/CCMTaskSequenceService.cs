@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager task sequences
     /// </summary>
-    public class CCMTaskSequenceService
+    public class CCMTaskSequenceService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMTaskSequenceService(string computerName)
+        public CCMTaskSequenceService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -34,7 +32,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_Program WHERE PackageType = 4");
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_Program WHERE PackageType = 4");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -60,7 +58,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve task sequences from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve task sequences", ex);
             }
 
             return taskSequences;
@@ -87,7 +85,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
                 using var results = searcher.Get();
 
@@ -114,7 +112,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve task sequence '{packageId}\\{programId}' from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve task sequence '{packageId}\\{programId}'", ex);
             }
 
             return null;
@@ -141,7 +139,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
                 using var results = searcher.Get();
 
@@ -154,7 +152,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to invoke task sequence '{packageId}\\{programId}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException("invoke task sequence '{packageId}\\{programId}'", ex);
             }
 
             return false;
@@ -181,7 +179,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
+                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE Name LIKE '%{name}%' AND PackageType = 4");
                 using var results = searcher.Get();
 
@@ -208,7 +206,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve task sequences with name '{name}' from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve task sequences with name '{name}'", ex);
             }
 
             return taskSequences;
