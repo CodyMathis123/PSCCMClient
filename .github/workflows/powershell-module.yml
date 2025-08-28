@@ -1,0 +1,122 @@
+name: Build and Publish PowerShell Module
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Source/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish_module:
+        description: 'Publish module to PowerShell Gallery'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PowerShell
+      shell: pwsh
+      run: |
+        Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
+        
+    - name: Install required modules
+      shell: pwsh
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Install-Module -Name Pester -Force -SkipPublisherCheck
+        Install-Module -Name PSScriptAnalyzer -Force
+
+    - name: Test PowerShell module syntax
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        
+        # Test module manifest
+        $ManifestPath = ".\Source\PSCCMClient.psd1"
+        if (Test-Path $ManifestPath) {
+          Test-ModuleManifest -Path $ManifestPath
+          Write-Host "Module manifest is valid"
+        } else {
+          throw "Module manifest not found at $ManifestPath"
+        }
+        
+        # Run PSScriptAnalyzer
+        $AnalyzerResults = Invoke-ScriptAnalyzer -Path ".\Source" -Recurse -ReportSummary
+        if ($AnalyzerResults.Count -gt 0) {
+          Write-Warning "PSScriptAnalyzer found $($AnalyzerResults.Count) issues"
+          $AnalyzerResults | Format-Table -AutoSize
+        }
+
+    - name: Run Pester tests
+      shell: pwsh
+      run: |
+        # Look for test files
+        $TestFiles = Get-ChildItem -Path . -Recurse -Include "*.Tests.ps1"
+        if ($TestFiles.Count -gt 0) {
+          Write-Host "Running Pester tests..."
+          Invoke-Pester -Path $TestFiles.FullName -PassThru
+        } else {
+          Write-Host "No Pester test files found"
+        }
+      continue-on-error: true
+
+    - name: Create module package
+      shell: pwsh
+      run: |
+        $ModulePath = ".\Source"
+        $OutputPath = ".\artifacts"
+        New-Item -Path $OutputPath -ItemType Directory -Force
+        
+        # Copy module files to artifacts
+        Copy-Item -Path $ModulePath -Destination "$OutputPath\PSCCMClient" -Recurse -Force
+        
+        # Create a zip package
+        Compress-Archive -Path "$OutputPath\PSCCMClient" -DestinationPath "$OutputPath\PSCCMClient.zip" -Force
+        
+        Write-Host "Module package created"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: powershell-module
+        path: ./artifacts/
+
+  publish:
+    needs: build
+    runs-on: windows-latest
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_module == true)
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: powershell-module
+        path: ./artifacts
+
+    - name: Publish to PowerShell Gallery
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        
+        # Extract and publish module
+        Expand-Archive -Path "./artifacts/PSCCMClient.zip" -DestinationPath "./temp" -Force
+        
+        $ModulePath = "./temp/PSCCMClient"
+        if (Test-Path $ModulePath) {
+          Write-Host "Publishing module to PowerShell Gallery..."
+          Publish-Module -Path $ModulePath -NuGetApiKey $env:POWERSHELL_GALLERY_API_KEY -Verbose
+          Write-Host "Module published successfully"
+        } else {
+          throw "Module path not found: $ModulePath"
+        }
+      env:
+        POWERSHELL_GALLERY_API_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
