@@ -156,7 +156,7 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
-        /// Resets client policy
+        /// Resets client policy with default options
         /// </summary>
         /// <returns>True if successful</returns>
         public async Task<bool> ResetPolicyAsync()
@@ -165,20 +165,38 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
-        /// Resets client policy (synchronous)
+        /// Resets client policy with specified type
         /// </summary>
+        /// <param name="resetType">Reset type: "Purge" or "ForceFull"</param>
         /// <returns>True if successful</returns>
-        public bool ResetPolicy()
+        public async Task<bool> ResetPolicyAsync(string resetType = "Purge")
+        {
+            return await Task.Run(() => ResetPolicy(resetType));
+        }
+
+        /// <summary>
+        /// Resets client policy with specified type (synchronous)
+        /// </summary>
+        /// <param name="resetType">Reset type: "Purge" or "ForceFull"</param>
+        /// <returns>True if successful</returns>
+        public bool ResetPolicy(string resetType = "Purge")
         {
             try
             {
+                uint uFlags = resetType.ToLowerInvariant() switch
+                {
+                    "purge" => 1,
+                    "forcefull" => 0,
+                    _ => 1
+                };
+
                 using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM SMS_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
                     var inParams = obj.GetMethodParameters("ResetPolicy");
-                    inParams["uFlags"] = 1; // Reset policy
+                    inParams["uFlags"] = uFlags;
                     
                     var outParams = obj.InvokeMethod("ResetPolicy", inParams, null);
                     return Convert.ToInt32(outParams["ReturnValue"]) == 0;
@@ -190,6 +208,15 @@ namespace PSCCMClient.Core.Services
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Resets client policy (legacy method for backward compatibility)
+        /// </summary>
+        /// <returns>True if successful</returns>
+        public bool ResetPolicyLegacy()
+        {
+            return ResetPolicy("Purge");
         }
 
         private string GetScheduleId(ClientAction action)

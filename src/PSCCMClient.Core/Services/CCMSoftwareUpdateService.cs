@@ -142,7 +142,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", 
+                    "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -150,6 +151,37 @@ namespace PSCCMClient.Core.Services
                     return new CCMSoftwareUpdateSettings
                     {
                         ComputerName = _computerName,
+                        ComponentName = obj["ComponentName"]?.ToString() ?? "",
+                        Enabled = Convert.ToBoolean(obj["Enabled"] ?? false),
+                        WUfBEnabled = Convert.ToBoolean(obj["WUfBEnabled"] ?? false),
+                        EnableThirdPartyUpdates = Convert.ToBoolean(obj["EnableThirdPartyUpdates"] ?? false),
+                        EnableExpressUpdates = Convert.ToBoolean(obj["EnableExpressUpdates"] ?? false),
+                        ServiceWindowManagement = Convert.ToBoolean(obj["ServiceWindowManagement"] ?? false),
+                        ReminderInterval = Convert.ToInt32(obj["ReminderInterval"] ?? 0),
+                        DayReminderInterval = Convert.ToInt32(obj["DayReminderInterval"] ?? 0),
+                        HourReminderInterval = Convert.ToInt32(obj["HourReminderInterval"] ?? 0),
+                        AssignmentBatchingTimeout = Convert.ToInt32(obj["AssignmentBatchingTimeout"] ?? 0),
+                        BrandingSubTitle = obj["BrandingSubTitle"]?.ToString() ?? "",
+                        BrandingTitle = obj["BrandingTitle"]?.ToString() ?? "",
+                        ContentDownloadTimeout = Convert.ToInt32(obj["ContentDownloadTimeout"] ?? 0),
+                        ContentLocationTimeout = Convert.ToInt32(obj["ContentLocationTimeout"] ?? 0),
+                        DynamicUpdateOption = Convert.ToInt32(obj["DynamicUpdateOption"] ?? 0),
+                        ExpressUpdatesPort = Convert.ToInt32(obj["ExpressUpdatesPort"] ?? 0),
+                        ExpressVersion = Convert.ToInt32(obj["ExpressVersion"] ?? 0),
+                        GroupPolicyNotificationTimeout = Convert.ToInt32(obj["GroupPolicyNotificationTimeout"] ?? 0),
+                        MaxScanRetryCount = Convert.ToInt32(obj["MaxScanRetryCount"] ?? 0),
+                        NEOPriorityOption = Convert.ToInt32(obj["NEOPriorityOption"] ?? 0),
+                        PerDPInactivityTimeout = Convert.ToInt32(obj["PerDPInactivityTimeout"] ?? 0),
+                        ScanRetryDelay = Convert.ToInt32(obj["ScanRetryDelay"] ?? 0),
+                        SiteSettingsKey = Convert.ToInt32(obj["SiteSettingsKey"] ?? 0),
+                        TotalInactivityTimeout = Convert.ToInt32(obj["TotalInactivityTimeout"] ?? 0),
+                        UserJobPerDPInactivityTimeout = Convert.ToInt32(obj["UserJobPerDPInactivityTimeout"] ?? 0),
+                        UserJobTotalInactivityTimeout = Convert.ToInt32(obj["UserJobTotalInactivityTimeout"] ?? 0),
+                        WSUSLocationTimeout = Convert.ToInt32(obj["WSUSLocationTimeout"] ?? 0),
+                        Reserved1 = obj["Reserved1"]?.ToString() ?? "",
+                        Reserved2 = obj["Reserved2"]?.ToString() ?? "",
+                        Reserved3 = obj["Reserved3"]?.ToString() ?? "",
+                        // Legacy properties for compatibility
                         WSUSLocationServer = obj["WSUSLocationServer"]?.ToString() ?? "",
                         WSUSLocationServerPort = Convert.ToInt32(obj["WSUSLocationServerPort"] ?? 0),
                         WSUSStatusServer = obj["WSUSStatusServer"]?.ToString() ?? "",
@@ -259,4 +291,5 @@ namespace PSCCMClient.Core.Services
             };
         }
     }
+}
 }

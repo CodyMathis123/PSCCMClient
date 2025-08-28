@@ -168,6 +168,157 @@ namespace PSCCMClient.Core.Models
         public string ComputerName { get; set; } = "";
 
         /// <summary>
+        /// Component name
+        /// </summary>
+        public string ComponentName { get; set; } = "";
+
+        /// <summary>
+        /// Whether software updates are enabled
+        /// </summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Whether Windows Update for Business is enabled
+        /// </summary>
+        public bool WUfBEnabled { get; set; }
+
+        /// <summary>
+        /// Whether third party updates are enabled
+        /// </summary>
+        public bool EnableThirdPartyUpdates { get; set; }
+
+        /// <summary>
+        /// Whether express updates are enabled
+        /// </summary>
+        public bool EnableExpressUpdates { get; set; }
+
+        /// <summary>
+        /// Service window management setting
+        /// </summary>
+        public bool ServiceWindowManagement { get; set; }
+
+        /// <summary>
+        /// Reminder interval
+        /// </summary>
+        public int ReminderInterval { get; set; }
+
+        /// <summary>
+        /// Day reminder interval
+        /// </summary>
+        public int DayReminderInterval { get; set; }
+
+        /// <summary>
+        /// Hour reminder interval
+        /// </summary>
+        public int HourReminderInterval { get; set; }
+
+        /// <summary>
+        /// Assignment batching timeout
+        /// </summary>
+        public int AssignmentBatchingTimeout { get; set; }
+
+        /// <summary>
+        /// Branding subtitle
+        /// </summary>
+        public string BrandingSubTitle { get; set; } = "";
+
+        /// <summary>
+        /// Branding title
+        /// </summary>
+        public string BrandingTitle { get; set; } = "";
+
+        /// <summary>
+        /// Content download timeout
+        /// </summary>
+        public int ContentDownloadTimeout { get; set; }
+
+        /// <summary>
+        /// Content location timeout
+        /// </summary>
+        public int ContentLocationTimeout { get; set; }
+
+        /// <summary>
+        /// Dynamic update option
+        /// </summary>
+        public int DynamicUpdateOption { get; set; }
+
+        /// <summary>
+        /// Express updates port
+        /// </summary>
+        public int ExpressUpdatesPort { get; set; }
+
+        /// <summary>
+        /// Express version
+        /// </summary>
+        public int ExpressVersion { get; set; }
+
+        /// <summary>
+        /// Group policy notification timeout
+        /// </summary>
+        public int GroupPolicyNotificationTimeout { get; set; }
+
+        /// <summary>
+        /// Maximum scan retry count
+        /// </summary>
+        public int MaxScanRetryCount { get; set; }
+
+        /// <summary>
+        /// NEO priority option
+        /// </summary>
+        public int NEOPriorityOption { get; set; }
+
+        /// <summary>
+        /// Per DP inactivity timeout
+        /// </summary>
+        public int PerDPInactivityTimeout { get; set; }
+
+        /// <summary>
+        /// Scan retry delay
+        /// </summary>
+        public int ScanRetryDelay { get; set; }
+
+        /// <summary>
+        /// Site settings key
+        /// </summary>
+        public int SiteSettingsKey { get; set; }
+
+        /// <summary>
+        /// Total inactivity timeout
+        /// </summary>
+        public int TotalInactivityTimeout { get; set; }
+
+        /// <summary>
+        /// User job per DP inactivity timeout
+        /// </summary>
+        public int UserJobPerDPInactivityTimeout { get; set; }
+
+        /// <summary>
+        /// User job total inactivity timeout
+        /// </summary>
+        public int UserJobTotalInactivityTimeout { get; set; }
+
+        /// <summary>
+        /// WSUS location timeout
+        /// </summary>
+        public int WSUSLocationTimeout { get; set; }
+
+        /// <summary>
+        /// Reserved field 1
+        /// </summary>
+        public string Reserved1 { get; set; } = "";
+
+        /// <summary>
+        /// Reserved field 2
+        /// </summary>
+        public string Reserved2 { get; set; } = "";
+
+        /// <summary>
+        /// Reserved field 3
+        /// </summary>
+        public string Reserved3 { get; set; } = "";
+
+        // Legacy properties for compatibility
+        /// <summary>
         /// WSUS location server
         /// </summary>
         public string WSUSLocationServer { get; set; } = "";
