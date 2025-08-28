@@ -32,7 +32,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_Program WHERE PackageType = 4");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_Program WHERE PackageType = 4");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -85,7 +85,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
                 using var results = searcher.Get();
 
@@ -139,7 +139,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE PackageID = '{packageId}' AND ProgramID = '{programId}' AND PackageType = 4");
                 using var results = searcher.Get();
 
@@ -179,7 +179,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_Program WHERE Name LIKE '%{name}%' AND PackageType = 4");
                 using var results = searcher.Get();
 

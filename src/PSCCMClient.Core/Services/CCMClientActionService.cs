@@ -127,21 +127,18 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                // For local computer, use different approach like PowerShell does
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                // Use the base class to determine if it's a local computer and get the namespace path
+                var namespacePath = GetNamespacePath("root\\ccm");
+                var mgmtClass = new ManagementClass(namespacePath, "sms_client", null);
+                var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
+                inParams["sScheduleID"] = scheduleId;
                 
-                if (isLocal)
-                {
-                    return InvokeLocalClientAction(scheduleId);
-                }
-                else
-                {
-                    return InvokeRemoteClientAction(scheduleId);
-                }
+                var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to trigger schedule '{scheduleId}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"trigger schedule '{scheduleId}'", ex);
             }
         }
 

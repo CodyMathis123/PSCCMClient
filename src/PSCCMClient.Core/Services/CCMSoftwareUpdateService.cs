@@ -38,7 +38,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_SoftwareUpdate WHERE {filter}");
                 using var results = searcher.Get();
 
@@ -101,7 +101,7 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_UpdateStore");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_UpdateStore");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -140,7 +140,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\Policy\Machine\ActualConfig", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", 
                     "SELECT * FROM CCM_SoftwareUpdatesClientConfig");
                 using var results = searcher.Get();
 
@@ -219,7 +219,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = GetNamespacePath("root\CCM\ClientSDK", 
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", 
                     $"SELECT * FROM CCM_SoftwareUpdate WHERE UpdateID = '{updateID}'");
                 using var results = searcher.Get();
 

@@ -32,8 +32,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
-                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_ServiceWindow");
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindow");
+                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
@@ -78,8 +78,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var namespacePath = GetNamespacePath("root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_ServiceWindow");
-                using var results = QueryWMIObjects(namespacePath, query);
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\Policy\Machine\ActualConfig", "SELECT * FROM CCM_ServiceWindow");
+                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
@@ -100,7 +100,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new CreateException("retrieve service windows", {ex.Message}", ex);
+                throw CreateException("retrieve service windows", ex);
             }
 
             return windows;
@@ -123,8 +123,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindowManager");
-                using var results = QueryWMIObjects(namespacePath, query);
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\ClientSDK", "SELECT * FROM CCM_ServiceWindowManager");
+                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {
@@ -145,7 +145,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new CreateException("get current window available time", {ex.Message}", ex);
+                throw CreateException("get current window available time", ex);
             }
 
             return null;
@@ -185,7 +185,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new CreateException("test window availability", {ex.Message}", ex);
+                throw CreateException("test window availability", ex);
             }
 
             return false;
