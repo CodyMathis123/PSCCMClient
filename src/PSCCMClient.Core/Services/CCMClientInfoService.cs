@@ -394,7 +394,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -411,7 +411,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client'
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT ClientID, ClientIDChangeDate, PreviousClientID FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -432,7 +432,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\InvAgt", "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -452,7 +452,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\InvAgt", "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -472,7 +472,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\InvAgt", "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -604,7 +604,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -649,7 +649,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_ClientUtilities");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_ClientUtilities");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -688,7 +688,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
