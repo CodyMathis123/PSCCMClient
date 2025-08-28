@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>PSCCMClient.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Cody Mathis</Authors>
+    <Company>PSCCMClient</Company>
+    <Description>C# library for interacting with Microsoft Endpoint Configuration Manager (MEMCM) clients</Description>
+    <PackageTags>SCCM;MEMCM;ConfigMgr;SystemCenter</PackageTags>
+    <RepositoryUrl>https://github.com/CodyMathis123/PSCCMClient</RepositoryUrl>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+  </ItemGroup>
+
+</Project>

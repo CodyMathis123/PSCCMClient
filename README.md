@@ -1,4 +1,8 @@
-# PSCCMClient PowerShell Module
+# PSCCMClient - PowerShell Module & C# Library
+
+This project provides both PowerShell and C# solutions for interacting with Microsoft Endpoint Manager Configuration Manager (MEMCM) clients.
+
+## PowerShell Module
 
 PowerShell module focused around interaction with the Microsoft Endpoint Manager Configuration Manager (MEMCM) client. The general theme is to provide functions that 'work as expected' in that they accept pipeline where possible, such as with the below example, as well as an array of Computer Names, CimSessions, or PSSessions.
 
@@ -10,7 +14,42 @@ Get-CCMBaseline -BaselineName 'Cache Management' -CimSession $CimSession1 | Invo
 Get-CCMApplication -ApplicationName '7-Zip' -ComputerName Workstation1 | Invoke-CCMApplication -Method Uninstall
 ```
 
-Largely this is leveraging CIM to gather info, and act upon it. This is why there are custom functions to make registry edits, and gather registry info via CIM. By consistently using CIM, we can ensure that a CimSession can be used for efficiency. A PSSession parameter is also available on all functions for an alternative remote connection. In some cases, invoking certain CIMMethods over a CIMSession is not available because some CIM methods for the MEMCM client do not work well remotely over CIM. This can be seen with the methods on SMS_CLIENT in the root\CCM Namespace and by trying to invoke updates remotely with CIM. There are functions that allow executing arbitrary code via the Win32_Process:CreateProcess method. In order to do this, code is converted to, and from Base64. This might be a red flag for enterprise AV.
+## C# Library
+
+The C# library provides a modern, strongly-typed API for interacting with MEMCM clients. It's designed to be used from .NET applications or as a foundation for PowerShell cmdlets.
+
+```csharp
+using PSCCMClient.Core;
+
+// Create a client for the local computer
+var client = new CCMClient();
+
+// Get all applications
+var applications = await client.Applications.GetApplicationsAsync();
+
+// Get applications by name
+var specificApps = await client.Applications.GetApplicationsByNameAsync("7-Zip");
+
+// Install an application
+await client.Applications.InstallApplicationAsync("ScopeId_12345678-1234-1234-1234-123456789012/Application_87654321-4321-4321-4321-210987654321");
+
+// Work with packages
+var packages = await client.Packages.GetPackagesAsync();
+await client.Packages.InvokePackageAsync("ABC00123", "Install");
+```
+
+### Building the C# Library
+
+```bash
+dotnet build
+dotnet pack
+```
+
+## Architecture
+
+Both the PowerShell module and C# library leverage CIM/WMI to gather info and act upon it. This is why there are custom functions to make registry edits, and gather registry info via CIM. By consistently using CIM, we can ensure that a CimSession can be used for efficiency. A PSSession parameter is also available on all PowerShell functions for an alternative remote connection. 
+
+In some cases, invoking certain CIMMethods over a CIMSession is not available because some CIM methods for the MEMCM client do not work well remotely over CIM. This can be seen with the methods on SMS_CLIENT in the root\CCM Namespace and by trying to invoke updates remotely with CIM. There are functions that allow executing arbitrary code via the Win32_Process:CreateProcess method. In order to do this, code is converted to, and from Base64. This might be a red flag for enterprise AV.
 
 I encourage anyone that wants to contribute to start picking away! I'm currently using VSCode to develop this module, and as part of that I'm using the 'TODO Tree' extension to make brief notes regarding future work that needs done.
 
