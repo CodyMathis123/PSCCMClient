@@ -16,6 +16,15 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
+        /// Helper method to get the correct namespace path for local or remote operations
+        /// </summary>
+        private string GetNamespacePath(string baseNamespace)
+        {
+            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
+        }
+
+        /// <summary>
         /// Gets comprehensive client information
         /// </summary>
         /// <returns>Client information</returns>
@@ -133,7 +142,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ClientVersion FROM SMS_Client'
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT ClientVersion FROM SMS_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT ClientVersion FROM SMS_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -204,7 +213,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\CIModels", "SELECT User FROM CCM_PrimaryUser");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\CIModels"), "SELECT User FROM CCM_PrimaryUser");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -238,7 +247,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // First get the CCMExec service process ID
-                using var serviceSearcher = new ManagementObjectSearcher($@"\\{_computerName}\root\cimv2", "SELECT ProcessID FROM Win32_Service WHERE Name = 'CCMExec'");
+                using var serviceSearcher = new ManagementObjectSearcher(GetNamespacePath("root\\cimv2"), "SELECT ProcessID FROM Win32_Service WHERE Name = 'CCMExec'");
                 using var serviceResults = serviceSearcher.Get();
 
                 foreach (ManagementObject serviceObj in serviceResults)
@@ -247,7 +256,7 @@ namespace PSCCMClient.Core.Services
                     if (!string.IsNullOrEmpty(processId))
                     {
                         // Now get the process creation date
-                        using var processSearcher = new ManagementObjectSearcher($@"\\{_computerName}\root\cimv2", $"SELECT CreationDate FROM Win32_Process WHERE ProcessID = '{processId}'");
+                        using var processSearcher = new ManagementObjectSearcher(GetNamespacePath("root\\cimv2"), $"SELECT CreationDate FROM Win32_Process WHERE ProcessID = '{processId}'");
                         using var processResults = processSearcher.Get();
 
                         foreach (ManagementObject processObj in processResults)
@@ -294,7 +303,7 @@ namespace PSCCMClient.Core.Services
                 }
 
                 // Fallback to WMI approach
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -311,7 +320,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT CurrentManagementPoint FROM SMS_Authority'
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT CurrentManagementPoint FROM SMS_Authority");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT CurrentManagementPoint FROM SMS_Authority");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -328,7 +337,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use query like PowerShell: 'SELECT ContentLocation FROM CCM_UpdateSource'
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\SoftwareUpdates\WUAHandler", "SELECT ContentLocation FROM CCM_UpdateSource");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\SoftwareUpdates\\WUAHandler"), "SELECT ContentLocation FROM CCM_UpdateSource");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -344,7 +353,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", "SELECT * FROM CacheConfig");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\SoftMgmtAgent"), "SELECT * FROM CacheConfig");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -484,7 +493,7 @@ namespace PSCCMClient.Core.Services
             try
             {
                 // Use correct namespace like PowerShell: 'root\ccm\policy\machine\actualconfig'
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\policy\machine\actualconfig", "SELECT * FROM CCM_Logging_GlobalConfiguration");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\ccm\\policy\\machine\\actualconfig"), "SELECT * FROM CCM_Logging_GlobalConfiguration");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
