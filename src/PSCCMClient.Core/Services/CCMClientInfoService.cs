@@ -165,12 +165,15 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
+                var registryService = new CCMRegistryService(_computerName);
+                var registryProperty = registryService.GetRegistryProperty(
+                    "HKEY_LOCAL_MACHINE",
+                    "SOFTWARE\\Microsoft\\SMS\\Client\\Configuration\\Client Properties",
+                    "Local SMS Path");
 
-                foreach (ManagementObject obj in results)
+                if (registryProperty?.Value != null)
                 {
-                    return obj["ClientDirectory"]?.ToString() ?? "";
+                    return registryProperty.Value.TrimEnd('\\');
                 }
             }
             catch (Exception ex)
@@ -179,6 +182,88 @@ namespace PSCCMClient.Core.Services
             }
 
             return "";
+        }
+
+        /// <summary>
+        /// Gets the primary user for the client
+        /// </summary>
+        /// <returns>Primary user information</returns>
+        public async Task<string> GetPrimaryUserAsync()
+        {
+            return await Task.Run(() => GetPrimaryUser());
+        }
+
+        /// <summary>
+        /// Gets the primary user for the client (synchronous)
+        /// </summary>
+        /// <returns>Primary user information</returns>
+        public string GetPrimaryUser()
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\CIModels", "SELECT User FROM CCM_PrimaryUser");
+                using var results = searcher.Get();
+
+                foreach (ManagementObject obj in results)
+                {
+                    return obj["User"]?.ToString() ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve primary user from {_computerName}: {ex.Message}", ex);
+            }
+
+            return "";
+        }
+
+        /// <summary>
+        /// Gets the CCMExec service startup time
+        /// </summary>
+        /// <returns>CCMExec startup time information</returns>
+        public async Task<DateTime?> GetExecStartupTimeAsync()
+        {
+            return await Task.Run(() => GetExecStartupTime());
+        }
+
+        /// <summary>
+        /// Gets the CCMExec service startup time (synchronous)
+        /// </summary>
+        /// <returns>CCMExec startup time information</returns>
+        public DateTime? GetExecStartupTime()
+        {
+            try
+            {
+                // First get the CCMExec service process ID
+                using var serviceSearcher = new ManagementObjectSearcher($@"\\{_computerName}\root\cimv2", "SELECT ProcessID FROM Win32_Service WHERE Name = 'CCMExec'");
+                using var serviceResults = serviceSearcher.Get();
+
+                foreach (ManagementObject serviceObj in serviceResults)
+                {
+                    var processId = serviceObj["ProcessID"]?.ToString();
+                    if (!string.IsNullOrEmpty(processId))
+                    {
+                        // Now get the process creation date
+                        using var processSearcher = new ManagementObjectSearcher($@"\\{_computerName}\root\cimv2", $"SELECT CreationDate FROM Win32_Process WHERE ProcessID = '{processId}'");
+                        using var processResults = processSearcher.Get();
+
+                        foreach (ManagementObject processObj in processResults)
+                        {
+                            var creationDate = processObj["CreationDate"]?.ToString();
+                            if (!string.IsNullOrEmpty(creationDate))
+                            {
+                                return ManagementDateTimeConverter.ToDateTime(creationDate);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve CCMExec startup time from {_computerName}: {ex.Message}", ex);
+            }
+
+            return null;
         }
 
         private string GetSiteCode()

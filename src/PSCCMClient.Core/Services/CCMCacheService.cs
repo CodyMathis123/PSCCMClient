@@ -220,7 +220,7 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
-        /// Repairs cache location by recreating the directory structure (synchronous)
+        /// Repairs cache location by fixing path issues and recreating directory structure (synchronous)
         /// </summary>
         /// <returns>True if successful</returns>
         public bool RepairCacheLocation()
@@ -230,9 +230,28 @@ namespace PSCCMClient.Core.Services
                 var cacheInfo = GetCacheInfo();
                 if (cacheInfo != null && !string.IsNullOrEmpty(cacheInfo.Location))
                 {
-                    if (!Directory.Exists(cacheInfo.Location))
+                    string currentLocation = cacheInfo.Location;
+                    // Fix common path issues like the PowerShell version: double backslashes and duplicate ccmcache
+                    string newLocation = currentLocation
+                        .Replace("\\\\", "\\")  // Replace double backslashes
+                        .Replace("ccmcache\\ccmcache", "ccmcache"); // Fix duplicate ccmcache
+                    
+                    // Use regex pattern like PowerShell: -replace '(ccmcache\\?)+', 'ccmcache'
+                    newLocation = System.Text.RegularExpressions.Regex.Replace(newLocation, @"(ccmcache\\?)+", "ccmcache");
+
+                    if (!newLocation.Equals(currentLocation, StringComparison.OrdinalIgnoreCase))
                     {
-                        Directory.CreateDirectory(cacheInfo.Location);
+                        // Path was repaired, set the new location
+                        if (!SetCacheLocation(newLocation))
+                        {
+                            return false;
+                        }
+                    }
+
+                    // Ensure the directory exists
+                    if (!Directory.Exists(newLocation))
+                    {
+                        Directory.CreateDirectory(newLocation);
                     }
                     return true;
                 }
