@@ -25,6 +25,28 @@ namespace PSCCMClient.Core.Services
         }
 
         /// <summary>
+        /// Helper method to convert WMI datetime strings to DateTime
+        /// </summary>
+        private DateTime? ConvertWmiDateTime(object? wmiDateTime)
+        {
+            if (wmiDateTime == null)
+                return null;
+
+            try
+            {
+                string dateTimeString = wmiDateTime.ToString();
+                if (string.IsNullOrEmpty(dateTimeString))
+                    return null;
+                    
+                return ManagementDateTimeConverter.ToDateTime(dateTimeString);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Gets comprehensive client information
         /// </summary>
         /// <returns>Client information</returns>
@@ -419,68 +441,8 @@ namespace PSCCMClient.Core.Services
                     return new CCMGuidInfo
                     {
                         GUID = obj["ClientID"]?.ToString() ?? "",
-                        ClientGUIDChangeDate = obj["ClientIDChangeDate"] as DateTime?,
+                        ClientGUIDChangeDate = ConvertWmiDateTime(obj["ClientIDChangeDate"]),
                         PreviousGUID = obj["PreviousClientID"]?.ToString() ?? ""
-                    };
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private CCMInventoryInfo? GetLastHeartbeat()
-        {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    return new CCMInventoryInfo
-                    {
-                        LastCycleStartedDate = obj["LastCycleStartedDate"] as DateTime?,
-                        LastReportDate = obj["LastReportDate"] as DateTime?
-                    };
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private CCMInventoryInfo? GetLastHardwareInventory()
-        {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    return new CCMInventoryInfo
-                    {
-                        LastCycleStartedDate = obj["LastCycleStartedDate"] as DateTime?,
-                        LastReportDate = obj["LastReportDate"] as DateTime?
-                    };
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private CCMInventoryInfo? GetLastSoftwareInventory()
-        {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    return new CCMInventoryInfo
-                    {
-                        LastCycleStartedDate = obj["LastCycleStartedDate"] as DateTime?,
-                        LastReportDate = obj["LastReportDate"] as DateTime?
                     };
                 }
             }
@@ -622,6 +584,114 @@ namespace PSCCMClient.Core.Services
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Gets the last heartbeat (DDR) information
+        /// </summary>
+        /// <returns>Last heartbeat information</returns>
+        public async Task<CCMInventoryInfo?> GetLastHeartbeatAsync()
+        {
+            return await Task.Run(() => GetLastHeartbeat());
+        }
+
+        /// <summary>
+        /// Gets the last heartbeat (DDR) information (synchronous)
+        /// </summary>
+        /// <returns>Last heartbeat information</returns>
+        public CCMInventoryInfo? GetLastHeartbeat()
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000003}'");
+                using var results = searcher.Get();
+
+                foreach (ManagementObject obj in results)
+                {
+                    return new CCMInventoryInfo
+                    {
+                        LastCycleStartedDate = ConvertWmiDateTime(obj["LastCycleStartedDate"]),
+                        LastReportDate = ConvertWmiDateTime(obj["LastReportDate"])
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve last heartbeat from {_computerName}: {ex.Message}", ex);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the last hardware inventory information
+        /// </summary>
+        /// <returns>Last hardware inventory information</returns>
+        public async Task<CCMInventoryInfo?> GetLastHardwareInventoryAsync()
+        {
+            return await Task.Run(() => GetLastHardwareInventory());
+        }
+
+        /// <summary>
+        /// Gets the last hardware inventory information (synchronous)
+        /// </summary>
+        /// <returns>Last hardware inventory information</returns>
+        public CCMInventoryInfo? GetLastHardwareInventory()
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
+                using var results = searcher.Get();
+
+                foreach (ManagementObject obj in results)
+                {
+                    return new CCMInventoryInfo
+                    {
+                        LastCycleStartedDate = ConvertWmiDateTime(obj["LastCycleStartedDate"]),
+                        LastReportDate = ConvertWmiDateTime(obj["LastReportDate"])
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve last hardware inventory from {_computerName}: {ex.Message}", ex);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the last software inventory information
+        /// </summary>
+        /// <returns>Last software inventory information</returns>
+        public async Task<CCMInventoryInfo?> GetLastSoftwareInventoryAsync()
+        {
+            return await Task.Run(() => GetLastSoftwareInventory());
+        }
+
+        /// <summary>
+        /// Gets the last software inventory information (synchronous)
+        /// </summary>
+        /// <returns>Last software inventory information</returns>
+        public CCMInventoryInfo? GetLastSoftwareInventory()
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\InvAgt"), "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000002}'");
+                using var results = searcher.Get();
+
+                foreach (ManagementObject obj in results)
+                {
+                    return new CCMInventoryInfo
+                    {
+                        LastCycleStartedDate = ConvertWmiDateTime(obj["LastCycleStartedDate"]),
+                        LastReportDate = ConvertWmiDateTime(obj["LastReportDate"])
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to retrieve last software inventory from {_computerName}: {ex.Message}", ex);
+            }
+            return null;
         }
 
         private bool TestIsClientOnInternet()
