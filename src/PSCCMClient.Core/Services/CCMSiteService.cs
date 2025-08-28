@@ -367,22 +367,22 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
-                {
-                    obj["AlwaysInternet"] = alwaysOnInternet;
-                    obj.Put();
-                    return true;
-                }
+                // PowerShell module uses registry approach to set this value
+                // Set DWORD value "ClientAlwaysOnInternet" in "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\CCM\Security"
+                uint enablement = alwaysOnInternet ? 1u : 0u;
+                
+                return RegistryHelper.SetDWORDValue(
+                    _computerName,
+                    "HKEY_LOCAL_MACHINE",
+                    "SOFTWARE\\Microsoft\\CCM\\Security",
+                    "ClientAlwaysOnInternet",
+                    enablement
+                );
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set client always on internet to '{alwaysOnInternet}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"set client always on internet to '{alwaysOnInternet}'", ex);
             }
-
-            return false;
         }
     }
 }

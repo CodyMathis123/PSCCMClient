@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager registry operations and provisioning mode
     /// </summary>
-    public class CCMRegistryService
+    public class CCMRegistryService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMRegistryService(string computerName)
+        public CCMRegistryService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -38,22 +36,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var hiveValue = GetHiveValue(hive);
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-                
-                string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
-                
-                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
-                using var mgmtClass = new ManagementClass(namespacePath, "StdRegProv", null);
-                var inParams = mgmtClass.GetMethodParameters("GetStringValue");
-                inParams["hDefKey"] = hiveValue;
-                inParams["sSubKeyName"] = subKey;
-                inParams["sValueName"] = valueName;
-
-                var outParams = mgmtClass.InvokeMethod("GetStringValue", inParams, null);
-                var returnValue = Convert.ToInt32(outParams["ReturnValue"]);
-
-                if (returnValue == 0)
+                var value = RegistryHelper.GetStringValue(_computerName, hive, subKey, valueName);
+                if (value != null)
                 {
                     return new CCMRegistryProperty
                     {
@@ -61,14 +45,14 @@ namespace PSCCMClient.Core.Services
                         Hive = hive,
                         SubKey = subKey,
                         ValueName = valueName,
-                        Value = outParams["sValue"]?.ToString() ?? "",
+                        Value = value,
                         ValueType = "String"
                     };
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get registry property from {_computerName}: {ex.Message}", ex);
+                throw CreateException("get registry property", ex);
             }
 
             return null;
@@ -101,48 +85,16 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var hiveValue = GetHiveValue(hive);
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-                
-                string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
-                
-                var methodName = valueType.ToUpper() switch
+                return valueType.ToUpper() switch
                 {
-                    "STRING" => "SetStringValue",
-                    "DWORD" => "SetDWORDValue",
-                    "QWORD" => "SetQWORDValue",
-                    "BINARY" => "SetBinaryValue",
-                    "EXPANDSTRING" => "SetExpandedStringValue",
-                    "MULTISTRING" => "SetMultiStringValue",
-                    _ => "SetStringValue"
+                    "STRING" => RegistryHelper.SetStringValue(_computerName, hive, subKey, valueName, value.ToString() ?? ""),
+                    "DWORD" => RegistryHelper.SetDWORDValue(_computerName, hive, subKey, valueName, Convert.ToUInt32(value)),
+                    _ => RegistryHelper.SetStringValue(_computerName, hive, subKey, valueName, value.ToString() ?? "")
                 };
-
-                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
-                using var mgmtClass = new ManagementClass(namespacePath, "StdRegProv", null);
-                var inParams = mgmtClass.GetMethodParameters(methodName);
-                inParams["hDefKey"] = hiveValue;
-                inParams["sSubKeyName"] = subKey;
-                inParams["sValueName"] = valueName;
-
-                var paramName = valueType.ToUpper() switch
-                {
-                    "STRING" => "sValue",
-                    "DWORD" => "uValue",
-                    "QWORD" => "uValue",
-                    "BINARY" => "uValue",
-                    "EXPANDSTRING" => "sValue",
-                    "MULTISTRING" => "sValue",
-                    _ => "sValue"
-                };
-
-                inParams[paramName] = value;
-
-                var outParams = mgmtClass.InvokeMethod(methodName, inParams, null);
-                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set registry property on {_computerName}: {ex.Message}", ex);
+                throw CreateException("set registry property", ex);
             }
         }
 
@@ -163,7 +115,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -203,8 +155,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-                string namespacePath = isLocal ? "root\\CCM" : $@"\\{_computerName}\root\CCM";
+                string namespacePath = GetNamespacePath("root\\CCM");
                 
                 // Use ManagementClass to call method on the class, not on instances (like PowerShell)
                 using var mgmtClass = new ManagementClass(namespacePath, "SMS_Client", null);
@@ -237,7 +188,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Client");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -275,7 +226,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\CIModels", "SELECT * FROM CCM_UserAffinity");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM\\CIModels"), "SELECT * FROM CCM_UserAffinity");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -313,7 +264,7 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Service WHERE Name = 'CcmExec'");
+                using var searcher = new ManagementObjectSearcher(GetNamespacePath("root\\CCM"), "SELECT * FROM CCM_Service WHERE Name = 'CcmExec'");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -334,17 +285,5 @@ namespace PSCCMClient.Core.Services
             return null;
         }
 
-        private static uint GetHiveValue(string hive)
-        {
-            return hive.ToUpper() switch
-            {
-                "HKEY_CLASSES_ROOT" or "HKCR" => 0x80000000,
-                "HKEY_CURRENT_USER" or "HKCU" => 0x80000001,
-                "HKEY_LOCAL_MACHINE" or "HKLM" => 0x80000002,
-                "HKEY_USERS" or "HKU" => 0x80000003,
-                "HKEY_CURRENT_CONFIG" or "HKCC" => 0x80000005,
-                _ => 0x80000002 // Default to HKLM
-            };
-        }
     }
 }
