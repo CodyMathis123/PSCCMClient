@@ -88,7 +88,7 @@ try
         Console.WriteLine($"Found {maintenanceWindows.Count()} maintenance windows:");
         foreach (var window in maintenanceWindows.Take(3))
         {
-            Console.WriteLine($"  - {window.Name} (Duration: {window.Duration} min)");
+            Console.WriteLine($"  - {window.Type} (Duration: {window.DurationDescription})");
         }
         
         // Demonstrate registry and provisioning info
