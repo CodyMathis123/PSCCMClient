@@ -39,7 +39,11 @@ namespace PSCCMClient.Core.Services
             try
             {
                 var hiveValue = GetHiveValue(hive);
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\default", "SELECT * FROM StdRegProv");
+                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                
+                string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
+                
+                using var searcher = new ManagementObjectSearcher(namespacePath, "SELECT * FROM StdRegProv");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -102,7 +106,11 @@ namespace PSCCMClient.Core.Services
             try
             {
                 var hiveValue = GetHiveValue(hive);
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\default", "SELECT * FROM StdRegProv");
+                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                
+                string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
+                
+                using var searcher = new ManagementObjectSearcher(namespacePath, "SELECT * FROM StdRegProv");
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)

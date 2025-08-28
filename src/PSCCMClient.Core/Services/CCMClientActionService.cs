@@ -61,24 +61,55 @@ namespace PSCCMClient.Core.Services
                     DeleteHardwareInventoryHistory();
                 }
 
-                // Trigger the schedule
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM sms_client");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                // For local computer, use different approach like PowerShell does
+                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                
+                if (isLocal)
                 {
-                    var inParams = obj.GetMethodParameters("TriggerSchedule");
-                    inParams["sScheduleID"] = scheduleId;
-                    
-                    var outParams = obj.InvokeMethod("TriggerSchedule", inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+                    // Use CIM for local operations
+                    return InvokeLocalClientAction(scheduleId);
+                }
+                else
+                {
+                    // Use WMI for remote operations
+                    return InvokeRemoteClientAction(scheduleId);
                 }
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to invoke client action '{action}' on {_computerName}: {ex.Message}", ex);
             }
+        }
 
+        private bool InvokeLocalClientAction(string scheduleId)
+        {
+            using var searcher = new ManagementObjectSearcher("root\\ccm", "SELECT * FROM sms_client");
+            using var results = searcher.Get();
+
+            foreach (ManagementObject obj in results)
+            {
+                var inParams = obj.GetMethodParameters("TriggerSchedule");
+                inParams["sScheduleID"] = scheduleId;
+                
+                var outParams = obj.InvokeMethod("TriggerSchedule", inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+            }
+            return false;
+        }
+
+        private bool InvokeRemoteClientAction(string scheduleId)
+        {
+            using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm", "SELECT * FROM sms_client");
+            using var results = searcher.Get();
+
+            foreach (ManagementObject obj in results)
+            {
+                var inParams = obj.GetMethodParameters("TriggerSchedule");
+                inParams["sScheduleID"] = scheduleId;
+                
+                var outParams = obj.InvokeMethod("TriggerSchedule", inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
+            }
             return false;
         }
 
@@ -241,7 +272,11 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\ccm\invagt", 
+                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                
+                string namespacePath = isLocal ? "root\\ccm\\invagt" : $@"\\{_computerName}\root\ccm\invagt";
+                
+                using var searcher = new ManagementObjectSearcher(namespacePath, 
                     "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
                 using var results = searcher.Get();
 

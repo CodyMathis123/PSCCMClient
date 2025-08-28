@@ -172,13 +172,15 @@ namespace PSCCMClient.Core.Services
                     "SOFTWARE\\Microsoft\\SMS\\Client\\Configuration\\Client Properties",
                     "Local SMS Path");
 
-                if (registryProperty?.Value != null)
+                if (registryProperty?.Value != null && !string.IsNullOrWhiteSpace(registryProperty.Value))
                 {
                     return registryProperty.Value.TrimEnd('\\');
                 }
             }
             catch (Exception ex)
             {
+                // For debugging: let's see what the actual error is
+                System.Diagnostics.Debug.WriteLine($"Registry access error: {ex.Message}");
                 throw new InvalidOperationException($"Failed to retrieve client directory from {_computerName}: {ex.Message}", ex);
             }
 
