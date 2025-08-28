@@ -160,7 +160,7 @@ namespace PSCCMClient.Core.Services
                 inParams["bEnable"] = enabled;
 
                 var outParams = InvokeWMIClassMethod(namespacePath, "SMS_Client", "SetClientProvisioningMode", inParams);
-                return WMIHelper.IsMethodCallSuccessful(outParams);
+                return WMIHelper.IsMethodInvocationSuccessful(outParams);
             }
             catch (Exception ex)
             {

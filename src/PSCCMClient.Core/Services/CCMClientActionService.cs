@@ -65,7 +65,7 @@ namespace PSCCMClient.Core.Services
                 inParams["sScheduleID"] = scheduleId;
                 
                 var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "TriggerSchedule", inParams);
-                return WMIHelper.IsMethodCallSuccessful(outParams);
+                return WMIHelper.IsMethodInvocationSuccessful(outParams);
             }
             catch (Exception ex)
             {
@@ -132,7 +132,7 @@ namespace PSCCMClient.Core.Services
                 inParams["sScheduleID"] = scheduleId;
                 
                 var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "TriggerSchedule", inParams);
-                return WMIHelper.IsMethodCallSuccessful(outParams);
+                return WMIHelper.IsMethodInvocationSuccessful(outParams);
             }
             catch (Exception ex)
             {
@@ -181,7 +181,7 @@ namespace PSCCMClient.Core.Services
                 inParams["uFlags"] = uFlags;
                 
                 var outParams = InvokeWMIClassMethod(namespacePath, "sms_client", "ResetPolicy", inParams);
-                return WMIHelper.IsMethodCallSuccessful(outParams);
+                return WMIHelper.IsMethodInvocationSuccessful(outParams);
             }
             catch (Exception ex)
             {

@@ -158,5 +158,16 @@ namespace PSCCMClient.Core.Services.Infrastructure
         {
             return result != null && Convert.ToInt32(result["ReturnValue"] ?? -1) == 0;
         }
+
+        /// <summary>
+        /// Checks if a WMI method invocation was successful by checking if result object exists
+        /// Used for methods that don't return meaningful ReturnValue (like TriggerSchedule, ResetPolicy)
+        /// </summary>
+        /// <param name="result">Method result</param>
+        /// <returns>True if invocation completed (result object exists)</returns>
+        public static bool IsMethodInvocationSuccessful(ManagementBaseObject? result)
+        {
+            return result != null;
+        }
     }
 }
