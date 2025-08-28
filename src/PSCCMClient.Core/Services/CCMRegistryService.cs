@@ -43,31 +43,27 @@ namespace PSCCMClient.Core.Services
                 
                 string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
                 
-                using var searcher = new ManagementObjectSearcher(namespacePath, "SELECT * FROM StdRegProv");
-                using var results = searcher.Get();
+                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
+                using var mgmtClass = new ManagementClass(namespacePath, "StdRegProv", null);
+                var inParams = mgmtClass.GetMethodParameters("GetStringValue");
+                inParams["hDefKey"] = hiveValue;
+                inParams["sSubKeyName"] = subKey;
+                inParams["sValueName"] = valueName;
 
-                foreach (ManagementObject obj in results)
+                var outParams = mgmtClass.InvokeMethod("GetStringValue", inParams, null);
+                var returnValue = Convert.ToInt32(outParams["ReturnValue"]);
+
+                if (returnValue == 0)
                 {
-                    var inParams = obj.GetMethodParameters("GetStringValue");
-                    inParams["hDefKey"] = hiveValue;
-                    inParams["sSubKeyName"] = subKey;
-                    inParams["sValueName"] = valueName;
-
-                    var outParams = obj.InvokeMethod("GetStringValue", inParams, null);
-                    var returnValue = Convert.ToInt32(outParams["ReturnValue"]);
-
-                    if (returnValue == 0)
+                    return new CCMRegistryProperty
                     {
-                        return new CCMRegistryProperty
-                        {
-                            ComputerName = _computerName,
-                            Hive = hive,
-                            SubKey = subKey,
-                            ValueName = valueName,
-                            Value = outParams["sValue"]?.ToString() ?? "",
-                            ValueType = "String"
-                        };
-                    }
+                        ComputerName = _computerName,
+                        Hive = hive,
+                        SubKey = subKey,
+                        ValueName = valueName,
+                        Value = outParams["sValue"]?.ToString() ?? "",
+                        ValueType = "String"
+                    };
                 }
             }
             catch (Exception ex)
@@ -110,50 +106,44 @@ namespace PSCCMClient.Core.Services
                 
                 string namespacePath = isLocal ? "root\\default" : $@"\\{_computerName}\root\default";
                 
-                using var searcher = new ManagementObjectSearcher(namespacePath, "SELECT * FROM StdRegProv");
-                using var results = searcher.Get();
-
-                foreach (ManagementObject obj in results)
+                var methodName = valueType.ToUpper() switch
                 {
-                    var methodName = valueType.ToUpper() switch
-                    {
-                        "STRING" => "SetStringValue",
-                        "DWORD" => "SetDWORDValue",
-                        "QWORD" => "SetQWORDValue",
-                        "BINARY" => "SetBinaryValue",
-                        "EXPANDSTRING" => "SetExpandedStringValue",
-                        "MULTISTRING" => "SetMultiStringValue",
-                        _ => "SetStringValue"
-                    };
+                    "STRING" => "SetStringValue",
+                    "DWORD" => "SetDWORDValue",
+                    "QWORD" => "SetQWORDValue",
+                    "BINARY" => "SetBinaryValue",
+                    "EXPANDSTRING" => "SetExpandedStringValue",
+                    "MULTISTRING" => "SetMultiStringValue",
+                    _ => "SetStringValue"
+                };
 
-                    var inParams = obj.GetMethodParameters(methodName);
-                    inParams["hDefKey"] = hiveValue;
-                    inParams["sSubKeyName"] = subKey;
-                    inParams["sValueName"] = valueName;
+                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
+                using var mgmtClass = new ManagementClass(namespacePath, "StdRegProv", null);
+                var inParams = mgmtClass.GetMethodParameters(methodName);
+                inParams["hDefKey"] = hiveValue;
+                inParams["sSubKeyName"] = subKey;
+                inParams["sValueName"] = valueName;
 
-                    var paramName = valueType.ToUpper() switch
-                    {
-                        "STRING" => "sValue",
-                        "DWORD" => "uValue",
-                        "QWORD" => "uValue",
-                        "BINARY" => "uValue",
-                        "EXPANDSTRING" => "sValue",
-                        "MULTISTRING" => "sValue",
-                        _ => "sValue"
-                    };
+                var paramName = valueType.ToUpper() switch
+                {
+                    "STRING" => "sValue",
+                    "DWORD" => "uValue",
+                    "QWORD" => "uValue",
+                    "BINARY" => "uValue",
+                    "EXPANDSTRING" => "sValue",
+                    "MULTISTRING" => "sValue",
+                    _ => "sValue"
+                };
 
-                    inParams[paramName] = value;
+                inParams[paramName] = value;
 
-                    var outParams = obj.InvokeMethod(methodName, inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
-                }
+                var outParams = mgmtClass.InvokeMethod(methodName, inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to set registry property on {_computerName}: {ex.Message}", ex);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -213,25 +203,21 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM", "SELECT * FROM CCM_Client");
-                using var results = searcher.Get();
+                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                string namespacePath = isLocal ? "root\\CCM" : $@"\\{_computerName}\root\CCM";
+                
+                // Use ManagementClass to call method on the class, not on instances (like PowerShell)
+                using var mgmtClass = new ManagementClass(namespacePath, "SMS_Client", null);
+                var inParams = mgmtClass.GetMethodParameters("SetClientProvisioningMode");
+                inParams["bEnable"] = enabled;
 
-                foreach (ManagementObject obj in results)
-                {
-                    var methodName = enabled ? "SetClientProvisioningMode" : "SetClientProvisioningMode";
-                    var inParams = obj.GetMethodParameters(methodName);
-                    inParams["bEnable"] = enabled;
-
-                    var outParams = obj.InvokeMethod(methodName, inParams, null);
-                    return Convert.ToInt32(outParams["ReturnValue"]) == 0;
-                }
+                var outParams = mgmtClass.InvokeMethod("SetClientProvisioningMode", inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to set provisioning mode to '{enabled}' on {_computerName}: {ex.Message}", ex);
             }
-
-            return false;
         }
 
         /// <summary>
