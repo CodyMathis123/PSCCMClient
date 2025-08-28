@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for invoking Configuration Manager client actions
     /// </summary>
-    public class CCMClientActionService
+    public class CCMClientActionService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMClientActionService(string computerName)
+        public CCMClientActionService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -61,46 +59,19 @@ namespace PSCCMClient.Core.Services
                     DeleteHardwareInventoryHistory();
                 }
 
-                // For local computer, use different approach like PowerShell does
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+                // Use the base class to determine if it's a local computer and get the namespace path
+                var namespacePath = GetNamespacePath("root\\ccm");
+                var mgmtClass = new ManagementClass(namespacePath, "sms_client", null);
+                var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
+                inParams["sScheduleID"] = scheduleId;
                 
-                if (isLocal)
-                {
-                    // Use CIM for local operations
-                    return InvokeLocalClientAction(scheduleId);
-                }
-                else
-                {
-                    // Use WMI for remote operations
-                    return InvokeRemoteClientAction(scheduleId);
-                }
+                var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
+                return Convert.ToInt32(outParams["ReturnValue"]) == 0;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to invoke client action '{action}' on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"invoke client action '{action}'", ex);
             }
-        }
-
-        private bool InvokeLocalClientAction(string scheduleId)
-        {
-            // Use ManagementClass to call method on the class, not on instances
-            using var mgmtClass = new ManagementClass("root\\ccm", "sms_client", null);
-            var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
-            inParams["sScheduleID"] = scheduleId;
-            
-            var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
-            return Convert.ToInt32(outParams["ReturnValue"]) == 0;
-        }
-
-        private bool InvokeRemoteClientAction(string scheduleId)
-        {
-            // Use ManagementClass to call method on the class, not on instances
-            using var mgmtClass = new ManagementClass($@"\\{_computerName}\root\ccm", "sms_client", null);
-            var inParams = mgmtClass.GetMethodParameters("TriggerSchedule");
-            inParams["sScheduleID"] = scheduleId;
-            
-            var outParams = mgmtClass.InvokeMethod("TriggerSchedule", inParams, null);
-            return Convert.ToInt32(outParams["ReturnValue"]) == 0;
         }
 
         /// <summary>
@@ -259,13 +230,9 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-                
-                string namespacePath = isLocal ? "root\\ccm\\invagt" : $@"\\{_computerName}\root\ccm\invagt";
-                
-                using var searcher = new ManagementObjectSearcher(namespacePath, 
+                var namespacePath = GetNamespacePath("root\\ccm\\invagt");
+                using var results = QueryWMIObjects(namespacePath, 
                     "SELECT * FROM InventoryActionStatus WHERE InventoryActionID = '{00000000-0000-0000-0000-000000000001}'");
-                using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
                 {

@@ -1,18 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager cache
     /// </summary>
-    public class CCMCacheService
+    public class CCMCacheService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMCacheService(string computerName)
+        public CCMCacheService(string computerName) : base(computerName)
         {
-            _computerName = computerName ?? ".";
         }
 
         /// <summary>
@@ -32,8 +30,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", "SELECT * FROM CacheConfig");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\SoftMgmtAgent");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CacheConfig");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -47,7 +45,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve cache info from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve cache info", ex);
             }
 
             return null;
@@ -72,8 +70,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", "SELECT * FROM CacheInfoEx");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\SoftMgmtAgent");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CacheInfoEx");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -93,7 +91,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve cache content from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve cache content", ex);
             }
 
             return content;
@@ -118,8 +116,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", "SELECT * FROM CacheConfig");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\SoftMgmtAgent");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CacheConfig");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -130,7 +128,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set cache location on {_computerName}: {ex.Message}", ex);
+                throw CreateException("set cache location", ex);
             }
 
             return false;
@@ -155,8 +153,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", "SELECT * FROM CacheConfig");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\SoftMgmtAgent");
+                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CacheConfig");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -167,7 +165,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to set cache size on {_computerName}: {ex.Message}", ex);
+                throw CreateException("set cache size", ex);
             }
 
             return false;
@@ -192,9 +190,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher($@"\\{_computerName}\root\CCM\SoftMgmtAgent", 
-                    $"SELECT * FROM CacheInfoEx WHERE ContentId = '{contentId}'");
-                using var results = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\SoftMgmtAgent");
+                using var results = QueryWMIObjects(namespacePath, $"SELECT * FROM CacheInfoEx WHERE ContentId = '{contentId}'");
 
                 foreach (ManagementObject obj in results)
                 {
@@ -204,7 +201,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to remove cache content '{contentId}' from {_computerName}: {ex.Message}", ex);
+                throw CreateException($"remove cache content '{contentId}'", ex);
             }
 
             return false;
@@ -258,7 +255,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to repair cache location on {_computerName}: {ex.Message}", ex);
+                throw CreateException("repair cache location", ex);
             }
 
             return false;

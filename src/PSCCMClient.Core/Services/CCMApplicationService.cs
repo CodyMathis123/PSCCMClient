@@ -1,27 +1,16 @@
 using System.Management;
 using PSCCMClient.Core.Models;
+using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager applications
     /// </summary>
-    public class CCMApplicationService
+    public class CCMApplicationService : CCMServiceBase
     {
-        private readonly string _computerName;
-
-        public CCMApplicationService(string computerName = ".")
+        public CCMApplicationService(string computerName = ".") : base(computerName)
         {
-            _computerName = computerName;
-        }
-
-        /// <summary>
-        /// Helper method to get the correct namespace path for local or remote operations
-        /// </summary>
-        private string GetNamespacePath(string baseNamespace)
-        {
-            bool isLocal = _computerName == "." || _computerName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-            return isLocal ? baseNamespace : $@"\\{_computerName}\{baseNamespace}";
         }
 
         /// <summary>
@@ -53,11 +42,8 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
-                scope.Connect();
-
-                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery("SELECT * FROM CCM_Application"));
-                using var collection = searcher.Get();
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var collection = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Application");
 
                 foreach (ManagementObject obj in collection)
                 {
@@ -71,7 +57,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve applications from {_computerName}: {ex.Message}", ex);
+                throw CreateException("retrieve applications", ex);
             }
 
             return applications;
@@ -88,12 +74,9 @@ namespace PSCCMClient.Core.Services
 
             try
             {
-                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
-                scope.Connect();
-
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
                 var query = $"SELECT * FROM CCM_Application WHERE Name LIKE '%{applicationName}%'";
-                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
-                using var collection = searcher.Get();
+                using var collection = QueryWMIObjects(namespacePath, query);
 
                 foreach (ManagementObject obj in collection)
                 {
@@ -107,7 +90,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to retrieve applications by name '{applicationName}' from {_computerName}: {ex.Message}", ex);
+                throw CreateException($"retrieve applications by name '{applicationName}'", ex);
             }
 
             return applications;
@@ -132,10 +115,8 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var scope = new ManagementScope(GetNamespacePath("root\\CCM\\ClientSDK"));
-                scope.Connect();
-
-                using var appClass = new ManagementClass(scope, new ManagementPath("CCM_Application"), null);
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                using var appClass = new ManagementClass(namespacePath, "CCM_Application", null);
                 using var inParams = appClass.GetMethodParameters("Install");
                 
                 inParams["Id"] = applicationId;
@@ -151,7 +132,7 @@ namespace PSCCMClient.Core.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to install application {applicationId} on {_computerName}: {ex.Message}", ex);
+                throw CreateException($"install application {applicationId}", ex);
             }
         }
     }
