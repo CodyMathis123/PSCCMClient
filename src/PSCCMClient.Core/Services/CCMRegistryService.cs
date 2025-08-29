@@ -39,9 +39,24 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var value = RegistryHelper.GetStringValue(_computerName, hive, subKey, valueName);
+                var value = RegistryHelper.GetValue(_computerName, hive, subKey, valueName);
                 if (value != null)
                 {
+                    // Determine value type based on the actual type returned
+                    string valueType;
+                    if (value is string)
+                        valueType = "String";
+                    else if (value is uint)
+                        valueType = "DWORD";
+                    else if (value is ulong)
+                        valueType = "QWORD";
+                    else if (value is string[])
+                        valueType = "MultiString";
+                    else if (value is byte[])
+                        valueType = "Binary";
+                    else
+                        valueType = "Unknown";
+
                     return new CCMRegistryProperty
                     {
                         ComputerName = ActualComputerName,
@@ -49,7 +64,7 @@ namespace PSCCMClient.Core.Services
                         SubKey = subKey,
                         ValueName = valueName,
                         Value = value,
-                        ValueType = "String"
+                        ValueType = valueType
                     };
                 }
             }

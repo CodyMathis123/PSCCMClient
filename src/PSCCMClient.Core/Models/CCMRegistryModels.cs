@@ -27,12 +27,12 @@ namespace PSCCMClient.Core.Models
         public string ValueName { get; set; } = "";
 
         /// <summary>
-        /// Value data
+        /// Value data (actual object - could be string, uint, ulong, string[], byte[])
         /// </summary>
-        public string Value { get; set; } = "";
+        public object? Value { get; set; }
 
         /// <summary>
-        /// Value type
+        /// Value type (String, DWORD, QWORD, MultiString, Binary, etc.)
         /// </summary>
         public string ValueType { get; set; } = "";
     }

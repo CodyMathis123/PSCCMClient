@@ -172,9 +172,9 @@ namespace PSCCMClient.Core.Services
                     "SOFTWARE\\Microsoft\\SMS\\Client\\Configuration\\Client Properties",
                     "Local SMS Path");
 
-                if (registryProperty?.Value != null && !string.IsNullOrWhiteSpace(registryProperty.Value))
+                if (registryProperty?.Value != null && !string.IsNullOrWhiteSpace(registryProperty.Value?.ToString()))
                 {
-                    return registryProperty.Value.TrimEnd('\\');
+                    return registryProperty.Value.ToString()?.TrimEnd('\\') ?? "";
                 }
             }
             catch (Exception ex)
@@ -423,7 +423,7 @@ namespace PSCCMClient.Core.Services
                             "HKEY_LOCAL_MACHINE",
                             "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global",
                             "LogDirectory");
-                        config.LogDirectory = logDirProperty?.Value ?? "";
+                        config.LogDirectory = logDirProperty?.Value?.ToString() ?? "";
                     }
                     catch
                     {

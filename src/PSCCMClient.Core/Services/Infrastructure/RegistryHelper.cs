@@ -45,6 +45,70 @@ namespace PSCCMClient.Core.Services.Infrastructure
         }
 
         /// <summary>
+        /// Gets a registry value (auto-detecting type like PowerShell module)
+        /// </summary>
+        /// <param name="computerName">Target computer</param>
+        /// <param name="hive">Registry hive</param>
+        /// <param name="subKey">Registry subkey path</param>
+        /// <param name="valueName">Value name</param>
+        /// <returns>Registry value or null if not found</returns>
+        public static object? GetValue(string computerName, string hive, string subKey, string valueName)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\default");
+                var hiveValue = GetHiveValue(hive);
+
+                // First enumerate values to get the type (like PowerShell module)
+                var enumParams = WMIHelper.GetClassMethodParameters(namespacePath, "StdRegProv", "EnumValues");
+                enumParams["hDefKey"] = hiveValue;
+                enumParams["sSubKeyName"] = subKey;
+
+                var enumResult = WMIHelper.InvokeClassMethod(namespacePath, "StdRegProv", "EnumValues", enumParams);
+                
+                if (!WMIHelper.IsMethodCallSuccessful(enumResult))
+                {
+                    return null;
+                }
+
+                // Find the property and its type
+                var names = enumResult?["sNames"] as string[];
+                var types = enumResult?["Types"] as uint[];
+
+                if (names == null || types == null)
+                {
+                    return null;
+                }
+
+                var propertyIndex = Array.IndexOf(names, valueName);
+                if (propertyIndex == -1)
+                {
+                    return null; // Property not found
+                }
+
+                var propertyType = types[propertyIndex];
+
+                // Call the appropriate method based on type (like PowerShell module)
+                return propertyType switch
+                {
+                    1 => GetStringValue(computerName, hive, subKey, valueName), // REG_SZ
+                    2 => GetStringValue(computerName, hive, subKey, valueName), // REG_EXPAND_SZ  
+                    4 => GetDWORDValue(computerName, hive, subKey, valueName), // REG_DWORD
+                    7 => GetMultiStringValue(computerName, hive, subKey, valueName), // REG_MULTI_SZ
+                    11 => GetQWORDValue(computerName, hive, subKey, valueName), // REG_QWORD
+                    3 => GetBinaryValue(computerName, hive, subKey, valueName), // REG_BINARY
+                    _ => GetStringValue(computerName, hive, subKey, valueName) // Default to string
+                };
+            }
+            catch
+            {
+                // Return null on error
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Gets a registry string value
         /// </summary>
         /// <param name="computerName">Target computer</param>
@@ -104,6 +168,111 @@ namespace PSCCMClient.Core.Services.Infrastructure
                 if (WMIHelper.IsMethodCallSuccessful(outParams))
                 {
                     return Convert.ToUInt32(outParams?["uValue"] ?? 0);
+                }
+            }
+            catch
+            {
+                // Return null on error
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a registry QWORD value
+        /// </summary>
+        /// <param name="computerName">Target computer</param>
+        /// <param name="hive">Registry hive</param>
+        /// <param name="subKey">Registry subkey path</param>
+        /// <param name="valueName">Value name</param>
+        /// <returns>Registry value or null if not found</returns>
+        public static ulong? GetQWORDValue(string computerName, string hive, string subKey, string valueName)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\default");
+                var hiveValue = GetHiveValue(hive);
+
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "StdRegProv", "GetQWORDValue");
+                inParams["hDefKey"] = hiveValue;
+                inParams["sSubKeyName"] = subKey;
+                inParams["sValueName"] = valueName;
+
+                var outParams = WMIHelper.InvokeClassMethod(namespacePath, "StdRegProv", "GetQWORDValue", inParams);
+                
+                if (WMIHelper.IsMethodCallSuccessful(outParams))
+                {
+                    return Convert.ToUInt64(outParams?["uValue"] ?? 0);
+                }
+            }
+            catch
+            {
+                // Return null on error
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a registry multi-string value
+        /// </summary>
+        /// <param name="computerName">Target computer</param>
+        /// <param name="hive">Registry hive</param>
+        /// <param name="subKey">Registry subkey path</param>
+        /// <param name="valueName">Value name</param>
+        /// <returns>Registry value or null if not found</returns>
+        public static string[]? GetMultiStringValue(string computerName, string hive, string subKey, string valueName)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\default");
+                var hiveValue = GetHiveValue(hive);
+
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "StdRegProv", "GetMultiStringValue");
+                inParams["hDefKey"] = hiveValue;
+                inParams["sSubKeyName"] = subKey;
+                inParams["sValueName"] = valueName;
+
+                var outParams = WMIHelper.InvokeClassMethod(namespacePath, "StdRegProv", "GetMultiStringValue", inParams);
+                
+                if (WMIHelper.IsMethodCallSuccessful(outParams))
+                {
+                    return outParams?["sValue"] as string[];
+                }
+            }
+            catch
+            {
+                // Return null on error
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a registry binary value
+        /// </summary>
+        /// <param name="computerName">Target computer</param>
+        /// <param name="hive">Registry hive</param>
+        /// <param name="subKey">Registry subkey path</param>
+        /// <param name="valueName">Value name</param>
+        /// <returns>Registry value or null if not found</returns>
+        public static byte[]? GetBinaryValue(string computerName, string hive, string subKey, string valueName)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\default");
+                var hiveValue = GetHiveValue(hive);
+
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "StdRegProv", "GetBinaryValue");
+                inParams["hDefKey"] = hiveValue;
+                inParams["sSubKeyName"] = subKey;
+                inParams["sValueName"] = valueName;
+
+                var outParams = WMIHelper.InvokeClassMethod(namespacePath, "StdRegProv", "GetBinaryValue", inParams);
+                
+                if (WMIHelper.IsMethodCallSuccessful(outParams))
+                {
+                    return outParams?["uValue"] as byte[];
                 }
             }
             catch
