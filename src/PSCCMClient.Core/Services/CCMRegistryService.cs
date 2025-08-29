@@ -3,13 +3,14 @@ using System;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager registry operations and provisioning mode
     /// </summary>
-    public class CCMRegistryService : CCMServiceBase
+    public class CCMRegistryService : CCMServiceBase, ICCMRegistryService
     {
         public CCMRegistryService(string computerName) : base(computerName)
         {

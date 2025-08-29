@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager logging
     /// </summary>
-    public class CCMLoggingService : CCMServiceBase
+    public class CCMLoggingService : CCMServiceBase, ICCMLoggingService
     {
         public CCMLoggingService(string computerName) : base(computerName)
         {

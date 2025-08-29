@@ -4,34 +4,17 @@ using System.Threading.Tasks;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for invoking Configuration Manager client actions
     /// </summary>
-    public class CCMClientActionService : CCMServiceBase
+    public class CCMClientActionService : CCMServiceBase, ICCMClientActionService
     {
         public CCMClientActionService(string computerName) : base(computerName)
         {
-        }
-
-        /// <summary>
-        /// Available client actions
-        /// </summary>
-        public enum ClientAction
-        {
-            HardwareInventory,
-            FullHardwareInventory,
-            SoftwareInventory,
-            UpdateScan,
-            UpdateEval,
-            MachinePol,
-            AppEval,
-            DDR,
-            RefreshDefaultMP,
-            SourceUpdateMessage,
-            SendUnsentStateMessage
         }
 
         /// <summary>

@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager task sequences
     /// </summary>
-    public class CCMTaskSequenceService : CCMServiceBase
+    public class CCMTaskSequenceService : CCMServiceBase, ICCMTaskSequenceService
     {
         public CCMTaskSequenceService(string computerName) : base(computerName)
         {

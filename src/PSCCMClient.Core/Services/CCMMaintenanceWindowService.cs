@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager maintenance windows
     /// </summary>
-    public class CCMMaintenanceWindowService : CCMServiceBase
+    public class CCMMaintenanceWindowService : CCMServiceBase, ICCMMaintenanceWindowService
     {
         public CCMMaintenanceWindowService(string computerName) : base(computerName)
         {

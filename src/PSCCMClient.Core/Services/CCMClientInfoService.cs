@@ -3,13 +3,14 @@ using System.Threading.Tasks;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for retrieving Configuration Manager client information
     /// </summary>
-    public class CCMClientInfoService : CCMServiceBase
+    public class CCMClientInfoService : CCMServiceBase, ICCMClientInfoService
     {
         public CCMClientInfoService(string computerName) : base(computerName)
         {

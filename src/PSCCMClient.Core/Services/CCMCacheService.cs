@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager cache
     /// </summary>
-    public class CCMCacheService : CCMServiceBase
+    public class CCMCacheService : CCMServiceBase, ICCMCacheService
     {
         public CCMCacheService(string computerName) : base(computerName)
         {

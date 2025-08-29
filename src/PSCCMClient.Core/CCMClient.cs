@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using PSCCMClient.Core.Services;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core
 {
@@ -165,8 +166,8 @@ namespace PSCCMClient.Core
         public async Task<bool> InvokeHardwareInventoryAsync(bool fullInventory = false)
         {
             var action = fullInventory 
-                ? CCMClientActionService.ClientAction.FullHardwareInventory 
-                : CCMClientActionService.ClientAction.HardwareInventory;
+                ? ClientAction.FullHardwareInventory 
+                : ClientAction.HardwareInventory;
             return await ClientActions.InvokeClientActionAsync(action);
         }
 
@@ -176,7 +177,7 @@ namespace PSCCMClient.Core
         /// <returns>True if successful</returns>
         public async Task<bool> InvokeSoftwareInventoryAsync()
         {
-            return await ClientActions.InvokeClientActionAsync(CCMClientActionService.ClientAction.SoftwareInventory);
+            return await ClientActions.InvokeClientActionAsync(ClientAction.SoftwareInventory);
         }
 
         /// <summary>
@@ -185,7 +186,7 @@ namespace PSCCMClient.Core
         /// <returns>True if successful</returns>
         public async Task<bool> InvokeUpdateScanAsync()
         {
-            return await ClientActions.InvokeClientActionAsync(CCMClientActionService.ClientAction.UpdateScan);
+            return await ClientActions.InvokeClientActionAsync(ClientAction.UpdateScan);
         }
 
         /// <summary>
@@ -194,7 +195,7 @@ namespace PSCCMClient.Core
         /// <returns>True if successful</returns>
         public async Task<bool> InvokeMachinePolicyAsync()
         {
-            return await ClientActions.InvokeClientActionAsync(CCMClientActionService.ClientAction.MachinePol);
+            return await ClientActions.InvokeClientActionAsync(ClientAction.MachinePol);
         }
     }
 }

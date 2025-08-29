@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager software updates
     /// </summary>
-    public class CCMSoftwareUpdateService : CCMServiceBase
+    public class CCMSoftwareUpdateService : CCMServiceBase, ICCMSoftwareUpdateService
     {
         public CCMSoftwareUpdateService(string computerName) : base(computerName)
         {

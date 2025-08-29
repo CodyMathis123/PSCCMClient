@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
+using PSCCMClient.Core.Interfaces;
 
 namespace PSCCMClient.Core.Services
 {
     /// <summary>
     /// Service for managing Configuration Manager applications
     /// </summary>
-    public class CCMApplicationService : CCMServiceBase
+    public class CCMApplicationService : CCMServiceBase, ICCMApplicationService
     {
         public CCMApplicationService(string computerName = ".") : base(computerName)
         {
