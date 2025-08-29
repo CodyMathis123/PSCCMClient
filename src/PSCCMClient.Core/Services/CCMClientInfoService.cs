@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Management;
+using System.Security;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
 using PSCCMClient.Core.Interfaces;
@@ -13,6 +14,18 @@ namespace PSCCMClient.Core.Services
     public class CCMClientInfoService : CCMServiceBase, ICCMClientInfoService
     {
         public CCMClientInfoService(string computerName) : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMClientInfoService with credential support
+        /// </summary>
+        /// <param name="computerName">Target computer name</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMClientInfoService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 

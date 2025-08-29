@@ -1,5 +1,6 @@
 using System;
 using System.Management;
+using System.Security;
 using PSCCMClient.Core.Services.Infrastructure;
 
 namespace PSCCMClient.Core.Services.Infrastructure
@@ -10,10 +11,24 @@ namespace PSCCMClient.Core.Services.Infrastructure
     public abstract class CCMServiceBase
     {
         protected readonly string _computerName;
+        protected readonly string? _username;
+        protected readonly SecureString? _password;
+        protected readonly string? _domain;
 
         protected CCMServiceBase(string computerName)
         {
             _computerName = computerName ?? ".";
+            _username = null;
+            _password = null;
+            _domain = null;
+        }
+
+        protected CCMServiceBase(string computerName, string? username, SecureString? password, string? domain = null)
+        {
+            _computerName = computerName ?? ".";
+            _username = username;
+            _password = password;
+            _domain = domain;
         }
 
         /// <summary>
@@ -54,7 +69,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <returns>First ManagementObject or null</returns>
         protected ManagementObject? QueryFirstWMIObject(string namespacePath, string query)
         {
-            return WMIHelper.QueryFirstObject(namespacePath, query);
+            return WMIHelper.QueryFirstObject(namespacePath, query, _username, _password, _domain);
         }
 
         /// <summary>
@@ -65,7 +80,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <returns>Collection of ManagementObjects</returns>
         protected ManagementObjectCollection QueryWMIObjects(string namespacePath, string query)
         {
-            return WMIHelper.QueryObjects(namespacePath, query);
+            return WMIHelper.QueryObjects(namespacePath, query, _username, _password, _domain);
         }
 
         /// <summary>
@@ -78,7 +93,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <returns>Method output parameters</returns>
         protected ManagementBaseObject? InvokeWMIClassMethod(string namespacePath, string className, string methodName, ManagementBaseObject? parameters = null)
         {
-            return WMIHelper.InvokeClassMethod(namespacePath, className, methodName, parameters);
+            return WMIHelper.InvokeClassMethod(namespacePath, className, methodName, parameters, _username, _password, _domain);
         }
 
         /// <summary>
@@ -94,7 +109,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
         }
 
         /// <summary>
-        /// Safely invokes a COM object method for local operations only
+        /// Safely invokes a COM object method - automatically handles local vs remote execution
         /// </summary>
         /// <param name="progId">COM object ProgID</param>
         /// <param name="methodName">Method name</param>
@@ -102,16 +117,20 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <returns>Method result or null</returns>
         protected object? InvokeCOMMethod(string progId, string methodName, params object[] parameters)
         {
-            if (!IsLocalComputer)
+            if (IsLocalComputer)
             {
-                throw new InvalidOperationException("COM object methods can only be invoked on the local computer");
+                // Local COM execution
+                return COMHelper.InvokeMethod(progId, methodName, parameters);
             }
-
-            return COMHelper.InvokeMethod(progId, methodName, parameters);
+            else
+            {
+                // Remote execution via PowerShell
+                return RemoteCOMHelper.InvokeMethod(_computerName, progId, methodName, parameters, _username, _password, _domain);
+            }
         }
 
         /// <summary>
-        /// Safely invokes a COM object method for local operations only, returning a boolean result
+        /// Safely invokes a COM object method returning a boolean result - automatically handles local vs remote execution
         /// </summary>
         /// <param name="progId">COM object ProgID</param>
         /// <param name="methodName">Method name</param>
@@ -121,8 +140,15 @@ namespace PSCCMClient.Core.Services.Infrastructure
         {
             try
             {
-                InvokeCOMMethod(progId, methodName, parameters);
-                return true;
+                if (IsLocalComputer)
+                {
+                    var result = COMHelper.InvokeMethod(progId, methodName, parameters);
+                    return Convert.ToBoolean(result ?? false);
+                }
+                else
+                {
+                    return RemoteCOMHelper.InvokeMethodBool(_computerName, progId, methodName, parameters, _username, _password, _domain);
+                }
             }
             catch
             {
@@ -131,7 +157,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
         }
 
         /// <summary>
-        /// Safely invokes a COM object method for local operations only, returning a string result
+        /// Safely invokes a COM object method returning a string result - automatically handles local vs remote execution
         /// </summary>
         /// <param name="progId">COM object ProgID</param>
         /// <param name="methodName">Method name</param>
@@ -139,12 +165,22 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <returns>Method result as string or empty string</returns>
         protected string InvokeCOMMethodString(string progId, string methodName, params object[] parameters)
         {
-            if (!IsLocalComputer)
+            try
+            {
+                if (IsLocalComputer)
+                {
+                    var result = COMHelper.InvokeMethod(progId, methodName, parameters);
+                    return result?.ToString() ?? "";
+                }
+                else
+                {
+                    return RemoteCOMHelper.InvokeMethodString(_computerName, progId, methodName, parameters, _username, _password, _domain);
+                }
+            }
+            catch
             {
                 return "";
             }
-
-            return COMHelper.InvokeMethodString(progId, methodName, parameters);
         }
 
         /// <summary>
