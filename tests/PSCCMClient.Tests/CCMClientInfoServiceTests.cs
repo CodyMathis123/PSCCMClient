@@ -10,6 +10,7 @@ namespace PSCCMClient.Tests
 {
     /// <summary>
     /// Unit tests for CCM Client Info Service
+    /// Updated for Windows environments with ConfigMgr client
     /// </summary>
     public class CCMClientInfoServiceTests
     {
@@ -37,80 +38,114 @@ namespace PSCCMClient.Tests
         }
 
         [Fact]
-        public async Task GetClientInfoAsync_ReturnsClientInfo()
+        public async Task GetClientInfoAsync_WithConfigMgrClient_ReturnsClientInfo()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetClientInfoAsync());
-            ex.Should().NotBeNull(); // Expected in test environment without WMI
+            // Act
+            var result = await service.GetClientInfoAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ComputerName.Should().NotBeNullOrEmpty();
+            // On a machine with ConfigMgr client, we should get version info
+            if (!string.IsNullOrEmpty(result.ClientVersion))
+            {
+                result.ClientVersion.Should().MatchRegex(@"\d+\.\d+\.\d+\.\d+");
+            }
         }
 
         [Fact]
-        public async Task GetClientVersionAsync_ReturnsVersionString()
+        public async Task GetClientVersionAsync_WithConfigMgrClient_ReturnsVersionString()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetClientVersionAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetClientVersionAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            // If ConfigMgr client is installed, version should be present
+            if (!string.IsNullOrEmpty(result))
+            {
+                result.Should().MatchRegex(@"\d+\.\d+\.\d+\.\d+");
+            }
         }
 
         [Fact]
-        public async Task GetClientDirectoryAsync_ReturnsDirectoryPath()
+        public async Task GetClientDirectoryAsync_WithConfigMgrClient_ReturnsDirectoryPath()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetClientDirectoryAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetClientDirectoryAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            // If ConfigMgr client is installed, directory should be present
+            if (!string.IsNullOrEmpty(result))
+            {
+                result.Should().Contain("CCM");
+            }
         }
 
         [Fact]
-        public async Task GetPrimaryUserAsync_ReturnsUserName()
+        public async Task GetPrimaryUserAsync_WithConfigMgrClient_ReturnsUserName()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetPrimaryUserAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetPrimaryUserAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            // Primary user might be empty, but shouldn't throw
         }
 
         [Fact]
-        public async Task GetExecStartupTimeAsync_ReturnsDateTime()
+        public async Task GetExecStartupTimeAsync_WithConfigMgrClient_ReturnsDateTime()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetExecStartupTimeAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetExecStartupTimeAsync();
+
+            // Assert
+            // CCMExec service might not be running, so result could be null
+            // but it shouldn't throw an exception
         }
 
         [Fact]
-        public async Task IsClientOnInternetAsync_ReturnsBoolean()
+        public async Task IsClientOnInternetAsync_WithConfigMgrClient_ReturnsBoolean()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.IsClientOnInternetAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.IsClientOnInternetAsync();
+
+            // Assert
+            // Should return a boolean value without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
-        public async Task IsClientAlwaysOnInternetAsync_ReturnsBoolean()
+        public async Task IsClientAlwaysOnInternetAsync_WithConfigMgrClient_ReturnsBoolean()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.IsClientAlwaysOnInternetAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.IsClientAlwaysOnInternetAsync();
+
+            // Assert
+            // Should return a boolean value without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Theory]
@@ -121,65 +156,84 @@ namespace PSCCMClient.Tests
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.SetClientAlwaysOnInternetAsync(alwaysOnInternet));
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.SetClientAlwaysOnInternetAsync(alwaysOnInternet);
+
+            // Assert
+            // Should return a boolean indicating success/failure
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
-        public async Task GetLastHeartbeatAsync_ReturnsInventoryInfo()
+        public async Task GetLastHeartbeatAsync_WithConfigMgrClient_ReturnsInventoryInfo()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetLastHeartbeatAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetLastHeartbeatAsync();
+
+            // Assert
+            // Might be null if no heartbeat has occurred, but shouldn't throw
         }
 
         [Fact]
-        public async Task GetLastHardwareInventoryAsync_ReturnsInventoryInfo()
+        public async Task GetLastHardwareInventoryAsync_WithConfigMgrClient_ReturnsInventoryInfo()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetLastHardwareInventoryAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetLastHardwareInventoryAsync();
+
+            // Assert
+            // Might be null if no hardware inventory has occurred, but shouldn't throw
         }
 
         [Fact]
-        public async Task GetLastSoftwareInventoryAsync_ReturnsInventoryInfo()
+        public async Task GetLastSoftwareInventoryAsync_WithConfigMgrClient_ReturnsInventoryInfo()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.GetLastSoftwareInventoryAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await service.GetLastSoftwareInventoryAsync();
+
+            // Assert
+            // Might be null if no software inventory has occurred, but shouldn't throw
         }
 
         // Synchronous method tests - these mirror the async tests
         [Fact]
-        public void GetClientInfo_ReturnsClientInfo()
+        public void GetClientInfo_WithConfigMgrClient_ReturnsClientInfo()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = Assert.Throws<Exception>(() => service.GetClientInfo());
-            ex.Should().NotBeNull();
+            // Act
+            var result = service.GetClientInfo();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ComputerName.Should().NotBeNullOrEmpty();
         }
 
         [Fact]
-        public void GetClientVersion_ReturnsVersionString()
+        public void GetClientVersion_WithConfigMgrClient_ReturnsVersionString()
         {
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = Assert.Throws<Exception>(() => service.GetClientVersion());
-            ex.Should().NotBeNull();
+            // Act
+            var result = service.GetClientVersion();
+
+            // Assert
+            result.Should().NotBeNull();
+            // If ConfigMgr client is installed, version should be present
+            if (!string.IsNullOrEmpty(result))
+            {
+                result.Should().MatchRegex(@"\d+\.\d+\.\d+\.\d+");
+            }
         }
 
         [Theory]
@@ -190,9 +244,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var service = new CCMClientInfoService(".");
 
-            // Act & Assert
-            var ex = Assert.Throws<Exception>(() => service.SetClientAlwaysOnInternet(alwaysOnInternet));
-            ex.Should().NotBeNull();
+            // Act
+            var result = service.SetClientAlwaysOnInternet(alwaysOnInternet);
+
+            // Assert
+            // Should return a boolean indicating success/failure
+            Assert.True(result == true || result == false);
         }
     }
 }

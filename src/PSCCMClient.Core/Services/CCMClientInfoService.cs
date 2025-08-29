@@ -390,7 +390,7 @@ namespace PSCCMClient.Core.Services
                     return new CCMGuidInfo
                     {
                         GUID = obj["ClientID"]?.ToString() ?? "",
-                        ClientGUIDChangeDate = ConvertWmiDateTime(obj["ClientIDChangeDate"]),
+                        ClientGUIDChangeDate = obj["ClientIDChangeDate"] as DateTime?,
                         PreviousGUID = obj["PreviousClientID"]?.ToString() ?? ""
                     };
                 }

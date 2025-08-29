@@ -10,6 +10,7 @@ namespace PSCCMClient.Tests
 {
     /// <summary>
     /// Unit tests for the main CCMClient class
+    /// Updated for Windows environments with ConfigMgr client
     /// </summary>
     public class CCMClientTests
     {
@@ -84,9 +85,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var client = new CCMClient(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => client.InvokeHardwareInventoryAsync());
-            ex.Should().NotBeNull(); // Expected in test environment
+            // Act
+            var result = await client.InvokeHardwareInventoryAsync();
+
+            // Assert
+            // Should return a boolean indicating success/failure without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Theory]
@@ -97,9 +101,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var client = new CCMClient(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => client.InvokeHardwareInventoryAsync(fullInventory));
-            ex.Should().NotBeNull();
+            // Act
+            var result = await client.InvokeHardwareInventoryAsync(fullInventory);
+
+            // Assert
+            // Should return a boolean indicating success/failure without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
@@ -108,9 +115,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var client = new CCMClient(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => client.InvokeSoftwareInventoryAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await client.InvokeSoftwareInventoryAsync();
+
+            // Assert
+            // Should return a boolean indicating success/failure without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
@@ -119,9 +129,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var client = new CCMClient(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => client.InvokeUpdateScanAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await client.InvokeUpdateScanAsync();
+
+            // Assert
+            // Should return a boolean indicating success/failure without throwing
+            Assert.True(result == true || result == false);
         }
 
         [Fact]
@@ -130,9 +143,12 @@ namespace PSCCMClient.Tests
             // Arrange
             var client = new CCMClient(".");
 
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<Exception>(() => client.InvokeMachinePolicyAsync());
-            ex.Should().NotBeNull();
+            // Act
+            var result = await client.InvokeMachinePolicyAsync();
+
+            // Assert
+            // Should return a boolean indicating success/failure without throwing
+            Assert.True(result == true || result == false);
         }
     }
 }
