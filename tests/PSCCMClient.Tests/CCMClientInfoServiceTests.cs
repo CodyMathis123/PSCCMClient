@@ -49,10 +49,34 @@ namespace PSCCMClient.Tests
             // Assert
             result.Should().NotBeNull();
             result.ComputerName.Should().NotBeNullOrEmpty();
-            // On a machine with ConfigMgr client, we should get version info
+
             if (!string.IsNullOrEmpty(result.ClientVersion))
             {
                 result.ClientVersion.Should().MatchRegex(@"\d+\.\d+\.\d+\.\d+");
+            }
+            if (!string.IsNullOrEmpty(result.CurrentManagementPoint))
+            {
+                result.CurrentManagementPoint.Should().NotBeNullOrEmpty();
+            }
+            if (!string.IsNullOrEmpty(result.CacheLocation))
+            {
+                result.CacheLocation.Should().NotBeNullOrEmpty();
+            }
+            if (!string.IsNullOrEmpty(result.ClientDirectory))
+            {
+                result.ClientDirectory.Should().NotBeNullOrEmpty();
+            }
+            if (!string.IsNullOrEmpty(result.SiteCode))
+            {
+                result.SiteCode.Should().NotBeNullOrEmpty();
+            }
+            if (!string.IsNullOrEmpty(result.GUID))
+            {
+               Guid.TryParse(result.GUID.Substring(5), out _).Should().BeTrue();
+            }
+            if (!string.IsNullOrEmpty(result.LogDirectory))
+            {
+                result.LogDirectory.Should().NotBeNullOrEmpty();
             }
         }
 
