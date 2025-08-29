@@ -6,24 +6,6 @@ using PSCCMClient.Core.Models;
 namespace PSCCMClient.Core.Interfaces
 {
     /// <summary>
-    /// Available client actions
-    /// </summary>
-    public enum ClientAction
-    {
-        HardwareInventory,
-        FullHardwareInventory,
-        SoftwareInventory,
-        UpdateScan,
-        UpdateEval,
-        MachinePol,
-        AppEval,
-        DDR,
-        RefreshDefaultMP,
-        SourceUpdateMessage,
-        SendUnsentStateMessage
-    }
-
-    /// <summary>
     /// Interface for Configuration Manager client action operations
     /// </summary>
     public interface ICCMClientActionService

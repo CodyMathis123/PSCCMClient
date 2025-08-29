@@ -1,6 +1,6 @@
 using PSCCMClient.Core;
 using PSCCMClient.Core.Services;
-using PSCCMClient.Core.Interfaces;
+using PSCCMClient.Core.Models;
 
 Console.WriteLine("PSCCMClient C# Library - Comprehensive Feature Demo");
 Console.WriteLine("===================================================");

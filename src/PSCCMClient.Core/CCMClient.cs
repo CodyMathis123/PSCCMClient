@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Security;
 using PSCCMClient.Core.Services;
-using PSCCMClient.Core.Interfaces;
+using PSCCMClient.Core.Models;
 
 namespace PSCCMClient.Core
 {

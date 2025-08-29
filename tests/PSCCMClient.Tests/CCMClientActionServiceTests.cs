@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using PSCCMClient.Core.Interfaces;
+using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services;
 using Xunit;
 
