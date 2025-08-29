@@ -178,29 +178,58 @@ namespace PSCCMClient.Core.Services
         /// Installs an application on the Configuration Manager client
         /// </summary>
         /// <param name="applicationId">The ID of the application to install</param>
+        /// <param name="revision">The revision of the application</param>
+        /// <param name="isMachineTarget">Whether this is a machine-targeted application</param>
+        /// <param name="enforcePreference">When to enforce the installation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Installation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
         /// <returns>True if the installation was initiated successfully</returns>
-        public async Task<bool> InstallApplicationAsync(string applicationId)
+        public async Task<bool> InstallApplicationAsync(string applicationId, string revision, bool isMachineTarget = true, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
         {
-            return await Task.Run(() => InstallApplication(applicationId));
+            return await Task.Run(() => InstallApplication(applicationId, revision, isMachineTarget, enforcePreference, priority, isRebootIfNeeded));
+        }
+
+        /// <summary>
+        /// Installs an application on the Configuration Manager client (simplified overload)
+        /// This method requires getting the application first to obtain the revision
+        /// </summary>
+        /// <param name="application">The application object containing ID, revision, and machine target info</param>
+        /// <param name="enforcePreference">When to enforce the installation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Installation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the installation was initiated successfully</returns>
+        public async Task<bool> InstallApplicationAsync(CCMApplication application, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            return await InstallApplicationAsync(application.Id, application.Revision, application.IsMachineTarget, 
+                enforcePreference, priority, isRebootIfNeeded);
         }
 
         /// <summary>
         /// Installs an application on the Configuration Manager client (synchronous)
         /// </summary>
         /// <param name="applicationId">The ID of the application to install</param>
+        /// <param name="revision">The revision of the application</param>
+        /// <param name="isMachineTarget">Whether this is a machine-targeted application</param>
+        /// <param name="enforcePreference">When to enforce the installation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Installation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
         /// <returns>True if the installation was initiated successfully</returns>
-        public bool InstallApplication(string applicationId)
+        public bool InstallApplication(string applicationId, string revision, bool isMachineTarget = true, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
         {
             try
             {
                 var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
                 var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "CCM_Application", "Install");
                 
-                inParams["Id"] = applicationId;
-                inParams["IsMachineTarget"] = true;
-                inParams["EnforcePreference"] = 0; // Immediate
-                inParams["Priority"] = "High";
-                inParams["IsRebootIfNeeded"] = false;
+                inParams["ID"] = applicationId;
+                inParams["Revision"] = revision;
+                inParams["IsMachineTarget"] = isMachineTarget;
+                inParams["EnforcePreference"] = (uint)enforcePreference;
+                inParams["Priority"] = priority;
+                inParams["IsRebootIfNeeded"] = isRebootIfNeeded;
 
                 var outParams = InvokeWMIClassMethod(namespacePath, "CCM_Application", "Install", inParams);
                 return WMIHelper.IsMethodCallSuccessful(outParams);
@@ -209,6 +238,104 @@ namespace PSCCMClient.Core.Services
             {
                 throw CreateException($"install application {applicationId}", ex);
             }
+        }
+
+        /// <summary>
+        /// Installs an application on the Configuration Manager client (simplified overload)
+        /// This method requires getting the application first to obtain the revision
+        /// </summary>
+        /// <param name="application">The application object containing ID, revision, and machine target info</param>
+        /// <param name="enforcePreference">When to enforce the installation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Installation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the installation was initiated successfully</returns>
+        public bool InstallApplication(CCMApplication application, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            return InstallApplication(application.Id, application.Revision, application.IsMachineTarget, 
+                enforcePreference, priority, isRebootIfNeeded);
+        }
+
+        /// <summary>
+        /// Uninstalls an application on the Configuration Manager client
+        /// </summary>
+        /// <param name="applicationId">The ID of the application to uninstall</param>
+        /// <param name="revision">The revision of the application</param>
+        /// <param name="isMachineTarget">Whether this is a machine-targeted application</param>
+        /// <param name="enforcePreference">When to enforce the uninstallation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Uninstallation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the uninstallation was initiated successfully</returns>
+        public async Task<bool> UninstallApplicationAsync(string applicationId, string revision, bool isMachineTarget = true, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            return await Task.Run(() => UninstallApplication(applicationId, revision, isMachineTarget, enforcePreference, priority, isRebootIfNeeded));
+        }
+
+        /// <summary>
+        /// Uninstalls an application on the Configuration Manager client (simplified overload)
+        /// This method requires getting the application first to obtain the revision
+        /// </summary>
+        /// <param name="application">The application object containing ID, revision, and machine target info</param>
+        /// <param name="enforcePreference">When to enforce the uninstallation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Uninstallation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the uninstallation was initiated successfully</returns>
+        public async Task<bool> UninstallApplicationAsync(CCMApplication application, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            return await UninstallApplicationAsync(application.Id, application.Revision, application.IsMachineTarget, 
+                enforcePreference, priority, isRebootIfNeeded);
+        }
+
+        /// <summary>
+        /// Uninstalls an application on the Configuration Manager client (synchronous)
+        /// </summary>
+        /// <param name="applicationId">The ID of the application to uninstall</param>
+        /// <param name="revision">The revision of the application</param>
+        /// <param name="isMachineTarget">Whether this is a machine-targeted application</param>
+        /// <param name="enforcePreference">When to enforce the uninstallation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Uninstallation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the uninstallation was initiated successfully</returns>
+        public bool UninstallApplication(string applicationId, string revision, bool isMachineTarget = true, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            try
+            {
+                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
+                var inParams = WMIHelper.GetClassMethodParameters(namespacePath, "CCM_Application", "Uninstall");
+                
+                inParams["ID"] = applicationId;
+                inParams["Revision"] = revision;
+                inParams["IsMachineTarget"] = isMachineTarget;
+                inParams["EnforcePreference"] = (uint)enforcePreference;
+                inParams["Priority"] = priority;
+                inParams["IsRebootIfNeeded"] = isRebootIfNeeded;
+
+                var outParams = InvokeWMIClassMethod(namespacePath, "CCM_Application", "Uninstall", inParams);
+                return WMIHelper.IsMethodCallSuccessful(outParams);
+            }
+            catch (Exception ex)
+            {
+                throw CreateException($"uninstall application {applicationId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Uninstalls an application on the Configuration Manager client (simplified overload)
+        /// This method requires getting the application first to obtain the revision
+        /// </summary>
+        /// <param name="application">The application object containing ID, revision, and machine target info</param>
+        /// <param name="enforcePreference">When to enforce the uninstallation (Immediate=0, NonBusinessHours=1, AdminSchedule=2)</param>
+        /// <param name="priority">Uninstallation priority (Foreground, High, Normal, Low)</param>
+        /// <param name="isRebootIfNeeded">Whether to allow reboot if needed</param>
+        /// <returns>True if the uninstallation was initiated successfully</returns>
+        public bool UninstallApplication(CCMApplication application, 
+            int enforcePreference = 0, string priority = "High", bool isRebootIfNeeded = false)
+        {
+            return UninstallApplication(application.Id, application.Revision, application.IsMachineTarget, 
+                enforcePreference, priority, isRebootIfNeeded);
         }
     }
 }
