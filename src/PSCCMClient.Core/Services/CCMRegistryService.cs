@@ -41,7 +41,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMRegistryProperty
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         Hive = hive,
                         SubKey = subKey,
                         ValueName = valueName,
@@ -122,9 +122,9 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMProvisioningMode
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         ProvisioningMode = Convert.ToBoolean(obj["IsInProvisioningMode"] ?? false),
-                        ProvisioningModeStartTime = obj["ProvisioningModeStartTime"] as DateTime?
+                        ProvisioningModeStartTime = ConvertWmiDateTime(obj["ProvisioningModeStartTime"])
                     };
                 }
             }
@@ -193,7 +193,7 @@ namespace PSCCMClient.Core.Services
                     return new CCMGuidInfo
                     {
                         GUID = obj["ClientId"]?.ToString() ?? "",
-                        ClientGUIDChangeDate = obj["ClientIdChangeDate"] as DateTime?,
+                        ClientGUIDChangeDate = ConvertWmiDateTime(obj["ClientIdChangeDate"]),
                         PreviousGUID = obj["PreviousClientId"]?.ToString() ?? ""
                     };
                 }
@@ -230,7 +230,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMPrimaryUser
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         PrimaryUser = obj["ConsoleUser"]?.ToString() ?? "",
                         Sources = obj["Sources"]?.ToString() ?? ""
                     };
@@ -268,8 +268,8 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMExecStartupTime
                     {
-                        ComputerName = _computerName,
-                        StartupTime = obj["ProcessStartTime"] as DateTime? ?? DateTime.MinValue,
+                        ComputerName = ActualComputerName,
+                        StartupTime = ConvertWmiDateTime(obj["ProcessStartTime"]) ?? DateTime.MinValue,
                         ServiceStatus = obj["Status"]?.ToString() ?? ""
                     };
                 }

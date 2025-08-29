@@ -50,7 +50,7 @@ namespace PSCCMClient.Core.Services
                     using (obj)
                     {
                         var package = CCMPackage.FromManagementObject(obj);
-                        package.ComputerName = _computerName;
+                        package.ComputerName = ActualComputerName;
                         packages.Add(package);
                     }
                 }
@@ -83,7 +83,7 @@ namespace PSCCMClient.Core.Services
                     using (obj)
                     {
                         var package = CCMPackage.FromManagementObject(obj);
-                        package.ComputerName = _computerName;
+                        package.ComputerName = ActualComputerName;
                         packages.Add(package);
                     }
                 }

@@ -45,11 +45,11 @@ namespace PSCCMClient.Core.Services
                 {
                     baselines.Add(new CCMBaseline
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         BaselineName = obj["DisplayName"]?.ToString() ?? "",
                         Version = obj["Version"]?.ToString() ?? "",
                         LastComplianceStatus = GetComplianceStatus(obj["LastComplianceStatus"]),
-                        LastEvalTime = obj["LastEvalTime"] as DateTime?
+                        LastEvalTime = ConvertWmiDateTime(obj["LastEvalTime"])
                     });
                 }
             }

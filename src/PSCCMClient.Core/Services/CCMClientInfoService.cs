@@ -32,7 +32,7 @@ namespace PSCCMClient.Core.Services
         {
             var clientInfo = new CCMClientInfo
             {
-                ComputerName = _computerName
+                ComputerName = ActualComputerName
             };
 
             try

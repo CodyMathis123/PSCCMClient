@@ -37,7 +37,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMCacheInfo
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         Location = obj["Location"]?.ToString() ?? "",
                         Size = Convert.ToInt32(obj["Size"] ?? 0)
                     };
@@ -77,11 +77,11 @@ namespace PSCCMClient.Core.Services
                 {
                     content.Add(new CCMCacheContent
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         ContentId = obj["ContentId"]?.ToString() ?? "",
                         ContentVersion = obj["ContentVer"]?.ToString() ?? "",
                         Location = obj["Location"]?.ToString() ?? "",
-                        LastReferenceTime = obj["LastReferenced"] as DateTime?,
+                        LastReferenceTime = ConvertWmiDateTime(obj["LastReferenced"]),
                         ReferenceCount = Convert.ToInt32(obj["ReferenceCount"] ?? 0),
                         ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
                         ContentComplete = Convert.ToBoolean(obj["ContentComplete"] ?? false),

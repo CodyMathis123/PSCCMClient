@@ -39,18 +39,18 @@ namespace PSCCMClient.Core.Services
                 {
                     taskSequences.Add(new CCMTaskSequence
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         PackageID = obj["PackageID"]?.ToString() ?? "",
                         ProgramID = obj["ProgramID"]?.ToString() ?? "",
                         Name = obj["Name"]?.ToString() ?? "",
                         Description = obj["Description"]?.ToString() ?? "",
                         ScheduledMessageID = obj["ScheduledMessageID"]?.ToString() ?? "",
-                        Deadline = obj["Deadline"] as DateTime?,
-                        StartTime = obj["StartTime"] as DateTime?,
+                        Deadline = ConvertWmiDateTime(obj["Deadline"]),
+                        StartTime = ConvertWmiDateTime(obj["StartTime"]),
                         State = obj["State"]?.ToString() ?? "",
                         RunningState = obj["RunningState"]?.ToString() ?? "",
-                        LastRunTime = obj["LastRunTime"] as DateTime?,
-                        NextRunTime = obj["NextRunTime"] as DateTime?,
+                        LastRunTime = ConvertWmiDateTime(obj["LastRunTime"]),
+                        NextRunTime = ConvertWmiDateTime(obj["NextRunTime"]),
                         RepeatRunBehavior = obj["RepeatRunBehavior"]?.ToString() ?? "",
                         RerunBehavior = obj["RerunBehavior"]?.ToString() ?? ""
                     });
@@ -93,18 +93,18 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMTaskSequence
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         PackageID = obj["PackageID"]?.ToString() ?? "",
                         ProgramID = obj["ProgramID"]?.ToString() ?? "",
                         Name = obj["Name"]?.ToString() ?? "",
                         Description = obj["Description"]?.ToString() ?? "",
                         ScheduledMessageID = obj["ScheduledMessageID"]?.ToString() ?? "",
-                        Deadline = obj["Deadline"] as DateTime?,
-                        StartTime = obj["StartTime"] as DateTime?,
+                        Deadline = ConvertWmiDateTime(obj["Deadline"]),
+                        StartTime = ConvertWmiDateTime(obj["StartTime"]),
                         State = obj["State"]?.ToString() ?? "",
                         RunningState = obj["RunningState"]?.ToString() ?? "",
-                        LastRunTime = obj["LastRunTime"] as DateTime?,
-                        NextRunTime = obj["NextRunTime"] as DateTime?,
+                        LastRunTime = ConvertWmiDateTime(obj["LastRunTime"]),
+                        NextRunTime = ConvertWmiDateTime(obj["NextRunTime"]),
                         RepeatRunBehavior = obj["RepeatRunBehavior"]?.ToString() ?? "",
                         RerunBehavior = obj["RerunBehavior"]?.ToString() ?? ""
                     };
@@ -187,18 +187,18 @@ namespace PSCCMClient.Core.Services
                 {
                     taskSequences.Add(new CCMTaskSequence
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         PackageID = obj["PackageID"]?.ToString() ?? "",
                         ProgramID = obj["ProgramID"]?.ToString() ?? "",
                         Name = obj["Name"]?.ToString() ?? "",
                         Description = obj["Description"]?.ToString() ?? "",
                         ScheduledMessageID = obj["ScheduledMessageID"]?.ToString() ?? "",
-                        Deadline = obj["Deadline"] as DateTime?,
-                        StartTime = obj["StartTime"] as DateTime?,
+                        Deadline = ConvertWmiDateTime(obj["Deadline"]),
+                        StartTime = ConvertWmiDateTime(obj["StartTime"]),
                         State = obj["State"]?.ToString() ?? "",
                         RunningState = obj["RunningState"]?.ToString() ?? "",
-                        LastRunTime = obj["LastRunTime"] as DateTime?,
-                        NextRunTime = obj["NextRunTime"] as DateTime?,
+                        LastRunTime = ConvertWmiDateTime(obj["LastRunTime"]),
+                        NextRunTime = ConvertWmiDateTime(obj["NextRunTime"]),
                         RepeatRunBehavior = obj["RepeatRunBehavior"]?.ToString() ?? "",
                         RerunBehavior = obj["RerunBehavior"]?.ToString() ?? ""
                     });

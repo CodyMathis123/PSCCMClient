@@ -37,7 +37,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMSite
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         SiteCode = obj["ClientSite"]?.ToString() ?? ""
                     };
                 }
@@ -113,7 +113,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMManagementPoint
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         CurrentManagementPoint = obj["Name"]?.ToString() ?? "",
                         Version = obj["Version"]?.ToString() ?? "",
                         Type = Convert.ToInt32(obj["Type"] ?? 0)
@@ -191,7 +191,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMSoftwareUpdatePoint
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         CurrentSoftwareUpdatePoint = obj["WSUSLocationServer"]?.ToString() ?? "",
                         Port = Convert.ToInt32(obj["WSUSLocationServerPort"] ?? 0),
                         UseSSL = Convert.ToBoolean(obj["UseSSL"] ?? false)
@@ -230,7 +230,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMDNSSuffix
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         DNSSuffix = obj["DNSSuffix"]?.ToString() ?? ""
                     };
                 }

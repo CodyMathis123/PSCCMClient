@@ -40,12 +40,12 @@ namespace PSCCMClient.Core.Services
 
                 foreach (ManagementObject obj in results)
                 {
-                    var startTime = obj["StartTime"] as DateTime?;
-                    var endTime = obj["EndTime"] as DateTime?;
+                    var startTime = ConvertWmiDateTime(obj["StartTime"]);
+                    var endTime = ConvertWmiDateTime(obj["EndTime"]);
                     
                     windows.Add(new CCMMaintenanceWindow
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         TimeZone = timeZone,
                         StartTime = startTime?.ToUniversalTime(),
                         EndTime = endTime?.ToUniversalTime(),
@@ -90,7 +90,7 @@ namespace PSCCMClient.Core.Services
                 {
                     windows.Add(new CCMServiceWindow
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         Schedules = obj["Schedules"]?.ToString() ?? "",
                         ServiceWindowID = obj["ServiceWindowID"]?.ToString() ?? "",
                         ServiceWindowType = GetServiceWindowType(obj["ServiceWindowType"])
@@ -134,7 +134,7 @@ namespace PSCCMClient.Core.Services
                     {
                         return new CCMCurrentWindowAvailableTime
                         {
-                            ComputerName = _computerName,
+                            ComputerName = ActualComputerName,
                             AvailableTime = Convert.ToInt32(outParams["AvailableTime"] ?? 0),
                             WindowType = Convert.ToInt32(outParams["WindowType"] ?? 0),
                             ReturnValue = Convert.ToInt32(outParams["ReturnValue"] ?? 0)

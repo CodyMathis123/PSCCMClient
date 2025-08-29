@@ -21,6 +21,11 @@ namespace PSCCMClient.Core.Services.Infrastructure
         protected bool IsLocalComputer => WMIHelper.IsLocalComputer(_computerName);
 
         /// <summary>
+        /// Gets the actual computer name (converts "." to actual machine name)
+        /// </summary>
+        protected string ActualComputerName => _computerName == "." ? Environment.MachineName : _computerName;
+
+        /// <summary>
         /// Gets the appropriate WMI namespace path for local or remote operations
         /// </summary>
         /// <param name="baseNamespace">Base namespace (e.g., "root\\CCM")</param>

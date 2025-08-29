@@ -51,7 +51,7 @@ namespace PSCCMClient.Core.Services
                     {
                         applications.Add(new CCMApplication
                         {
-                            ComputerName = _computerName,
+                            ComputerName = ActualComputerName,
                             Name = obj["Name"]?.ToString() ?? "",
                             FullName = obj["FullName"]?.ToString() ?? "",
                             SoftwareVersion = obj["SoftwareVersion"]?.ToString() ?? "",
@@ -66,11 +66,11 @@ namespace PSCCMClient.Core.Services
                             InstallState = obj["InstallState"]?.ToString() ?? "",
                             ApplicabilityState = obj["ApplicabilityState"]?.ToString() ?? "",
                             ConfigureState = obj["ConfigureState"]?.ToString() ?? "",
-                            LastEvalTime = obj["LastEvalTime"] as DateTime?,
-                            LastInstallTime = obj["LastInstallTime"] as DateTime?,
-                            StartTime = obj["StartTime"] as DateTime?,
-                            Deadline = obj["Deadline"] as DateTime?,
-                            NextUserScheduledTime = obj["NextUserScheduledTime"] as DateTime?,
+                            LastEvalTime = ConvertWmiDateTime(obj["LastEvalTime"]),
+                            LastInstallTime = ConvertWmiDateTime(obj["LastInstallTime"]),
+                            StartTime = ConvertWmiDateTime(obj["StartTime"]),
+                            Deadline = ConvertWmiDateTime(obj["Deadline"]),
+                            NextUserScheduledTime = ConvertWmiDateTime(obj["NextUserScheduledTime"]),
                             IsMachineTarget = Convert.ToBoolean(obj["IsMachineTarget"] ?? false),
                             IsPreflightOnly = Convert.ToBoolean(obj["IsPreflightOnly"] ?? false),
                             NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
@@ -87,7 +87,7 @@ namespace PSCCMClient.Core.Services
                             InformativeUrl = obj["InformativeUrl"]?.ToString() ?? "",
                             InProgressActions = obj["InProgressActions"]?.ToString() ?? "",
                             PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
-                            ReleaseDate = obj["ReleaseDate"] as DateTime?,
+                            ReleaseDate = ConvertWmiDateTime(obj["ReleaseDate"]),
                             SupersessionState = obj["SupersessionState"]?.ToString() ?? "",
                             Type = obj["Type"]?.ToString() ?? ""
                         });
@@ -123,7 +123,7 @@ namespace PSCCMClient.Core.Services
                     {
                         applications.Add(new CCMApplication
                         {
-                            ComputerName = _computerName,
+                            ComputerName = ActualComputerName,
                             Name = obj["Name"]?.ToString() ?? "",
                             FullName = obj["FullName"]?.ToString() ?? "",
                             SoftwareVersion = obj["SoftwareVersion"]?.ToString() ?? "",
@@ -138,11 +138,11 @@ namespace PSCCMClient.Core.Services
                             InstallState = obj["InstallState"]?.ToString() ?? "",
                             ApplicabilityState = obj["ApplicabilityState"]?.ToString() ?? "",
                             ConfigureState = obj["ConfigureState"]?.ToString() ?? "",
-                            LastEvalTime = obj["LastEvalTime"] as DateTime?,
-                            LastInstallTime = obj["LastInstallTime"] as DateTime?,
-                            StartTime = obj["StartTime"] as DateTime?,
-                            Deadline = obj["Deadline"] as DateTime?,
-                            NextUserScheduledTime = obj["NextUserScheduledTime"] as DateTime?,
+                            LastEvalTime = ConvertWmiDateTime(obj["LastEvalTime"]),
+                            LastInstallTime = ConvertWmiDateTime(obj["LastInstallTime"]),
+                            StartTime = ConvertWmiDateTime(obj["StartTime"]),
+                            Deadline = ConvertWmiDateTime(obj["Deadline"]),
+                            NextUserScheduledTime = ConvertWmiDateTime(obj["NextUserScheduledTime"]),
                             IsMachineTarget = Convert.ToBoolean(obj["IsMachineTarget"] ?? false),
                             IsPreflightOnly = Convert.ToBoolean(obj["IsPreflightOnly"] ?? false),
                             NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
@@ -159,7 +159,7 @@ namespace PSCCMClient.Core.Services
                             InformativeUrl = obj["InformativeUrl"]?.ToString() ?? "",
                             InProgressActions = obj["InProgressActions"]?.ToString() ?? "",
                             PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
-                            ReleaseDate = obj["ReleaseDate"] as DateTime?,
+                            ReleaseDate = ConvertWmiDateTime(obj["ReleaseDate"]),
                             SupersessionState = obj["SupersessionState"]?.ToString() ?? "",
                             Type = obj["Type"]?.ToString() ?? ""
                         });

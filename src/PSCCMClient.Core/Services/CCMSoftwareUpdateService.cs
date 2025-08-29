@@ -45,12 +45,12 @@ namespace PSCCMClient.Core.Services
                 {
                     updates.Add(new CCMSoftwareUpdate
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         ArticleID = obj["ArticleID"]?.ToString() ?? "",
                         BulletinID = obj["BulletinID"]?.ToString() ?? "",
                         ComplianceState = GetComplianceState(obj["ComplianceState"]),
                         ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
-                        Deadline = obj["Deadline"] as DateTime?,
+                        Deadline = ConvertWmiDateTime(obj["Deadline"]),
                         Description = obj["Description"]?.ToString() ?? "",
                         ErrorCode = Convert.ToInt32(obj["ErrorCode"] ?? 0),
                         EvaluationState = GetEvaluationState(obj["EvaluationState"]),
@@ -59,14 +59,14 @@ namespace PSCCMClient.Core.Services
                         IsUpgrade = Convert.ToBoolean(obj["IsUpgrade"] ?? false),
                         MaxExecutionTime = Convert.ToInt32(obj["MaxExecutionTime"] ?? 0),
                         Name = obj["Name"]?.ToString() ?? "",
-                        NextUserScheduledTime = obj["NextUserScheduledTime"] as DateTime?,
+                        NextUserScheduledTime = ConvertWmiDateTime(obj["NextUserScheduledTime"]),
                         NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
                         OverrideServiceWindows = Convert.ToBoolean(obj["OverrideServiceWindows"] ?? false),
                         PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
                         Publisher = obj["Publisher"]?.ToString() ?? "",
                         RebootOutsideServiceWindows = Convert.ToBoolean(obj["RebootOutsideServiceWindows"] ?? false),
-                        RestartDeadline = obj["RestartDeadline"] as DateTime?,
-                        StartTime = obj["StartTime"] as DateTime?,
+                        RestartDeadline = ConvertWmiDateTime(obj["RestartDeadline"]),
+                        StartTime = ConvertWmiDateTime(obj["StartTime"]),
                         UpdateID = obj["UpdateID"]?.ToString() ?? "",
                         URL = obj["URL"]?.ToString() ?? "",
                         UserUIExperience = Convert.ToBoolean(obj["UserUIExperience"] ?? false)
@@ -107,7 +107,7 @@ namespace PSCCMClient.Core.Services
                 {
                     groups.Add(new CCMSoftwareUpdateGroup
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         GroupName = obj["Name"]?.ToString() ?? "",
                         Description = obj["Description"]?.ToString() ?? "",
                         UpdateCount = Convert.ToInt32(obj["UpdateCount"] ?? 0)
@@ -146,7 +146,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMSoftwareUpdateSettings
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         ComponentName = obj["ComponentName"]?.ToString() ?? "",
                         Enabled = Convert.ToBoolean(obj["Enabled"] ?? false),
                         WUfBEnabled = Convert.ToBoolean(obj["WUfBEnabled"] ?? false),

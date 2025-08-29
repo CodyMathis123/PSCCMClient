@@ -37,7 +37,7 @@ namespace PSCCMClient.Core.Services
                 {
                     return new CCMLoggingConfiguration
                     {
-                        ComputerName = _computerName,
+                        ComputerName = ActualComputerName,
                         LogDirectory = obj["LogDirectory"]?.ToString() ?? "",
                         LogMaxSize = Convert.ToInt32(obj["LogMaxSize"] ?? 0),
                         LogMaxHistory = Convert.ToInt32(obj["LogMaxHistory"] ?? 0),
