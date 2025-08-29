@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Management;
+using System.Security;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
 using PSCCMClient.Core.Interfaces;
@@ -13,6 +14,18 @@ namespace PSCCMClient.Core.Services
     public class CCMSiteService : CCMServiceBase, ICCMSiteService
     {
         public CCMSiteService(string computerName) : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMSiteService with credential support
+        /// </summary>
+        /// <param name="computerName">Target computer name</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMSiteService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 
@@ -72,24 +85,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
-                
-                if (obj != null)
-                {
-                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "SetClientSite");
-                    inParams["sSiteCode"] = siteCode;
-                    
-                    var outParams = InvokeWMIInstanceMethod(obj, "SetClientSite", inParams);
-                    return WMIHelper.IsMethodCallSuccessful(outParams);
-                }
+                // Use COM method like PowerShell module does: (New-Object -ComObject Microsoft.SMS.Client).SetAssignedSite
+                return InvokeCOMMethodBool(COMHelper.ProgIds.SMSClient, "SetAssignedSite", siteCode, 0);
             }
             catch (Exception ex)
             {
                 throw CreateException($"set site code '{siteCode}'", ex);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -150,24 +152,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
-                
-                if (obj != null)
-                {
-                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "SetCurrentManagementPoint");
-                    inParams["sMP"] = managementPoint;
-                    
-                    var outParams = InvokeWMIInstanceMethod(obj, "SetCurrentManagementPoint", inParams);
-                    return WMIHelper.IsMethodCallSuccessful(outParams);
-                }
+                // Use COM method like PowerShell module does: (New-Object -ComObject Microsoft.SMS.Client).SetCurrentManagementPoint
+                return InvokeCOMMethodBool(COMHelper.ProgIds.SMSClient, "SetCurrentManagementPoint", managementPoint, 1);
             }
             catch (Exception ex)
             {
                 throw CreateException($"set management point '{managementPoint}'", ex);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -226,24 +217,19 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
+                // Use COM method like PowerShell module does: (New-Object -ComObject Microsoft.SMS.Client).GetDNSSuffix()
+                var dnsSuffix = InvokeCOMMethodString(COMHelper.ProgIds.SMSClient, "GetDNSSuffix");
                 
-                if (obj != null)
+                return new CCMDNSSuffix
                 {
-                    return new CCMDNSSuffix
-                    {
-                        ComputerName = ActualComputerName,
-                        DNSSuffix = obj["DNSSuffix"]?.ToString() ?? ""
-                    };
-                }
+                    ComputerName = ActualComputerName,
+                    DNSSuffix = dnsSuffix
+                };
             }
             catch (Exception ex)
             {
                 throw CreateException("retrieve DNS suffix", ex);
             }
-
-            return null;
         }
 
         /// <summary>
@@ -300,22 +286,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_ClientUtilities");
-                
-                if (obj != null)
-                {
-                    var inParams = WMIHelper.GetInstanceMethodParameters(obj, "DetermineIfClientIsOnInternet");
-                    var outParams = InvokeWMIInstanceMethod(obj, "DetermineIfClientIsOnInternet", inParams);
-                    return Convert.ToBoolean(outParams?["ClientIsOnInternet"] ?? false);
-                }
+                // Use COM method like PowerShell module does: (New-Object -ComObject Microsoft.SMS.Client).IsClientOnInternet()
+                return InvokeCOMMethodBool(COMHelper.ProgIds.SMSClient, "IsClientOnInternet");
             }
             catch (Exception ex)
             {
                 throw CreateException("test if client is on internet", ex);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -335,20 +312,13 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                var obj = QueryFirstWMIObject(namespacePath, "SELECT * FROM CCM_Client");
-                
-                if (obj != null)
-                {
-                    return Convert.ToBoolean(obj["AlwaysInternet"] ?? false);
-                }
+                // Use COM method like PowerShell module does: (New-Object -ComObject Microsoft.SMS.Client).IsClientAlwaysOnInternet()
+                return InvokeCOMMethodBool(COMHelper.ProgIds.SMSClient, "IsClientAlwaysOnInternet");
             }
             catch (Exception ex)
             {
                 throw CreateException("test if client is always on internet", ex);
             }
-
-            return false;
         }
 
         /// <summary>

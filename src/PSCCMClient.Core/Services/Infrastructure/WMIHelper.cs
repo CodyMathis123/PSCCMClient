@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.Management;
+using System.Security;
 
 namespace PSCCMClient.Core.Services.Infrastructure
 {
@@ -9,6 +10,67 @@ namespace PSCCMClient.Core.Services.Infrastructure
     /// </summary>
     public static class WMIHelper
     {
+        /// <summary>
+        /// Creates connection options for WMI operations with optional credentials
+        /// </summary>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
+        /// <returns>ConnectionOptions object</returns>
+        public static ConnectionOptions CreateConnectionOptions(string? username = null, SecureString? password = null, string? domain = null)
+        {
+            var options = new ConnectionOptions();
+            
+            if (!string.IsNullOrEmpty(username))
+            {
+                options.Username = username;
+                
+                if (password != null)
+                {
+                    var ptr = System.Runtime.InteropServices.Marshal.SecureStringToBSTR(password);
+                    try
+                    {
+                        options.SecurePassword = password;
+                    }
+                    finally
+                    {
+                        System.Runtime.InteropServices.Marshal.ZeroFreeBSTR(ptr);
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(domain))
+                {
+                    options.Authority = $"ntlmdomain:{domain}";
+                }
+                
+                options.EnablePrivileges = true;
+                options.Authentication = AuthenticationLevel.PacketPrivacy;
+                options.Impersonation = ImpersonationLevel.Impersonate;
+            }
+            
+            return options;
+        }
+
+        /// <summary>
+        /// Creates a ManagementScope for WMI operations with optional credentials
+        /// </summary>
+        /// <param name="namespacePath">WMI namespace path</param>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
+        /// <returns>ManagementScope object</returns>
+        public static ManagementScope CreateManagementScope(string namespacePath, string? username = null, SecureString? password = null, string? domain = null)
+        {
+            var scope = new ManagementScope(namespacePath);
+            
+            if (!string.IsNullOrEmpty(username))
+            {
+                scope.Options = CreateConnectionOptions(username, password, domain);
+            }
+            
+            scope.Connect();
+            return scope;
+        }
         /// <summary>
         /// Determines if the specified computer name refers to the local machine
         /// </summary>
@@ -68,12 +130,16 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// </summary>
         /// <param name="namespacePath">WMI namespace path</param>
         /// <param name="query">WMI query</param>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
         /// <returns>First ManagementObject or null</returns>
-        public static ManagementObject? QueryFirstObject(string namespacePath, string query)
+        public static ManagementObject? QueryFirstObject(string namespacePath, string query, string? username = null, SecureString? password = null, string? domain = null)
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(namespacePath, query);
+                var scope = CreateManagementScope(namespacePath, username, password, domain);
+                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
                 using var results = searcher.Get();
 
                 foreach (ManagementObject obj in results)
@@ -94,10 +160,14 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// </summary>
         /// <param name="namespacePath">WMI namespace path</param>
         /// <param name="query">WMI query</param>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
         /// <returns>Collection of ManagementObjects</returns>
-        public static ManagementObjectCollection QueryObjects(string namespacePath, string query)
+        public static ManagementObjectCollection QueryObjects(string namespacePath, string query, string? username = null, SecureString? password = null, string? domain = null)
         {
-            using var searcher = new ManagementObjectSearcher(namespacePath, query);
+            var scope = CreateManagementScope(namespacePath, username, password, domain);
+            using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
             return searcher.Get();
         }
 
@@ -108,10 +178,14 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <param name="className">WMI class name</param>
         /// <param name="methodName">Method name</param>
         /// <param name="parameters">Method parameters (optional)</param>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
         /// <returns>Method output parameters</returns>
-        public static ManagementBaseObject? InvokeClassMethod(string namespacePath, string className, string methodName, ManagementBaseObject? parameters = null)
+        public static ManagementBaseObject? InvokeClassMethod(string namespacePath, string className, string methodName, ManagementBaseObject? parameters = null, string? username = null, SecureString? password = null, string? domain = null)
         {
-            using var mgmtClass = new ManagementClass(namespacePath, className, null);
+            var scope = CreateManagementScope(namespacePath, username, password, domain);
+            using var mgmtClass = new ManagementClass(scope, new ManagementPath(className), null);
             return mgmtClass.InvokeMethod(methodName, parameters, null);
         }
 
@@ -133,10 +207,14 @@ namespace PSCCMClient.Core.Services.Infrastructure
         /// <param name="namespacePath">WMI namespace path</param>
         /// <param name="className">WMI class name</param>
         /// <param name="methodName">Method name</param>
+        /// <param name="username">Optional username for authentication</param>
+        /// <param name="password">Optional password for authentication</param>
+        /// <param name="domain">Optional domain for authentication</param>
         /// <returns>Method parameters object</returns>
-        public static ManagementBaseObject GetClassMethodParameters(string namespacePath, string className, string methodName)
+        public static ManagementBaseObject GetClassMethodParameters(string namespacePath, string className, string methodName, string? username = null, SecureString? password = null, string? domain = null)
         {
-            using var mgmtClass = new ManagementClass(namespacePath, className, null);
+            var scope = CreateManagementScope(namespacePath, username, password, domain);
+            using var mgmtClass = new ManagementClass(scope, new ManagementPath(className), null);
             return mgmtClass.GetMethodParameters(methodName);
         }
 
