@@ -1,5 +1,6 @@
 using PSCCMClient.Core;
 using PSCCMClient.Core.Services;
+using PSCCMClient.Core.Interfaces;
 
 Console.WriteLine("PSCCMClient C# Library - Comprehensive Feature Demo");
 Console.WriteLine("===================================================");
@@ -123,7 +124,7 @@ try
         
         Console.WriteLine("\n=== AVAILABLE CLIENT ACTIONS ===");
         Console.WriteLine("The library supports triggering the following client actions:");
-        foreach (var action in Enum.GetValues<CCMClientActionService.ClientAction>())
+        foreach (var action in Enum.GetValues<ClientAction>())
         {
             Console.WriteLine($"  - {action}");
         }
