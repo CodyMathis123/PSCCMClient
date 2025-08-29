@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System;
+using System.Security;
 using System.Collections.Generic;
 using System.Management;
 using PSCCMClient.Core.Models;
@@ -14,6 +15,18 @@ namespace PSCCMClient.Core.Services
     public class CCMSoftwareUpdateService : CCMServiceBase, ICCMSoftwareUpdateService
     {
         public CCMSoftwareUpdateService(string computerName) : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMSoftwareUpdateService with credential support
+        /// </summary>
+        /// <param name="computerName">Computer name to connect to</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMSoftwareUpdateService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 

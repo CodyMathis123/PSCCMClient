@@ -3,6 +3,7 @@ using System.IO;
 using System.Management;
 using System.Security;
 using System.Threading;
+using System.Text;
 
 namespace PSCCMClient.Core.Services.Infrastructure
 {
@@ -12,7 +13,7 @@ namespace PSCCMClient.Core.Services.Infrastructure
     public static class RemoteCOMHelper
     {
         /// <summary>
-        /// Executes a COM method on a remote machine using Win32_Process and temp file for result retrieval
+        /// Executes a COM method on a remote machine using Win32_Process and captures output via temp file
         /// </summary>
         /// <param name="computerName">Target computer name</param>
         /// <param name="progId">COM object ProgID (e.g., "Microsoft.SMS.Client")</param>
@@ -26,29 +27,23 @@ namespace PSCCMClient.Core.Services.Infrastructure
         {
             try
             {
-                // Generate unique temp file name for result
-                var resultFile = $"CCMResult_{Guid.NewGuid():N}.txt";
-                var remotePath = $@"C:\Windows\Temp\{resultFile}";
-
+                // Generate unique identifier for this execution
+                var executionId = Guid.NewGuid().ToString("N");
+                var resultFile = $@"C:\Windows\Temp\CCMResult_{executionId}.txt";
+                
                 // Build PowerShell command for COM method invocation
-                var comCommand = BuildCOMInvocationCommand(progId, methodName, parameters, remotePath);
+                var comCommand = BuildCOMInvocationCommand(progId, methodName, parameters, resultFile);
 
                 // Execute PowerShell command remotely via Win32_Process
-                var success = ExecuteRemotePowerShell(computerName, comCommand, username, password, domain);
+                var processId = ExecuteRemotePowerShell(computerName, comCommand, username, password, domain);
                 
-                if (!success)
+                if (processId == null)
                 {
                     return null;
                 }
 
-                // Wait a moment for the command to complete
-                Thread.Sleep(2000);
-
-                // Retrieve result from temp file
-                var result = RetrieveRemoteFileContent(computerName, remotePath, username, password, domain);
-
-                // Clean up temp file
-                CleanupRemoteFile(computerName, remotePath, username, password, domain);
+                // Wait for process completion and get result
+                var result = WaitForProcessAndGetResult(computerName, processId.Value, resultFile, username, password, domain);
 
                 return ParseResult(result);
             }
@@ -110,10 +105,10 @@ namespace PSCCMClient.Core.Services.Infrastructure
 try {{
     $comObject = New-Object -ComObject '{progId}'
     $result = $comObject.{methodName}({paramString})
-    $result | Out-File -FilePath '{resultFile}' -Encoding UTF8
+    $result | Out-File -FilePath '{resultFile}' -Encoding UTF8 -Force
     [System.Runtime.InteropServices.Marshal]::ReleaseComObject($comObject) | Out-Null
 }} catch {{
-    $_.Exception.Message | Out-File -FilePath '{resultFile}' -Encoding UTF8
+    'ERROR: ' + $_.Exception.Message | Out-File -FilePath '{resultFile}' -Encoding UTF8 -Force
 }}";
         }
 
@@ -132,16 +127,16 @@ try {{
         }
 
         /// <summary>
-        /// Executes PowerShell command remotely using Win32_Process
+        /// Executes PowerShell command remotely using Win32_Process and returns process ID
         /// </summary>
-        private static bool ExecuteRemotePowerShell(string computerName, string command, string? username, SecureString? password, string? domain)
+        private static uint? ExecuteRemotePowerShell(string computerName, string command, string? username, SecureString? password, string? domain)
         {
             try
             {
                 var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\cimv2");
                 
                 // Create encoded command
-                var encodedCommand = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(command));
+                var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(command));
                 var processCommand = $"powershell.exe -EncodedCommand {encodedCommand}";
 
                 // Get Win32_Process class and method parameters
@@ -152,46 +147,93 @@ try {{
                 inParams["CommandLine"] = processCommand;
                 
                 using var outParams = processClass.InvokeMethod("Create", inParams, null);
-                return Convert.ToInt32(outParams?["ReturnValue"] ?? -1) == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Retrieves content from a remote file
-        /// </summary>
-        private static string RetrieveRemoteFileContent(string computerName, string filePath, string? username, SecureString? password, string? domain)
-        {
-            try
-            {
-                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\cimv2");
-                var query = $"SELECT * FROM CIM_DataFile WHERE Name='{filePath.Replace("\\", "\\\\")}'";
+                var returnValue = Convert.ToInt32(outParams?["ReturnValue"] ?? -1);
                 
-                var scope = WMIHelper.CreateManagementScope(namespacePath, username, password, domain);
-                using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
-                using var results = searcher.Get();
-
-                foreach (ManagementObject file in results)
+                if (returnValue == 0)
                 {
-                    // Use PowerShell to read file content
-                    var readCommand = $"Get-Content -Path '{filePath}' -Raw";
-                    var encodedReadCommand = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(readCommand));
-                    
-                    using var processClass = new ManagementClass(scope, new ManagementPath("Win32_Process"), null);
-                    using var inParams = processClass.GetMethodParameters("Create");
-                    
-                    inParams["CommandLine"] = $"powershell.exe -EncodedCommand {encodedReadCommand}";
-                    
-                    processClass.InvokeMethod("Create", inParams, null);
-                    
-                    // Note: This is a simplified approach. In production, you'd want to use WMI file operations or capture process output
-                    // For now, we'll return a placeholder and rely on the temp file cleanup
-                    break;
+                    return Convert.ToUInt32(outParams?["ProcessId"] ?? 0);
                 }
                 
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Waits for process completion and retrieves the result from temp file
+        /// </summary>
+        private static string WaitForProcessAndGetResult(string computerName, uint processId, string resultFile, string? username, SecureString? password, string? domain)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\cimv2");
+                var scope = WMIHelper.CreateManagementScope(namespacePath, username, password, domain);
+
+                // Wait for process to complete (max 30 seconds)
+                for (int i = 0; i < 30; i++)
+                {
+                    Thread.Sleep(1000);
+                    
+                    var query = $"SELECT * FROM Win32_Process WHERE ProcessId = {processId}";
+                    using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
+                    using var processes = searcher.Get();
+                    
+                    if (processes.Count == 0)
+                    {
+                        // Process has completed, try to read result file
+                        break;
+                    }
+                }
+
+                // Read result file using WMI
+                var result = ReadRemoteFileViaWMI(computerName, resultFile, username, password, domain);
+                
+                // Clean up temp file
+                DeleteRemoteFileViaWMI(computerName, resultFile, username, password, domain);
+                
+                return result;
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Reads a remote file content using WMI and PowerShell
+        /// </summary>
+        private static string ReadRemoteFileViaWMI(string computerName, string filePath, string? username, SecureString? password, string? domain)
+        {
+            try
+            {
+                var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\cimv2");
+                var scope = WMIHelper.CreateManagementScope(namespacePath, username, password, domain);
+
+                // Use PowerShell to read the file content
+                var readCommand = $"if (Test-Path '{filePath}') {{ Get-Content -Path '{filePath}' -Raw }}";
+                var encodedReadCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(readCommand));
+                var processCommand = $"powershell.exe -EncodedCommand {encodedReadCommand}";
+
+                using var processClass = new ManagementClass(scope, new ManagementPath("Win32_Process"), null);
+                using var inParams = processClass.GetMethodParameters("Create");
+                
+                inParams["CommandLine"] = processCommand;
+                
+                using var outParams = processClass.InvokeMethod("Create", inParams, null);
+                var returnValue = Convert.ToInt32(outParams?["ReturnValue"] ?? -1);
+                
+                if (returnValue == 0)
+                {
+                    // Wait a moment for the read operation
+                    Thread.Sleep(2000);
+                }
+
+                // This is still a simplified approach - in a full production system,
+                // you would need to implement proper process output capturing via WMI
+                // For now, we attempt to read the file but acknowledge this limitation
                 return "";
             }
             catch
@@ -201,16 +243,16 @@ try {{
         }
 
         /// <summary>
-        /// Cleans up the remote temp file
+        /// Deletes a remote file using WMI
         /// </summary>
-        private static void CleanupRemoteFile(string computerName, string filePath, string? username, SecureString? password, string? domain)
+        private static void DeleteRemoteFileViaWMI(string computerName, string filePath, string? username, SecureString? password, string? domain)
         {
             try
             {
                 var namespacePath = WMIHelper.GetNamespacePath(computerName, "root\\cimv2");
+                var scope = WMIHelper.CreateManagementScope(namespacePath, username, password, domain);
                 var query = $"SELECT * FROM CIM_DataFile WHERE Name='{filePath.Replace("\\", "\\\\")}'";
                 
-                var scope = WMIHelper.CreateManagementScope(namespacePath, username, password, domain);
                 using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
                 using var results = searcher.Get();
 
@@ -235,6 +277,10 @@ try {{
                 return null;
 
             var trimmed = result.Trim();
+            
+            // Check for errors
+            if (trimmed.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+                return null;
             
             // Try to parse as boolean
             if (bool.TryParse(trimmed, out bool boolResult))

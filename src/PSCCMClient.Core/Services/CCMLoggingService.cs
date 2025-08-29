@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -15,6 +16,18 @@ namespace PSCCMClient.Core.Services
     public class CCMLoggingService : CCMServiceBase, ICCMLoggingService
     {
         public CCMLoggingService(string computerName) : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMLoggingService with credential support
+        /// </summary>
+        /// <param name="computerName">Computer name to connect to</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMLoggingService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 

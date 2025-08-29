@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Management;
@@ -14,6 +15,18 @@ namespace PSCCMClient.Core.Services
     public class CCMMaintenanceWindowService : CCMServiceBase, ICCMMaintenanceWindowService
     {
         public CCMMaintenanceWindowService(string computerName) : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMMaintenanceWindowService with credential support
+        /// </summary>
+        /// <param name="computerName">Computer name to connect to</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMMaintenanceWindowService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Management;
@@ -14,6 +15,18 @@ namespace PSCCMClient.Core.Services
     public class CCMPackageService : CCMServiceBase, ICCMPackageService
     {
         public CCMPackageService(string computerName = ".") : base(computerName)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new CCMPackageService with credential support
+        /// </summary>
+        /// <param name="computerName">Computer name to connect to</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMPackageService(string computerName, string username, SecureString password, string? domain = null) 
+            : base(computerName, username, password, domain)
         {
         }
 

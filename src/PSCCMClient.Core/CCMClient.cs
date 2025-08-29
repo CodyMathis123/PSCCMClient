@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Security;
 using PSCCMClient.Core.Services;
 using PSCCMClient.Core.Interfaces;
 
@@ -104,6 +105,30 @@ namespace PSCCMClient.Core
             Site = new CCMSiteService(_computerName);
             Logging = new CCMLoggingService(_computerName);
             Registry = new CCMRegistryService(_computerName);
+        }
+
+        /// <summary>
+        /// Initializes a new CCMClient for the specified computer with credential support
+        /// </summary>
+        /// <param name="computerName">The name of the computer to connect to</param>
+        /// <param name="username">Username for authentication</param>
+        /// <param name="password">Password for authentication</param>
+        /// <param name="domain">Domain for authentication (optional)</param>
+        public CCMClient(string computerName, string username, SecureString password, string? domain = null)
+        {
+            _computerName = computerName ?? ".";
+            Applications = new CCMApplicationService(_computerName, username, password, domain);
+            Packages = new CCMPackageService(_computerName, username, password, domain);
+            Baselines = new CCMBaselineService(_computerName, username, password, domain);
+            Cache = new CCMCacheService(_computerName, username, password, domain);
+            ClientInfo = new CCMClientInfoService(_computerName, username, password, domain);
+            SoftwareUpdates = new CCMSoftwareUpdateService(_computerName, username, password, domain);
+            ClientActions = new CCMClientActionService(_computerName, username, password, domain);
+            TaskSequences = new CCMTaskSequenceService(_computerName, username, password, domain);
+            MaintenanceWindows = new CCMMaintenanceWindowService(_computerName, username, password, domain);
+            Site = new CCMSiteService(_computerName, username, password, domain);
+            Logging = new CCMLoggingService(_computerName, username, password, domain);
+            Registry = new CCMRegistryService(_computerName, username, password, domain);
         }
 
         /// <summary>
