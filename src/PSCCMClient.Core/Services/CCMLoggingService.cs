@@ -35,15 +35,29 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
+                var namespacePath = GetNamespacePath("root\\ccm\\policy\\machine\\actualconfig");
                 using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Logging_GlobalConfiguration");
 
                 foreach (ManagementObject obj in results)
                 {
+                    // Get LogDirectory from registry like PowerShell does
+                    var logDirectory = "";
+                    try
+                    {
+                        var registryResult = RegistryHelper.GetStringValue(_computerName, "HKEY_LOCAL_MACHINE", 
+                            "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global", "LogDirectory");
+                        logDirectory = registryResult ?? "";
+                    }
+                    catch
+                    {
+                        // If registry read fails, fallback to empty string
+                        logDirectory = "";
+                    }
+
                     return new CCMLoggingConfiguration
                     {
                         ComputerName = ActualComputerName,
-                        LogDirectory = obj["LogDirectory"]?.ToString() ?? "",
+                        LogDirectory = logDirectory,
                         LogMaxSize = Convert.ToInt32(obj["LogMaxSize"] ?? 0),
                         LogMaxHistory = Convert.ToInt32(obj["LogMaxHistory"] ?? 0),
                         LogLevel = Convert.ToInt32(obj["LogLevel"] ?? 0),
@@ -82,28 +96,36 @@ namespace PSCCMClient.Core.Services
         {
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM");
-                using var results = QueryWMIObjects(namespacePath, "SELECT * FROM CCM_Logging_GlobalConfiguration");
+                bool anyChanges = false;
 
-                foreach (ManagementObject obj in results)
+                // Use registry operations like PowerShell does
+                if (logLevel.HasValue)
                 {
-                    if (logLevel.HasValue)
-                        obj["LogLevel"] = logLevel.Value;
-                    if (logMaxSize.HasValue)
-                        obj["LogMaxSize"] = logMaxSize.Value;
-                    if (logMaxHistory.HasValue)
-                        obj["LogMaxHistory"] = logMaxHistory.Value;
-
-                    obj.Put();
-                    return true;
+                    RegistryHelper.SetDWORDValue(_computerName, "HKEY_LOCAL_MACHINE", 
+                        "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global", "LogLevel", (uint)logLevel.Value);
+                    anyChanges = true;
                 }
+
+                if (logMaxSize.HasValue)
+                {
+                    RegistryHelper.SetDWORDValue(_computerName, "HKEY_LOCAL_MACHINE", 
+                        "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global", "LogMaxSize", (uint)logMaxSize.Value);
+                    anyChanges = true;
+                }
+
+                if (logMaxHistory.HasValue)
+                {
+                    RegistryHelper.SetDWORDValue(_computerName, "HKEY_LOCAL_MACHINE", 
+                        "SOFTWARE\\Microsoft\\CCM\\Logging\\@Global", "LogMaxHistory", (uint)logMaxHistory.Value);
+                    anyChanges = true;
+                }
+
+                return anyChanges;
             }
             catch (Exception ex)
             {
                 throw CreateException("set logging configuration", ex);
             }
-
-            return false;
         }
 
         /// <summary>
