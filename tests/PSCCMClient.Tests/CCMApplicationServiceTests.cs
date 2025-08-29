@@ -65,15 +65,18 @@ namespace PSCCMClient.Tests
             // Applications might be empty but shouldn't throw
         }
 
-        [Theory]
-        [InlineData("TestApp")]
-        public async Task GetApplicationsByNameAsync_WithValidInput_ReturnsApplications(string appName)
+        [Fact]
+        public async Task GetApplicationsByNameAsync_WithValidInput_ReturnsApplications()
         {
             // Arrange
             var service = new CCMApplicationService(".");
 
             // Act
-            var result = await service.GetApplicationsByNameAsync(appName);
+            // Get all applications so we can get one by name
+            var allApps = await service.GetApplicationsAsync();
+            allApps.Should().NotBeNull();
+
+            var result = await service.GetApplicationsByNameAsync(allApps.First().Name);
 
             // Assert
             result.Should().NotBeNull();

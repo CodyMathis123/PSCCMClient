@@ -113,60 +113,22 @@ namespace PSCCMClient.Core.Services
         /// <returns>A collection of CCMApplication objects matching the name</returns>
         public IEnumerable<CCMApplication> GetApplicationsByName(string applicationName)
         {
+            if (string.IsNullOrWhiteSpace(applicationName))
+            {
+                throw new ArgumentException("Application name cannot be null or empty.", nameof(applicationName));
+            }
+
             var applications = new List<CCMApplication>();
 
             try
             {
-                var namespacePath = GetNamespacePath("root\\CCM\\ClientSDK");
-                var query = $"SELECT * FROM CCM_Application WHERE Name LIKE '%{applicationName}%'";
-                using var collection = QueryWMIObjects(namespacePath, query);
-
-                foreach (ManagementObject obj in collection)
+                // It is not possible to filter on the CCM_Application class directly, so we retrieve all and filter in code with regex support
+                var allApplications = GetApplications();
+                foreach (var app in allApplications)
                 {
-                    using (obj)
+                    if (System.Text.RegularExpressions.Regex.IsMatch(app.Name, applicationName, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                     {
-                        applications.Add(new CCMApplication
-                        {
-                            ComputerName = ActualComputerName,
-                            Name = obj["Name"]?.ToString() ?? "",
-                            FullName = obj["FullName"]?.ToString() ?? "",
-                            SoftwareVersion = obj["SoftwareVersion"]?.ToString() ?? "",
-                            Publisher = obj["Publisher"]?.ToString() ?? "",
-                            Description = obj["Description"]?.ToString() ?? "",
-                            Id = obj["Id"]?.ToString() ?? "",
-                            Revision = obj["Revision"]?.ToString() ?? "",
-                            EvaluationState = obj["EvaluationState"]?.ToString() ?? "",
-                            ErrorCode = obj["ErrorCode"]?.ToString() ?? "",
-                            AllowedActions = obj["AllowedActions"]?.ToString() ?? "",
-                            ResolvedState = obj["ResolvedState"]?.ToString() ?? "",
-                            InstallState = obj["InstallState"]?.ToString() ?? "",
-                            ApplicabilityState = obj["ApplicabilityState"]?.ToString() ?? "",
-                            ConfigureState = obj["ConfigureState"]?.ToString() ?? "",
-                            LastEvalTime = ConvertWmiDateTime(obj["LastEvalTime"]),
-                            LastInstallTime = ConvertWmiDateTime(obj["LastInstallTime"]),
-                            StartTime = ConvertWmiDateTime(obj["StartTime"]),
-                            Deadline = ConvertWmiDateTime(obj["Deadline"]),
-                            NextUserScheduledTime = ConvertWmiDateTime(obj["NextUserScheduledTime"]),
-                            IsMachineTarget = Convert.ToBoolean(obj["IsMachineTarget"] ?? false),
-                            IsPreflightOnly = Convert.ToBoolean(obj["IsPreflightOnly"] ?? false),
-                            NotifyUser = Convert.ToBoolean(obj["NotifyUser"] ?? false),
-                            UserUIExperience = Convert.ToBoolean(obj["UserUIExperience"] ?? false),
-                            OverrideServiceWindow = Convert.ToBoolean(obj["OverrideServiceWindow"] ?? false),
-                            RebootOutsideServiceWindow = Convert.ToBoolean(obj["RebootOutsideServiceWindow"] ?? false),
-                            AppDTs = obj["AppDTs"]?.ToString() ?? "",
-                            ContentSize = Convert.ToInt64(obj["ContentSize"] ?? 0),
-                            DeploymentReport = obj["DeploymentReport"]?.ToString() ?? "",
-                            EnforcePreference = obj["EnforcePreference"]?.ToString() ?? "",
-                            EstimatedInstallTime = Convert.ToInt32(obj["EstimatedInstallTime"] ?? 0),
-                            FileTypes = obj["FileTypes"]?.ToString() ?? "",
-                            HighImpactDeployment = Convert.ToBoolean(obj["HighImpactDeployment"] ?? false),
-                            InformativeUrl = obj["InformativeUrl"]?.ToString() ?? "",
-                            InProgressActions = obj["InProgressActions"]?.ToString() ?? "",
-                            PercentComplete = Convert.ToInt32(obj["PercentComplete"] ?? 0),
-                            ReleaseDate = ConvertWmiDateTime(obj["ReleaseDate"]),
-                            SupersessionState = obj["SupersessionState"]?.ToString() ?? "",
-                            Type = obj["Type"]?.ToString() ?? ""
-                        });
+                        applications.Add(app);
                     }
                 }
             }

@@ -110,6 +110,15 @@ namespace PSCCMClient.Core.Services
         /// <returns>True if successful</returns>
         public bool TriggerSchedule(string scheduleId)
         {
+            if (string.IsNullOrWhiteSpace(scheduleId))
+            {
+                throw new ArgumentException("Schedule ID cannot be null or empty.", nameof(scheduleId));
+            }
+            if (!Guid.TryParse(scheduleId, out _))
+            {
+                throw new InvalidOperationException("Schedule ID must be a valid GUID format.");
+            }
+
             try
             {
                 // Use base class helper methods for WMI class method invocation

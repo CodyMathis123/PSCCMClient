@@ -162,6 +162,9 @@ namespace PSCCMClient.Tests
             // Assert
             // Should return a boolean indicating success/failure
             Assert.True(result == true || result == false);
+
+            // If we set this to true, lets flip it back to false to avoid side effects
+            await service.SetClientAlwaysOnInternetAsync(false);
         }
 
         [Fact]
