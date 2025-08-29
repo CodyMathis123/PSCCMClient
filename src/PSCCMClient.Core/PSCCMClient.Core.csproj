@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>net8.0;net48</TargetFrameworks>
+    <ImplicitUsings Condition="'$(TargetFramework)' == 'net8.0'">enable</ImplicitUsings>
+    <ImplicitUsings Condition="'$(TargetFramework)' == 'net48'">disable</ImplicitUsings>
+    <Nullable Condition="'$(TargetFramework)' == 'net8.0'">enable</Nullable>
+    <Nullable Condition="'$(TargetFramework)' == 'net48'">disable</Nullable>
+    <LangVersion Condition="'$(TargetFramework)' == 'net48'">8.0</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>PSCCMClient.Core</PackageId>
     <VersionPrefix>1.0.0</VersionPrefix>
@@ -18,9 +21,14 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="System.Management" Version="7.0.2" />
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="2.0.0" />
   </ItemGroup>
 
 </Project>

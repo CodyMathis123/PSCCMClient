@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using System.Management;
 
 namespace PSCCMClient.Core.Services.Infrastructure

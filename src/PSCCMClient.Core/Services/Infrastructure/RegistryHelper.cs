@@ -1,3 +1,4 @@
+using System;
 using System.Management;
 using PSCCMClient.Core.Models;
 
@@ -29,11 +30,16 @@ namespace PSCCMClient.Core.Services.Infrastructure
         {
             return hive.ToUpper() switch
             {
-                "HKEY_CLASSES_ROOT" or "HKCR" => Hives.HKEY_CLASSES_ROOT,
-                "HKEY_CURRENT_USER" or "HKCU" => Hives.HKEY_CURRENT_USER,
-                "HKEY_LOCAL_MACHINE" or "HKLM" => Hives.HKEY_LOCAL_MACHINE,
-                "HKEY_USERS" or "HKU" => Hives.HKEY_USERS,
-                "HKEY_CURRENT_CONFIG" or "HKCC" => Hives.HKEY_CURRENT_CONFIG,
+                "HKEY_CLASSES_ROOT" => Hives.HKEY_CLASSES_ROOT,
+                "HKCR" => Hives.HKEY_CLASSES_ROOT,
+                "HKEY_CURRENT_USER" => Hives.HKEY_CURRENT_USER,
+                "HKCU" => Hives.HKEY_CURRENT_USER,
+                "HKEY_LOCAL_MACHINE" => Hives.HKEY_LOCAL_MACHINE,
+                "HKLM" => Hives.HKEY_LOCAL_MACHINE,
+                "HKEY_USERS" => Hives.HKEY_USERS,
+                "HKU" => Hives.HKEY_USERS,
+                "HKEY_CURRENT_CONFIG" => Hives.HKEY_CURRENT_CONFIG,
+                "HKCC" => Hives.HKEY_CURRENT_CONFIG,
                 _ => Hives.HKEY_LOCAL_MACHINE // Default to HKLM
             };
         }

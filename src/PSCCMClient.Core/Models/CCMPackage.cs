@@ -1,3 +1,4 @@
+using System;
 using System.Management;
 
 namespace PSCCMClient.Core.Models
@@ -44,7 +45,7 @@ namespace PSCCMClient.Core.Models
 
             // Handle WMI datetime format (YYYYMMDDHHMMSS.000000+000)
             if (dateString.Length >= 14 && DateTime.TryParseExact(
-                dateString[..14], 
+                dateString.Substring(0, 14), 
                 "yyyyMMddHHmmss", 
                 null, 
                 System.Globalization.DateTimeStyles.None, 
@@ -54,7 +55,7 @@ namespace PSCCMClient.Core.Models
             }
 
             // Fallback to standard DateTime parsing
-            return DateTime.TryParse(dateString, out DateTime fallbackResult) ? fallbackResult : null;
+            return DateTime.TryParse(dateString, out DateTime fallbackResult) ? (DateTime?)fallbackResult : null;
         }
     }
 }

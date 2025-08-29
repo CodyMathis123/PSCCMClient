@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
@@ -202,7 +205,8 @@ namespace PSCCMClient.Core.Services
         {
             return action switch
             {
-                ClientAction.HardwareInventory or ClientAction.FullHardwareInventory => "{00000000-0000-0000-0000-000000000001}",
+                ClientAction.HardwareInventory => "{00000000-0000-0000-0000-000000000001}",
+                ClientAction.FullHardwareInventory => "{00000000-0000-0000-0000-000000000001}",
                 ClientAction.SoftwareInventory => "{00000000-0000-0000-0000-000000000002}",
                 ClientAction.UpdateScan => "{00000000-0000-0000-0000-000000000113}",
                 ClientAction.UpdateEval => "{00000000-0000-0000-0000-000000000108}",

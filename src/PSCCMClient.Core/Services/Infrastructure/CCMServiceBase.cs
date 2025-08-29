@@ -1,3 +1,4 @@
+using System;
 using System.Management;
 using PSCCMClient.Core.Services.Infrastructure;
 

@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using System;
 using System.Management;
 using PSCCMClient.Core.Models;
 using PSCCMClient.Core.Services.Infrastructure;
