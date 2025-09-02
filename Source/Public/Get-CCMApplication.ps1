@@ -7,6 +7,8 @@ function Get-CCMApplication {
         [string[]]$ApplicationID,
         [Parameter(Mandatory = $false)]
         [switch]$IncludeIcon,
+        [Parameter(Mandatory = $false)]
+        [switch]$IncludeLazyProperties,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'CimSession')]
         [Microsoft.Management.Infrastructure.CimSession[]]$CimSession,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ComputerName')]
@@ -19,7 +21,7 @@ function Get-CCMApplication {
         [ValidateSet('CimSession', 'PSSession')]
         [string]$ConnectionPreference
     )
-    # ENHANCE - Support lazy loading properties
+    # Lazy loading properties (like AppDTs) are supported via the -IncludeLazyProperties switch
     begin {
         #region define our hash tables for parameters to pass to Get-CIMInstance and our return hash table
         $getapplicationsplat = @{
@@ -118,6 +120,32 @@ function Get-CCMApplication {
                         }
                         switch ($null -ne $AppToReturn) {
                             $true {
+                                # Load lazy properties if requested
+                                if ($IncludeLazyProperties.IsPresent) {
+                                    try {
+                                        # Re-query the specific application instance to load lazy properties
+                                        $lazyLoadSplat = @{
+                                            NameSpace = 'root\CCM\ClientSDK'
+                                            ClassName = 'CCM_Application'
+                                            Filter = "Id='$($AppToReturn.Id)' AND Revision='$($AppToReturn.Revision)'"
+                                        }
+                                        [ciminstance]$AppWithLazyProps = switch ($Computer -eq $env:ComputerName) {
+                                            $true {
+                                                Get-CimInstance @lazyLoadSplat @connectionSplat
+                                            }
+                                            $false {
+                                                Get-CCMCimInstance @lazyLoadSplat @connectionSplat
+                                            }
+                                        }
+                                        if ($AppWithLazyProps) {
+                                            $AppToReturn = $AppWithLazyProps
+                                        }
+                                    }
+                                    catch {
+                                        Write-Warning "Failed to load lazy properties for application '$($AppToReturn.Name)': $($_.Exception.Message)"
+                                    }
+                                }
+                                
                                 $PropsToShow = 'Name', 'FullName', 'SoftwareVersion', 'Publisher', 'Description',
                                 'Id', 'Revision', 'EvaluationState', 'ErrorCode', 'AllowedActions', 'ResolvedState',
                                 'InstallState', 'ApplicabilityState', 'ConfigureState', 'LastEvalTime', 'LastInstallTime',
