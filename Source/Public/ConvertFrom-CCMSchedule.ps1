@@ -12,6 +12,7 @@ Function ConvertFrom-CCMSchedule {
             3 = 'SMS_ST_RecurWeekly'
             4 = 'SMS_ST_RecurMonthlyByWeekday'
             5 = 'SMS_ST_RecurMonthlyByDate'
+            6 = 'SMS_ST_RecurMonthlyByWeekdayBase'
         }
         #endregion TypeMap for returning readable window type
 
@@ -186,6 +187,25 @@ Function ConvertFrom-CCMSchedule {
                     $MW['Description'] = [string]::Format('Occurs {0} of every {1} months effective {2}', $MonthRecurrence, $ForNumberOfMonths, $StartDateTimeObject)
                     $MW['ForNumberOfMonths'] = $ForNumberOfMonths
                     $MW['MonthDay'] = $MonthDay
+                }
+                6 {
+                    $Day = [Convert]::ToInt32($binaryRecurrence.Substring(13, 3), 2)
+                    $ForNumberOfMonths = [Convert]::ToInt32($binaryRecurrence.Substring(16, 4), 2)
+                    $WeekOrder = [Convert]::ToInt32($binaryRecurrence.Substring(20, 3), 2)
+                    $OffsetDay = [Convert]::ToInt32($binaryRecurrence.Substring(23, 3), 2)
+                    $WeekRecurrence = switch ($WeekOrder) {
+                        0 {
+                            'Last'
+                        }
+                        default {
+                            $(Get-FancyDay -Day $WeekOrder)
+                        }
+                    }
+                    $MW['Description'] = [string]::Format('Occurs the {0} {1} of every {2} months with {3} day offset effective {4}', $WeekRecurrence, $([DayOfWeek]($Day - 1)), $ForNumberOfMonths, $OffsetDay, $StartDateTimeObject)
+                    $MW['Day'] = $Day
+                    $MW['ForNumberOfMonths'] = $ForNumberOfMonths
+                    $MW['WeekOrder'] = $WeekOrder
+                    $MW['OffsetDay'] = $OffsetDay
                 }
                 Default {
                     Write-Error "Parsing Schedule String resulted in invalid type of $RecurType"
