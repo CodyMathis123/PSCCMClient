@@ -10,7 +10,7 @@ function Invoke-CCMSoftwareUpdate {
         [Alias('Connection', 'PSComputerName', 'PSConnectionName', 'IPAddress', 'ServerName', 'HostName', 'DNSHostName')]
         [string[]]$ComputerName = $env:ComputerName,
         [Parameter(Mandatory = $false, ParameterSetName = 'PSSession')]
-        [Alias('Session')]      
+        [Alias('Session')]
         [System.Management.Automation.Runspaces.PSSession[]]$PSSession,
         [Parameter(Mandatory = $false, ParameterSetName = 'ComputerName')]
         [ValidateSet('CimSession', 'PSSession')]
@@ -92,9 +92,11 @@ function Invoke-CCMSoftwareUpdate {
                             Invoke-CCMCommand @invokeCommandSplat @connectionSplat
                         }
                     }
-                    if ($Invocation) {
-                        Write-Verbose "Successfully invoked updates on $Computer via the 'InstallUpdates' CIM method"
-                        $Result['Invoked'] = $true
+                    switch ($Invocation.ReturnValue) {
+                        0 {
+                            Write-Verbose "Successfully invoked updates on $Computer via the 'InstallUpdates' CIM method"
+                            $Result['Invoked'] = $true
+                        }
                     }
 
                 }
